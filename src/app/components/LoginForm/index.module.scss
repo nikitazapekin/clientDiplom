@@ -1,7 +1,62 @@
 //@use '@styles/' as *;
-@use '../../styles/index.scss' as *;
+@use "../../styles/index.scss" as *;
 
- 
 .form {
-    color: $color-primary-500;
+  background-color: $color-darkLight;
+
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &__content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 9px 10px 4px 0 rgba(0, 0, 0, 0.25);
+    background-color: $color-white;
+    max-width: $container-xs;
+    width: 100%;
+    flex-direction: column;
+    padding: px($spacing-md);
+    row-gap: px($spacing-md);
+    border-radius: px($radius-large);
+
+  }
+  &__preview {
+    display: flex;
+    column-gap: px($spacing-lg);
+    align-items: center;
+    justify-content: center;
+    flex-direction: row-reverse;
+  }
 }
+
+/*
+$color-grayLight:  #f0f0f0;
+$color-gray: #d8d8d8;
+$color-purple: #9f0fa7;
+$color-white: #fff;
+$color-darkLight: #303027;
+$color-dark: #222121;
+
+$container-sm: 1280;
+$container-md: 1400;
+$container-xs: 700;
+  
+
+
+
+$radius-small: 4;
+$radius-medium: 8;
+$radius-large: 16;
+$radius-xlarge: 24;
+$radius-circle: 9999;
+
+$spacing-xs: 4;
+$spacing-sm: 8;
+$spacing-md: 16;
+$spacing-lg: 24;
+$spacing-xl: 32;
+$spacing-xxl: 48;
+*/
