@@ -1,16 +1,7 @@
- 
-import LoginForm from "@components/LoginForm"
- import { theme } from "../constants";
-import { ThemeProvider } from "styled-components";
+import LoginForm from "@components/LoginForm";
 
 const Auth = () => {
- 
-  return  ( 
-   
-  <LoginForm />
-    
-    
-  );
-}
- 
+  return <LoginForm />;
+};
+
 export default Auth;

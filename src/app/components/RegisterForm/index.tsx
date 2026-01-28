@@ -6,7 +6,7 @@ import Image from "next/image";
 
 import styles from "./index.module.scss";
 
-const LoginForm = () => {
+const RegisterForm = () => {
   const handleSubmit = () => {};
 
   return (
@@ -20,6 +20,14 @@ const LoginForm = () => {
         <div className={styles.form__inputs}>
           <div className={styles.form__panel}>
             <div className={styles.form__subpreview}>
+              <label className={styles.form__label}>Имя</label>
+              <p className={styles.form__error}>error</p>
+            </div>
+            <input className={styles.form__input} placeholder="Введите имя" required />
+          </div>
+
+          <div className={styles.form__panel}>
+            <div className={styles.form__subpreview}>
               <label className={styles.form__label}>Почта</label>
               <p className={styles.form__error}>error</p>
             </div>
@@ -28,14 +36,14 @@ const LoginForm = () => {
 
           <div className={styles.form__panel}>
             <div className={styles.form__subpreview}>
-              <label className={styles.form__label}>Почта</label>
+              <label className={styles.form__label}>Пароль</label>
               <p className={styles.form__error}>error</p>
             </div>
             <input className={styles.form__input} placeholder="Введите пароль" required />
           </div>
         </div>
         <Button
-          text={"Вход"}
+          text={"Регистрация"}
           color={"#9f0fa7;"}
           onClick={handleSubmit}
           textColor={"#fff"}
@@ -43,7 +51,7 @@ const LoginForm = () => {
         />
 
         <Button
-          text={"Регистрация"}
+          text={"Вход"}
           color={"#d8d8d8;"}
           onClick={handleSubmit}
           textColor={"#000"}
@@ -54,4 +62,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default RegisterForm;
