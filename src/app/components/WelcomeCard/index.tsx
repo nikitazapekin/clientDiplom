@@ -14,7 +14,6 @@ const WelcomeCard = ({ item }: WelcomeCardProps) => {
       <div className={styles.card__cubes}>
         <div className={styles.card__cubesWrapper}>
           <div className={`${styles.card__cube}  ${styles.card__cube1}`} />
-
           <div className={`${styles.card__cube}  ${styles.card__cube2}`} />
         </div>
       </div>
