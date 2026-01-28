@@ -13,6 +13,9 @@ const CourseCategory = ({ title, courses }: CourseCategoryProps) => {
           {courses.map((item) => (
             <Course key={item.id} item={item} />
           ))}
+          {courses.length == 0 && (
+            <p className={styles.category__empty}>Курсов пока нету в этой категории</p>
+          )}
         </div>
       </div>
     </section>

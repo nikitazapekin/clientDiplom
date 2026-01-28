@@ -1,4 +1,5 @@
 import CourseCategory from "../CourseCategory";
+import SearchCourses from "../SearchCourses";
 
 import styles from "./index.module.scss";
 
@@ -33,7 +34,7 @@ const Courses = () => {
         <div className={styles.courses__preview}>
           <h1 className={styles.courses__title}>Выберите курс для обучения</h1>
         </div>
-        + фильры вначале
+        <SearchCourses />
         {/*     {Array.from({length: 100}).map(item=> (
           <div>test</div>
         ))} */}
