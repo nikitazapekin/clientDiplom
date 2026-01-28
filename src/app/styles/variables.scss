@@ -32,7 +32,8 @@ $spacing-md: 16;
 $spacing-lg: 24;
 $spacing-xl: 32;
 $spacing-xxl: 48;
-
+$spacing-bg: 60;
+$spacing-vg: 80;
 
 @function px($value) {
   @return #{$value}px;
