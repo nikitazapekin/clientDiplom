@@ -2,6 +2,7 @@ import styles from "@styles/wrappers.module.scss";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
+import Footer from "./components/Footer";
 import Header from "./components/Header";
 
 import "./styles/global.scss";
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main className={styles.main}>{children}</main>
 
-        <Header />
+        <Footer />
       </body>
     </html>
   );

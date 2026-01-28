@@ -1,10 +1,12 @@
 @use "../../styles/index.scss" as *;
+
 .header {
   width: 100%;
   min-height: px($spacing-bg);
   display: flex;
   justify-content: space-between;
   background-color: $color-dark;
+  
   &__container {
     max-width: px($container-md);
     width: 100%;
@@ -14,63 +16,64 @@
     align-items: center;
     padding: px($spacing-sm) 0;
   }
+  
   &__logo {
     cursor: pointer;
   }
+  
   &__nav {
     display: flex;
     align-items: center;
   }
+  
   &__item {
     cursor: pointer;
     color: $color-white;
+    position: relative;
+    padding: px($spacing-xs) 0;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+    
+    &_active::after,
+    &_hover::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: $color-white;
+      transform-origin: bottom center;
+      transition: transform 0.3s ease;
+    }
+    
+    &_active::after {
+      transform: scaleX(1);
+    }
+    
+    &_hover::after {
+      transform: scaleX(0.8);
+    }
   }
+  
   &__list {
     display: flex;
     column-gap: px($spacing-lg);
-    
     align-items: center;
   }
+  
   &__logout {
     padding: px($spacing-sm);
-    background-color: $color-purple ;
+    background-color: $color-purple;
     border-radius: px($radius-small);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
   }
 }
-
-/*
-@use "../../styles/index.scss" as *;
-$color-grayLight:  #f0f0f0;
-$color-gray: #d8d8d8;
-$color-purple: #9f0fa7;
-$color-white: #fff;
-$color-darkLight: #303027;
-$color-dark: #222121;
-
-$container-sm: 1280;
-$container-md: 1400;
-$container-xs: 700;
-  
-
-
-
-$radius-small: 4;
-$radius-medium: 8;
-$radius-large: 16;
-$radius-xlarge: 24;
-$radius-circle: 9999;
-
-$spacing-xs: 4;
-$spacing-sm: 8;
-$spacing-md: 16;
-$spacing-lg: 24;
-$spacing-xl: 32;
-$spacing-xxl: 48;
-$spacing-bg: 60;
-$spacing-vg: 80;
-
-$font-xs: 14;
-$font-sx: 20;
-$font-md: 24;
-$font-lg: 32;
-*/

@@ -1,0 +1,117 @@
+@use "../../styles/index.scss" as *;
+
+.card {
+  width: 100%;
+  max-width: 100%;
+  box-shadow: 9px 10px 4px 0 rgba(0, 0, 0, 0.25);
+  background-color: $color-white;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+  &:hover  {
+    transform: scale(1.03);
+  }
+  &__title {
+  }
+
+  &__icon {
+  }
+  &__wrapper {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: $color-purple;
+    border-radius: px($radius-medium);
+    transform: rotate(10deg);
+  }
+  &__cubes {
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+  &__cubesWrapper {
+    position: relative;
+    width: 50px;
+    height: 50px;
+  }
+
+  &__cube1 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    background-color: $color-black;
+    transform: rotate(20deg);
+    border: 3px solid $color-orange;
+  }
+
+  &__cube2 {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background-color: $color-black;
+    transform: rotate(30deg);
+    border: 3px solid $color-green;
+  }
+}
+
+/*
+ @use "../../styles/index.scss" as *;
+$color-white: #ffffff;
+$color-black: #000000;
+ 
+$color-white: #ffffff;
+$color-black: #000000;
+
+ 
+$color-white: #ffffff;
+$color-black: #000000;
+$color-green: #379c07;
+$color-orange: #e29f22;
+
+
+$color-grayLight:  #f0f0f0;
+$color-gray: #d8d8d8;
+$color-purple: #9f0fa7;
+$color-white: #fff;
+$color-darkLight: #303027;
+$color-dark: #222121;
+$color-red: #d80909;
+
+$container-sm: 1280;
+$container-md: 1400;
+$container-xs: 700;
+
+ 
+$font-xs: 14;
+$font-sx: 20;
+$font-md: 24;
+$font-lg: 32;
+
+$radius-small: 4;
+$radius-medium: 8;
+$radius-large: 16;
+$radius-xlarge: 24;
+$radius-circle: 9999;
+
+$spacing-xs: 4;
+$spacing-sm: 8;
+$spacing-md: 16;
+$spacing-lg: 24;
+$spacing-xl: 32;
+$spacing-xxl: 48;
+$spacing-bg: 60;
+$spacing-vg: 80;
+*/
