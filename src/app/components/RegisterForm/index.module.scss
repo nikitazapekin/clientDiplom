@@ -63,7 +63,11 @@
   }
   &__error {
     
-    color: $color-red
+    color: $color-red;
+
+    margin-left: 20px;
+text-align: right;
+
   }
 }
 
