@@ -45,6 +45,8 @@ const LoginForm = () => {
 
       const authResponse = await AuthService.login(data);
 
+      console.log("RESSP", authResponse);
+
       if (authResponse.role === "admin") {
         router.push("/admin/dashboard");
       } else {

@@ -4,14 +4,14 @@ import { NextResponse } from "next/server";
 export function proxy(request: NextRequest) {
   console.log(request);
 
-  /*  const currentUser = request.cookies.get("currentUser")?.value;
+  const currentUser = request.cookies.get("refresh-token")?.value;
 
-  const { pathname } = request.nextUrl; */
-  /* 
+  const { pathname } = request.nextUrl;
+
   if (
-    pathname.startsWith("/products") ||
+    pathname.startsWith("/homepage") /* ||
     pathname.startsWith("/users") ||
-    pathname.startsWith("/account")
+    pathname.startsWith("/account") */
   ) {
     if (!currentUser) {
       return NextResponse.redirect(new URL("/auth", request.url));
@@ -19,8 +19,8 @@ export function proxy(request: NextRequest) {
   }
 
   if ((pathname === "/auth" || pathname === "/register") && currentUser) {
-    return NextResponse.redirect(new URL("/products", request.url));
+    return NextResponse.redirect(new URL("/homepage", request.url));
   }
- */
+
   return NextResponse.next();
 }

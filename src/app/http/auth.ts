@@ -53,6 +53,7 @@ class TokenManager {
   static setAccessToken(token: string): void {
     if (typeof window === "undefined") return;
 
+    console.log("TOKEN", token);
     localStorage.setItem("accessToken", token);
   }
 
@@ -101,32 +102,40 @@ class TokenManager {
 }
 
 export class AuthService {
-  static async register(userData: RegisterRequest): Promise<AuthResponse> {
-    try {
-      console.log("Registering user:", userData.email);
-
-      const response = await $api.post<AuthResponse>("/auth/register", userData);
-      const data = response.data;
-
-      this.saveAuthData(data);
-
-      console.log("Registration successful");
-
-      return data;
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      throw new Error(error.response?.data?.message || "Registration failed");
-    }
-  }
-
   static async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      console.log("Logging in user:", credentials.email);
+      const response = await $api.post("/auth/login", credentials);
+      const apiResponse = response.data;
+      const data = apiResponse.data;
 
-      const response = await $api.post<AuthResponse>("/auth/login", credentials);
-      const data = response.data;
+      console.log("Full API response:", apiResponse);
+      console.log("Auth data:", data);
+      console.log("ACCESS", data.accessToken);
 
-      this.saveAuthData(data);
+      if (data.accessToken) {
+        localStorage.setItem("accessToken", data.accessToken);
+        console.log("Access token saved:", data.accessToken);
+      }
+
+      if (data.refreshToken) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("refreshToken", data.refreshToken);
+          console.log("Refresh token saved:", data.refreshToken);
+        }
+      }
+
+      if (data.role && data.email && data.userId) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("userRole", data.role);
+          localStorage.setItem("userEmail", data.email);
+          localStorage.setItem("userId", data.userId);
+          console.log("User data saved:", {
+            role: data.role,
+            email: data.email,
+            userId: data.userId,
+          });
+        }
+      }
 
       return data;
     } catch (error: any) {
@@ -135,10 +144,78 @@ export class AuthService {
     }
   }
 
+  static async register(userData: RegisterRequest): Promise<AuthResponse> {
+    try {
+      console.log("Registering user:", userData.email);
+
+      const response = await $api.post("/auth/register", userData);
+      const apiResponse = response.data;
+      const data = apiResponse.data;
+
+      if (data.accessToken && typeof window !== "undefined") {
+        localStorage.setItem("accessToken", data.accessToken);
+      }
+
+      if (data.refreshToken && typeof window !== "undefined") {
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
+
+      if (data.role && data.email && data.userId && typeof window !== "undefined") {
+        localStorage.setItem("userRole", data.role);
+        localStorage.setItem("userEmail", data.email);
+        localStorage.setItem("userId", data.userId);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      throw new Error(error.response?.data?.message || "Registration failed");
+    }
+  }
+
+  static async validateToken(token: string): Promise<ValidateResponse> {
+    try {
+      const response = await $api.post("/auth/validate", { token });
+      const apiResponse = response.data;
+
+      return apiResponse.data || { isValid: false };
+    } catch {
+      return { isValid: false };
+    }
+  }
+
+  static async refreshToken(): Promise<string> {
+    try {
+      const refreshToken = TokenManager.getRefreshToken();
+
+      if (!refreshToken) {
+        throw new Error("No refresh token available");
+      }
+
+      const response = await $api.post("/auth/refresh", {
+        refreshToken,
+      });
+
+      const apiResponse = response.data;
+      const data = apiResponse.data;
+
+      if (data.accessToken && typeof window !== "undefined") {
+        localStorage.setItem("accessToken", data.accessToken);
+      }
+
+      if (data.refreshToken && typeof window !== "undefined") {
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
+
+      return data.accessToken;
+    } catch {
+      this.clearAuthData();
+      throw new Error("SESSION_EXPIRED");
+    }
+  }
+
   static async logout(): Promise<void> {
     try {
-      console.log("Logging out...");
-
       await $api.post("/auth/logout");
     } catch (error) {
       console.warn("Logout error (but clearing local storage anyway):", error);
@@ -148,54 +225,6 @@ export class AuthService {
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }
-    }
-  }
-
-  static async validateToken(token: string): Promise<ValidateResponse> {
-    try {
-      console.log("Validating token...");
-
-      const response = await $api.post<ValidateResponse>("/auth/validate", { token });
-
-      console.log("Token validation result:", response.data.isValid);
-
-      return response.data;
-    } catch (error: any) {
-      console.error("Token validation error:", error);
-
-      return { isValid: false };
-    }
-  }
-
-  static async refreshToken(): Promise<string> {
-    try {
-      console.log("Refreshing token...");
-
-      const refreshToken = TokenManager.getRefreshToken();
-
-      if (!refreshToken) {
-        throw new Error("No refresh token available");
-      }
-
-      const response = await $api.post<AuthResponse>("/auth/refresh", {
-        refreshToken,
-      });
-
-      if (response.data.accessToken) {
-        TokenManager.setAccessToken(response.data.accessToken);
-      }
-
-      if (response.data.refreshToken) {
-        TokenManager.setRefreshToken(response.data.refreshToken);
-      }
-
-      console.log("Token refreshed successfully");
-
-      return response.data.accessToken;
-    } catch {
-      this.clearAuthData();
-
-      throw new Error("SESSION_EXPIRED");
     }
   }
 
@@ -234,8 +263,6 @@ export class AuthService {
   }
 
   private static saveAuthData(data: AuthResponse): void {
-    if (typeof window === "undefined") return;
-
     if (data.accessToken) {
       TokenManager.setAccessToken(data.accessToken);
     }

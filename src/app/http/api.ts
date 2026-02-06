@@ -1,7 +1,6 @@
 import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import axios from "axios";
 
-// Базовый URL - можно менять
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 
 const isBrowser = typeof window !== "undefined";
