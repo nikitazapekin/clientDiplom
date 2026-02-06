@@ -1,0 +1,110 @@
+import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import axios from "axios";
+
+// Базовый URL - можно менять
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+
+const isBrowser = typeof window !== "undefined";
+
+export const $api = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+class TokenManager {
+  static getAccessToken(): string | null {
+    if (!isBrowser) return null;
+
+    return localStorage.getItem("accessToken");
+  }
+
+  static setAccessToken(token: string): void {
+    if (!isBrowser) return;
+
+    localStorage.setItem("accessToken", token);
+  }
+
+  static removeAccessToken(): void {
+    if (!isBrowser) return;
+
+    localStorage.removeItem("accessToken");
+  }
+
+  static setUserData(data: { role: string; email: string; userId: string }): void {
+    if (!isBrowser) return;
+
+    localStorage.setItem("userRole", data.role);
+    localStorage.setItem("userEmail", data.email);
+    localStorage.setItem("userId", data.userId);
+  }
+
+  static getUserData(): { role: string | null; email: string | null; userId: string | null } {
+    if (!isBrowser) return { role: null, email: null, userId: null };
+
+    return {
+      role: localStorage.getItem("userRole"),
+      email: localStorage.getItem("userEmail"),
+      userId: localStorage.getItem("userId"),
+    };
+  }
+
+  static clearAll(): void {
+    if (!isBrowser) return;
+
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userId");
+  }
+}
+
+$api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    if (isBrowser) {
+      const token = TokenManager.getAccessToken();
+
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+
+    return config;
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  }
+);
+
+$api.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      TokenManager.clearAll();
+
+      if (isBrowser && window.location.pathname !== "/login") {
+        window.location.href = "/login?session=expired";
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export const setBaseUrl = (url: string) => {
+  $api.defaults.baseURL = url;
+};
+
+export const getBaseUrl = () => $api.defaults.baseURL;
+
+export default $api;
