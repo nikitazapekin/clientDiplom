@@ -41,11 +41,7 @@ const LoginForm = () => {
     setLoginError(null);
 
     try {
-      console.log("Login attempt for:", data.email);
-
       const authResponse = await AuthService.login(data);
-
-      console.log("RESSP", authResponse);
 
       if (authResponse.role === "admin") {
         router.push("/admin/dashboard");
