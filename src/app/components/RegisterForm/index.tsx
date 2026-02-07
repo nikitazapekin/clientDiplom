@@ -124,7 +124,8 @@ const RegisterForm = () => {
             <input
               className={styles.form__input}
               placeholder="Введите пароль (минимум 6 символов)"
-              type="password"
+              //type="password"
+              type="text"
               disabled={isLoading}
               {...register("password")}
             />
@@ -140,7 +141,8 @@ const RegisterForm = () => {
             <input
               className={styles.form__input}
               placeholder="Повторите пароль"
-              type="password"
+              type="text"
+              //   type="password"
               disabled={isLoading}
               {...register("confirmPassword")}
             />

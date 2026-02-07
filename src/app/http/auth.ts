@@ -102,29 +102,27 @@ class TokenManager {
 }
 
 export class AuthService {
-  static async login(credentials: LoginRequest): Promise<AuthResponse> {
+  /*  static async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
       const response = await $api.post("/auth/login", credentials);
       const apiResponse = response.data;
       const data = apiResponse.data;
 
-      console.log("Full API response:", apiResponse);
-      console.log("Auth data:", data);
-      console.log("ACCESS", data.accessToken);
+ 
 
-      if (data.accessToken) {
+      if (data?.accessToken) {
         localStorage.setItem("accessToken", data.accessToken);
         console.log("Access token saved:", data.accessToken);
       }
 
-      if (data.refreshToken) {
+      if (data?.refreshToken) {
         if (typeof window !== "undefined") {
           localStorage.setItem("refreshToken", data.refreshToken);
           console.log("Refresh token saved:", data.refreshToken);
         }
       }
-
-      if (data.role && data.email && data.userId) {
+console.log("DATTAAAAAAAAAAAAAAAAAAA", data)
+      if (data?.role && data?.email && data?.userId) {
         if (typeof window !== "undefined") {
           localStorage.setItem("userRole", data.role);
           localStorage.setItem("userEmail", data.email);
@@ -143,6 +141,44 @@ export class AuthService {
       throw new Error(error.response?.data?.message || "Login failed");
     }
   }
+ */
+
+  static async login(credentials: LoginRequest): Promise<AuthResponse> {
+    try {
+      const response = await $api.post("/auth/login", credentials);
+      const apiResponse = response.data;
+
+      // Проверяем структуру ответа
+      const responseData = apiResponse.data || apiResponse;
+
+      console.log("Login response:", responseData);
+
+      if (!responseData) {
+        throw new Error("No data received from server");
+      }
+
+      if (responseData?.accessToken) {
+        localStorage.setItem("accessToken", responseData.accessToken);
+      }
+
+      if (responseData?.refreshToken && typeof window !== "undefined") {
+        localStorage.setItem("refreshToken", responseData.refreshToken);
+      }
+
+      if (responseData?.role && responseData?.email && responseData?.userId) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("userRole", responseData.role);
+          localStorage.setItem("userEmail", responseData.email);
+          localStorage.setItem("userId", responseData.userId);
+        }
+      }
+
+      return responseData;
+    } catch (error: any) {
+      console.error("Login error:", error);
+      throw new Error(error.response?.data?.message || error.message || "Login failed");
+    }
+  }
 
   static async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
@@ -152,15 +188,15 @@ export class AuthService {
       const apiResponse = response.data;
       const data = apiResponse.data;
 
-      if (data.accessToken && typeof window !== "undefined") {
+      if (data?.accessToken && typeof window !== "undefined") {
         localStorage.setItem("accessToken", data.accessToken);
       }
 
-      if (data.refreshToken && typeof window !== "undefined") {
+      if (data?.refreshToken && typeof window !== "undefined") {
         localStorage.setItem("refreshToken", data.refreshToken);
       }
 
-      if (data.role && data.email && data.userId && typeof window !== "undefined") {
+      if (data?.role && data?.email && data?.userId && typeof window !== "undefined") {
         localStorage.setItem("userRole", data.role);
         localStorage.setItem("userEmail", data.email);
         localStorage.setItem("userId", data.userId);

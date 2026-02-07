@@ -121,7 +121,8 @@ const LoginForm = () => {
             <input
               className={styles.form__input}
               placeholder="Введите пароль"
-              type="password"
+              //type="password"
+              type="text"
               disabled={isLoading}
               {...register("password")}
             />
@@ -176,26 +177,3 @@ const LoginForm = () => {
 };
 
 export default LoginForm;
-
-/*
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={styles.submitButton}
-          style={{
-            backgroundColor: "#9f0fa7",
-            color: "#fff",
-            width: "413px",
-            padding: "12px",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "16px",
-            fontWeight: "500",
-            cursor: isLoading ? "not-allowed" : "pointer",
-            opacity: isLoading ? 0.7 : 1,
-          }}
-        >
-          {isLoading ? "Регистрация..." : "Зарегистрироваться"}
-        </button>
-        */
