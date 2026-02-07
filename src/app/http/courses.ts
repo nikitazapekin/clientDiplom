@@ -9,20 +9,14 @@ import $api from "./api";
 
 export class CourseService {
   static async createCourse(data: CreateCourseRequest): Promise<CourseResponse> {
-    console.log("DATAaaaaaaaaaaaaaaaaaaaaaaa", data);
-    try {
-      const token = localStorage.getItem("accessToken");
-      const response = await $api.post(`/courses/create`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const token = localStorage.getItem("accessToken");
+    const response = await $api.post(`/courses/create`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      return response.data;
-    } catch (error: any) {
-      console.error("💥 Ошибка в CourseService:", error);
-      throw error;
-    }
+    return response.data;
   }
 
   static async getCourses(options?: {

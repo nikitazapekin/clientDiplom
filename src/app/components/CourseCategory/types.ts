@@ -1,5 +1,5 @@
 interface Course {
-  id: number;
+  id: string;
   title: string;
   logo: string;
   lessonCount: number;

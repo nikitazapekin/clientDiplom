@@ -23,7 +23,7 @@ const AdminCourses = ({ initialCourses }: CourseListResponse) => {
 
           {initialCourses.courses.map((itemm, index) => {
             const item = {
-              id: index,
+              id: itemm.id,
               title: itemm.title,
               logo: itemm.logo,
               lessonCount: 0,
@@ -34,8 +34,6 @@ const AdminCourses = ({ initialCourses }: CourseListResponse) => {
             return <Course key={item.id} item={item} />;
           })}
 
-          {/* 
-      {JSON.stringify(initialCourses)} */}
           <CreateCourseModal handleOpen={handleOpen} isOpen={isOpenCourse} />
         </div>
       </div>

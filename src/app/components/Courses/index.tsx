@@ -14,7 +14,7 @@ const categories = [
     title: "Языки программирования",
     courses: [
       {
-        id: 1,
+        id: "1",
         title: "JavaScript для новичков",
         logo: "../../../assets/courses/JS.png",
         lessonCount: 32,
@@ -22,7 +22,7 @@ const categories = [
         tags: ["12"],
       },
       {
-        id: 12,
+        id: "12",
         title: "Python для начинающих",
         logo: "../../../assets/courses/JS.png",
         lessonCount: 28,
@@ -36,7 +36,7 @@ const categories = [
     title: "Мои курсы",
     courses: [
       {
-        id: 3,
+        id: "3",
         title: "React продвинутый",
         logo: "../../../assets/courses/JS.png",
         lessonCount: 45,
@@ -50,7 +50,7 @@ const categories = [
     title: "Алгоритмы и структуры данных",
     courses: [
       {
-        id: 4,
+        id: "4",
         title: "Алгоритмы на JavaScript",
         logo: "../../../assets/logo/logo.png",
         lessonCount: 35,
@@ -59,7 +59,7 @@ const categories = [
       },
 
       {
-        id: 5,
+        id: "5",
         title: "Алгоритмы на JavaScript",
         logo: "../../../assets/logo/logo.png",
         lessonCount: 35,

@@ -1,5 +1,3 @@
-export type CourseStatus = "draft" | "published" | "archived";
-
 export interface CreateCourseRequest {
   title: string;
   description: string;
@@ -33,3 +31,5 @@ export interface CourseResponse {
   updatedAt: string;
   publishedAt?: string;
 }
+
+export type CourseStatus = "draft" | "published" | "archived";

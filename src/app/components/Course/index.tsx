@@ -1,11 +1,20 @@
+"use client";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import styles from "./index.module.scss";
 import type { CourseItem } from "./types";
 
 const Course = ({ item }: CourseItem) => {
+  const router = useRouter();
+
+  const handleNavigate = () => {
+    router.push(`/admin/courses/${item.id}`);
+  };
+
   return (
-    <div className={styles.course}>
+    <div className={styles.course} onClick={handleNavigate}>
       <Image
         src={item.logo}
         alt="preview"
@@ -29,10 +38,6 @@ const Course = ({ item }: CourseItem) => {
         </div>
 
         <div className={styles.course__tags}>
-          {/*   <div className={styles.course__tag}>JS</div>
-          <div className={styles.course__tag}>Основы</div>
-          <div className={styles.course__tag}>Алгоритмы</div> */}
-
           {item.tags.map((item, index) => (
             <div key={index} className={styles.course__tag}>
               {item}

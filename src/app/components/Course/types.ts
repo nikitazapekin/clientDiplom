@@ -1,6 +1,6 @@
 export interface CourseItem {
   item: {
-    id: number;
+    id: string;
     title: string;
     logo: string;
     lessonCount: number;
