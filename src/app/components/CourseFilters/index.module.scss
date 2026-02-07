@@ -13,9 +13,23 @@ width: 100%;
   }
 
   &__title {
-    margin-top: px($spacing-lg);
     text-align: center;
   }
+  
+  
+  &__preview {
+  margin-top: px($spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+
+}
+
+&__create {
+  font-size: px($font-sx);
+  cursor: pointer;
+}
 } 
 
 

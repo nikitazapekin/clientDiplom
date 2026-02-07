@@ -9,18 +9,20 @@
   column-gap: px($spacing-lg);
   padding: px($spacing-sm);
   border-radius: px($radius-medium);
+  cursor: pointer;
  
 
   &__title  {
-    font-size: px($font-sx);
+    font-size: px($font-md);
   }
 
   &__description {
-      font-size: px($font-xs);
+      font-size: px($font-sx);
      font-weight: 400;
   }
 
   &__preview {
+          font-size: px($font-sx);
     display: flex;
     flex-direction: column;
     column-gap:  px($spacing-lg);
@@ -35,6 +37,25 @@
   column-gap: px($spacing-sm) ;
 }
 
+&__image {
+  width: 100px;
+  height: 100px;
+  margin-left: 20px;
+}
+&__tags {
+  display: flex;
+  gap: px($spacing-md);
+  margin-top: px($spacing-sm);
+  flex-wrap: wrap;
+}
+
+&__tag {
+
+  border-radius: 20px;
+  background-color: $color-grayLight;
+
+  padding: px($spacing-sm);
+}
 }
 
 /*

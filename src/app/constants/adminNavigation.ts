@@ -5,9 +5,21 @@ import Achievements from "@assets/icons/welcome/medal.png";
 import Profile from "@assets/icons/welcome/profile.png";
 
 export const adminNavigation = [
-  { id: 1, title: "Курсы", type: "/admin/courses", image: Study },
-  { id: 2, title: "Студенты", type: "/admin/students", image: Problems },
-  { id: 3, title: "Сертификаты", type: "/admin/certificates", image: Articles },
-  { id: 4, title: "Профиль", type: "/admin/profile", image: Profile },
-  { id: 5, title: "Для менторов", type: "/admin/mentorship", image: Achievements },
+  { id: 1, title: "Курсы", type: "/admin/courses", image: Study, path: "/admin/courses" },
+  { id: 2, title: "Студенты", type: "/admin/students", image: Problems, path: "/admin/students" },
+  {
+    id: 3,
+    title: "Сертификаты",
+    type: "/admin/certificates",
+    image: Articles,
+    path: "/admin/certificates",
+  },
+  { id: 4, title: "Профиль", type: "/admin/profile", image: Profile, path: "/admin/profile" },
+  {
+    id: 5,
+    title: "Для менторов",
+    type: "/admin/mentorship",
+    image: Achievements,
+    path: "/admin/mentorship",
+  },
 ];

@@ -1,0 +1,277 @@
+@use "../../styles/index.scss" as *;
+
+.modal {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__inner {
+    max-width: px($container-xs);
+    background-color: $color-white;
+    border-radius: 30px;
+    width: 100%;
+    height: auto;
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    row-gap: px($spacing-lg);
+    padding: px($spacing-lg);
+  }
+
+  &__overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+
+    background-color: $color-black;
+    opacity: 0.7;
+  }
+
+  &__title {
+    font-size: px($font-lg);
+    margin-bottom: px($spacing-md);
+    color: $color-dark;
+  }
+
+  &__fields {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-lg);
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-xs);
+  }
+
+  &__label {
+    font-size: px($font-xs);
+    color: $color-dark;
+    font-weight: 500;
+  }
+
+  &__input,
+  &__select {
+    padding: px($spacing-sm) px($spacing-md);
+    border: 1px solid $color-gray;
+    border-radius: px($radius-medium);
+    font-size: px($font-xs);
+    width: 100%;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: $color-purple;
+    }
+  }
+
+  &__select {
+    background-color: $color-white;
+    cursor: pointer;
+  }
+
+  &__tagContainer {
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-sm);
+  }
+
+  &__tagInputWrapper {
+    display: flex;
+    gap: px($spacing-sm);
+  }
+
+  &__addButton {
+    padding: px($spacing-sm) px($spacing-md);
+    background-color: $color-purple;
+    color: $color-white;
+    border: none;
+    border-radius: px($radius-medium);
+    cursor: pointer;
+    font-size: px($font-xs);
+    white-space: nowrap;
+
+    &:hover {
+      background-color: darken($color-purple, 10%);
+    }
+  }
+
+  &__tagsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: px($spacing-xs);
+  }
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: px($spacing-xs);
+    padding: px($spacing-xs) px($spacing-sm);
+    background-color: $color-grayLight;
+    border-radius: px($radius-small);
+    font-size: px($font-xs);
+  }
+
+  &__tagRemove {
+    background: none;
+    border: none;
+    color: $color-red;
+    font-size: px($font-md);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      color: darken($color-red, 10%);
+    }
+  }
+
+  &__imageButton {
+    padding: px($spacing-sm) px($spacing-md);
+    background-color: $color-grayLight;
+    color: $color-dark;
+    border: 1px solid $color-gray;
+    border-radius: px($radius-medium);
+    cursor: pointer;
+    font-size: px($font-xs);
+    width: 100%;
+    text-align: center;
+
+    &:hover {
+      background-color: $color-gray;
+    }
+  }
+
+  &__imagePreview {
+    margin-top: px($spacing-sm);
+    width: 100%;
+    max-width: 200px;
+  }
+
+  &__previewImage {
+    width: 100%;
+    height: auto;
+    border-radius: px($radius-medium);
+    border: 1px solid $color-gray;
+  }
+
+  &__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-md);
+    width: 100%;
+    align-items: center;
+  }
+
+  &__fileInput {
+    display: none;
+  }
+}
+/* @use "../../styles/index.scss" as *;
+
+.modal {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__inner {
+    max-width: px($container-xs);
+    background-color: $color-white;
+    border-radius: 30px;
+    width: 100%;
+    height: auto;
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    row-gap: px($spacing-lg);
+    padding: px($spacing-lg);
+  }
+
+  &__overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+
+    background-color: $color-black;
+    opacity: 0.7;
+  }
+}
+ */
+/*
+
+ @use "../../styles/index.scss" as *;
+$color-white: #ffffff;
+$color-black: #000000;
+ 
+$color-white: #ffffff;
+$color-black: #000000;
+
+ 
+$color-white: #ffffff;
+$color-black: #000000;
+$color-green: #379c07;
+$color-orange: #e29f22;
+
+
+$color-grayLight:  #f0f0f0;
+$color-gray: #d8d8d8;
+$color-purple: #9f0fa7;
+$color-white: #fff;
+$color-darkLight: #303027;
+$color-dark: #222121;
+$color-red: #d80909;
+
+$container-sm: 1280;
+$container-md: 1400;
+$container-xs: 700;
+
+ 
+$font-xs: 14;
+$font-sx: 20;
+$font-md: 24;
+$font-lg: 32;
+
+$radius-small: 4;
+$radius-medium: 8;
+$radius-large: 16;
+$radius-xlarge: 24;
+$radius-circle: 9999;
+
+$spacing-xs: 4;
+$spacing-sm: 8;
+$spacing-md: 16;
+$spacing-lg: 24;
+$spacing-xl: 32;
+$spacing-xxl: 48;
+$spacing-bg: 60;
+$spacing-vg: 80;
+*/
