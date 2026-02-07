@@ -2,6 +2,7 @@
 
 import Certificate from "@assets/courses/Certificate.jpg";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import Button from "../Button";
 
@@ -9,6 +10,11 @@ import styles from "./index.module.scss";
 import type { CourseResponse } from "./types";
 
 const CourseDetails = ({ course }: CourseResponse) => {
+  const router = useRouter();
+  const handleRedirect = () => {
+    router.push(`/admin/courses/${course.id}/map`);
+  };
+
   return (
     <div className={styles.courses}>
       <div className={styles.courses__container}>
@@ -70,7 +76,7 @@ const CourseDetails = ({ course }: CourseResponse) => {
         <div className={styles.courses__actions}>
           <Button
             text="Просмотреть карту курса"
-            onClick={() => {}}
+            onClick={handleRedirect}
             width="313px"
             color="#9F0FA7"
             textColor="#fff"
