@@ -1,14 +1,18 @@
 import Image from "next/image";
 
-import Logo from "../../../assets/courses/JS.png";
-
 import styles from "./index.module.scss";
 import type { CourseItem } from "./types";
 
 const Course = ({ item }: CourseItem) => {
   return (
     <div className={styles.course}>
-      <Image src={Logo} alt="preview" className={styles.course__image} />
+      <Image
+        src={item.logo}
+        alt="preview"
+        className={styles.course__image}
+        width={100}
+        height={100}
+      />
       <div className={styles.course__preview}>
         <h3 className={styles.course__title}>{item.title}</h3>
         <p className={styles.course__description}>{item.description}</p>
@@ -25,9 +29,15 @@ const Course = ({ item }: CourseItem) => {
         </div>
 
         <div className={styles.course__tags}>
-          <div className={styles.course__tag}>JS</div>
+          {/*   <div className={styles.course__tag}>JS</div>
           <div className={styles.course__tag}>Основы</div>
-          <div className={styles.course__tag}>Алгоритмы</div>
+          <div className={styles.course__tag}>Алгоритмы</div> */}
+
+          {item.tags.map((item, index) => (
+            <div key={index} className={styles.course__tag}>
+              {item}
+            </div>
+          ))}
         </div>
       </div>
     </div>

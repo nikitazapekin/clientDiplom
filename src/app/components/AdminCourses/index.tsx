@@ -2,69 +2,14 @@
 
 import { useState } from "react";
 
+import Course from "../Course";
 import CourseFilters from "../CourseFilters";
 import CreateCourseModal from "../CreateCourseModal";
 
-/* 
-const categories = [
-  {
-    id: 1,
-    title: "Языки программирования",
-    courses: [
-      {
-        id: 1,
-        title: "JavaScript для новичков",
-        logo: "../../../assets/courses/JS.png",
-        lessonCount: 32,
-        description: "Практичный курс для самых новичков в программировании",
-      },
-      {
-        id: 12,
-        title: "Python для начинающих",
-        logo: "../../../assets/courses/JS.png",
-        lessonCount: 28,
-        description: "Основы программирования на Python",
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "Мои курсы",
-    courses: [
-      {
-        id: 3,
-        title: "React продвинутый",
-        logo: "../../../assets/courses/JS.png",
-        lessonCount: 45,
-        description: "Продвинутые техники в React",
-      },
-    ],
-  },
-  {
-    id: 3,
-    title: "Алгоритмы и структуры данных",
-    courses: [
-      {
-        id: 4,
-        title: "Алгоритмы на JavaScript",
-        logo: "../../../assets/logo/logo.png",
-        lessonCount: 35,
-        description: "Изучение основных алгоритмов",
-      },
+import styles from "./index.module.scss";
+import type { CourseListResponse } from "./types";
 
-      {
-        id: 5,
-        title: "Алгоритмы на JavaScript",
-        logo: "../../../assets/logo/logo.png",
-        lessonCount: 35,
-        description: "Изучение основных алгоритмов",
-      },
-    ],
-  },
-];
- */
-
-const AdminCourses = () => {
+const AdminCourses = ({ initialCourses }: CourseListResponse) => {
   const [isOpenCourse, setIsOpenCourse] = useState(false);
   const handleOpen = () => {
     setIsOpenCourse((prev) => !prev);
@@ -72,9 +17,28 @@ const AdminCourses = () => {
 
   return (
     <>
-      <CourseFilters handleOpen={handleOpen} />
+      <div className={styles.courses}>
+        <div className={styles.courses__container}>
+          <CourseFilters handleOpen={handleOpen} />
 
-      <CreateCourseModal handleOpen={handleOpen} isOpen={isOpenCourse} />
+          {initialCourses.courses.map((itemm, index) => {
+            const item = {
+              id: index,
+              title: itemm.title,
+              logo: itemm.logo,
+              lessonCount: 0,
+              description: itemm.description,
+              tags: itemm.tags,
+            };
+
+            return <Course key={item.id} item={item} />;
+          })}
+
+          {/* 
+      {JSON.stringify(initialCourses)} */}
+          <CreateCourseModal handleOpen={handleOpen} isOpen={isOpenCourse} />
+        </div>
+      </div>
     </>
   );
 };

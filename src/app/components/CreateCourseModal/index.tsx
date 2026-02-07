@@ -8,6 +8,7 @@ import Button from "../Button";
 import styles from "./index.module.scss";
 import type { CourseModalProps } from "./types";
 
+import { updateCourses } from "@/app/actions/updateCourses";
 import { CourseService } from "@/app/http/courses";
 import type { CourseStatus } from "@/app/http/types/course";
 
@@ -179,12 +180,10 @@ const CreateCourseModal = ({
         status: formData.status as CourseStatus,
       };
 
-      console.log(
-        "CREEEEEEEEEEEEEEEEEEEEEEEEEEEEETTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
-      );
       await CourseService.createCourse(courseData);
 
-      // Очистить форму после успешного создания
+      updateCourses();
+
       setFormData({
         title: "",
         description: "",

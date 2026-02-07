@@ -8,62 +8,17 @@ import type {
 import $api from "./api";
 
 export class CourseService {
-  /*   static async createCourse(data: CreateCourseRequest): Promise<CourseResponse> {
-    try {
-      const token = localStorage.getItem("accessToken");
-      console.log("TOKEM", token )
-           const response = await axios({
-        method: 'POST',
-        url: 'http://localhost:3002/courses/create', // ПОРТ 3000, а не 3002!
-        data: data,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-      });
-      
-      console.log("Response:", response.data);
-//  const response = await $api.post("/courses/create", data, {
-  //      headers: {
-    //      Authorization: `Bearer ${token}`,
-     //   },
-     // }); 
-      return response.data;
-    } catch (error: any) {
-      console.error("Create course error:", error);
-      throw new Error(error.response?.data?.message || "Failed to create course");
-    }
-  }
- */
-
   static async createCourse(data: CreateCourseRequest): Promise<CourseResponse> {
     console.log("DATAaaaaaaaaaaaaaaaaaaaaaaa", data);
     try {
-      console.log("🚀 Клиент пытается отправить на порт 3002");
-
-      // ВАЖНО: порт 3002!
-      const response = await fetch("http://localhost:3002/courses/create", {
-        method: "POST",
+      const token = localStorage.getItem("accessToken");
+      const response = await $api.post(`/courses/create`, data, {
         headers: {
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
       });
 
-      console.log("📤 Статус ответа:", response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-
-        console.error("❌ Текст ошибки:", errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-
-      console.log("✅ Успех! Ответ:", result);
-
-      return result;
+      return response.data;
     } catch (error: any) {
       console.error("💥 Ошибка в CourseService:", error);
       throw error;

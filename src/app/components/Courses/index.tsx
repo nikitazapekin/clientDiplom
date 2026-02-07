@@ -19,6 +19,7 @@ const categories = [
         logo: "../../../assets/courses/JS.png",
         lessonCount: 32,
         description: "Практичный курс для самых новичков в программировании",
+        tags: ["12"],
       },
       {
         id: 12,
@@ -26,6 +27,7 @@ const categories = [
         logo: "../../../assets/courses/JS.png",
         lessonCount: 28,
         description: "Основы программирования на Python",
+        tags: ["12"],
       },
     ],
   },
@@ -39,6 +41,7 @@ const categories = [
         logo: "../../../assets/courses/JS.png",
         lessonCount: 45,
         description: "Продвинутые техники в React",
+        tags: ["12"],
       },
     ],
   },
@@ -52,6 +55,7 @@ const categories = [
         logo: "../../../assets/logo/logo.png",
         lessonCount: 35,
         description: "Изучение основных алгоритмов",
+        tags: ["12"],
       },
 
       {
@@ -60,6 +64,7 @@ const categories = [
         logo: "../../../assets/logo/logo.png",
         lessonCount: 35,
         description: "Изучение основных алгоритмов",
+        tags: ["12"],
       },
     ],
   },
