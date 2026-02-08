@@ -1,10 +1,17 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useParams, usePathname } from "next/navigation";
 
 import styles from "./index.module.scss";
 
-// Типы
+import { MapService } from "@/app/http/mapService";
+import type {
+  CreateMapElementRequest,
+  MapElementType,
+  UpdateMapElementRequest,
+} from "@/app/http/types/map";
+
 interface Position {
   x: number;
   y: number;
@@ -63,7 +70,54 @@ interface MapBackground {
   size?: string;
 }
 
+interface SaveState {
+  isSaving: boolean;
+  isSuccess: boolean;
+  error?: string;
+}
+
 const Map: React.FC = () => {
+  // Получаем courseId из URL параметров
+  const params = useParams();
+  let courseId = params.courseId as string;
+
+  const pathname = usePathname();
+
+  // Способ 1: Пробуем получить напрямую из params
+  if (params.courseId) {
+    courseId = params.courseId as string;
+  }
+  // Способ 2: Если нет courseId, ищем id или другие имена параметров
+  else if (params.id) {
+    courseId = params.id as string;
+  }
+  // Способ 3: Если в params нет нужного параметра, извлекаем из пути
+  else {
+    // Разбираем путь вручную
+    const pathSegments = pathname?.split("/") || [];
+
+    console.log("pathSegments:", pathSegments);
+
+    // Ищем сегмент, который начинается с "course_"
+    for (const segment of pathSegments) {
+      if (segment.startsWith("course_")) {
+        courseId = segment;
+        break;
+      }
+    }
+
+    // Если не нашли по префиксу, берем последний сегмент перед "map"
+    if (!courseId) {
+      const mapIndex = pathSegments.indexOf("map");
+
+      if (mapIndex > 0) {
+        courseId = pathSegments[mapIndex - 1];
+      }
+    }
+  }
+
+  console.log("Extracted courseId:", courseId);
+
   const [mapSize, setMapSize] = useState<MapSize>({ width: 800, height: 600 });
   const [mapBackground, setMapBackground] = useState<MapBackground>({
     color: "#ffffff",
@@ -95,7 +149,6 @@ const Map: React.FC = () => {
     { name: "mobile", width: 375, height: 667 },
   ];
 
-  // Устройства для эмуляции
   const devices: Device[] = [
     { name: "iPhone 12", width: 390, height: 844 },
     { name: "iPad Air", width: 820, height: 1180 },
@@ -103,7 +156,6 @@ const Map: React.FC = () => {
     { name: "Desktop", width: 1200, height: 800 },
   ];
 
-  // Стандартные смайлики
   const emojis = [
     "😀",
     "😃",
@@ -197,7 +249,72 @@ const Map: React.FC = () => {
     "🤠",
   ];
 
-  // Функция для получения настроек элемента для текущего брейкпоинта
+  const [saveState, setSaveState] = useState<SaveState>({
+    isSaving: false,
+    isSuccess: false,
+  });
+  const [mapId, setMapId] = useState<string>("");
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+
+  // Функция загрузки карты при монтировании
+  useEffect(() => {
+    if (courseId) {
+      loadCourseMap();
+    }
+  }, [courseId]);
+
+  const loadCourseMap = async () => {
+    try {
+      setSaveState({ isSaving: true, isSuccess: false });
+      const mapData = await MapService.getCourseMapByCourseId(courseId);
+
+      setMapId(mapData.id);
+      setMapSize({ width: mapData.width, height: mapData.height });
+      setMapBackground({
+        color: mapData.backgroundColor,
+        image: mapData.backgroundImage,
+        repeat: mapData.backgroundRepeat,
+        size: mapData.backgroundSize,
+      });
+
+      // Преобразуем элементы из формата API в формат компонента
+      const elements = mapData.elements.map((element) => ({
+        id: element.id,
+        type: element.type as Element["type"],
+        color: element.color,
+        position: { x: element.positionX, y: element.positionY },
+        positioning: element.positioning as Element["positioning"],
+        offset: { x: element.offsetX, y: element.offsetY },
+        imageUrl: element.imageUrl,
+        title: element.title,
+        isActive: element.isActive,
+        stars: element.stars,
+        text: element.text,
+        fontSize: element.fontSize,
+        fontFamily: element.fontFamily,
+        fontWeight: element.fontWeight,
+        fontStyle: element.fontStyle,
+        width: element.width,
+        height: element.height,
+        rotation: element.rotation,
+        emoji: element.emoji,
+        breakpoints: element.breakpoints,
+      }));
+
+      setElements(elements);
+      setIsMapLoaded(true);
+      setSaveState({ isSaving: false, isSuccess: true });
+    } catch (error) {
+      console.error("Failed to load course map:", error);
+      setSaveState({
+        isSaving: false,
+        isSuccess: false,
+        error: "Не удалось загрузить карту",
+      });
+      setIsMapLoaded(false);
+    }
+  };
+
   const getElementBreakpointSettings = (element: Element) => {
     if (!element.breakpoints || !element.breakpoints[activeBreakpoint]) {
       return {};
@@ -206,7 +323,6 @@ const Map: React.FC = () => {
     return element.breakpoints[activeBreakpoint];
   };
 
-  // Функция для вычисления позиции элемента с учетом брейкпоинта и размера карты
   const calculateElementPosition = (element: Element, targetMapSize: MapSize): Position => {
     const breakpointSettings = getElementBreakpointSettings(element);
     const isHidden = breakpointSettings.hidden;
@@ -246,7 +362,6 @@ const Map: React.FC = () => {
     return basePosition;
   };
 
-  // Добавление элементов
   const addCircle = () => {
     const newElement: Element = {
       id: `circle-${Date.now()}`,
@@ -358,7 +473,6 @@ const Map: React.FC = () => {
     setSelectedElementId(newElement.id);
   };
 
-  // Обработка загрузки изображения для элемента
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -373,7 +487,6 @@ const Map: React.FC = () => {
     }
   };
 
-  // Обработка загрузки фонового изображения
   const handleBackgroundImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -388,7 +501,6 @@ const Map: React.FC = () => {
     }
   };
 
-  // Управление брейкпоинтами
   const updateElementBreakpointSetting = (elementId: string, setting: string, value: any) => {
     setElements((prev) =>
       prev.map((el) => {
@@ -428,7 +540,6 @@ const Map: React.FC = () => {
     );
   };
 
-  // Обработчики изменения размера карты
   const handleResizeStart = (direction: "right" | "bottom") => (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(direction);
@@ -471,7 +582,6 @@ const Map: React.FC = () => {
     setDragStart(null);
   }, []);
 
-  // Обработчики для элементов
   const handleElementDragStart = (elementId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -513,10 +623,8 @@ const Map: React.FC = () => {
         prev.map((el) => {
           if (el.id === selectedElementId) {
             const breakpointSettings = getElementBreakpointSettings(el);
-            //     const currentPositioning = breakpointSettings.positioning || el.positioning;
 
             if (dragStart.elementType === "free") {
-              // Для свободного позиционирования - плавное перемещение
               const newPosition = {
                 x: Math.max(
                   0,
@@ -562,7 +670,6 @@ const Map: React.FC = () => {
     setDragStart(null);
   }, []);
 
-  // Эффекты для обработки событий мыши
   useEffect(() => {
     if (dragStart) {
       if (dragStart.type === "resize") {
@@ -582,7 +689,6 @@ const Map: React.FC = () => {
     }
   }, [dragStart, handleResizeMove, handleElementDragMove, handleResizeEnd, handleElementDragEnd]);
 
-  // Обновление свойств элемента
   const updateElementProperty = (property: string, value: any) => {
     if (!selectedElementId) return;
 
@@ -590,6 +696,137 @@ const Map: React.FC = () => {
       prev.map((el) => (el.id === selectedElementId ? { ...el, [property]: value } : el))
     );
   };
+
+  // Функция преобразования элементов в формат API
+  const convertElementsToApiFormat = (elements: Element[]): CreateMapElementRequest[] => {
+    return elements.map((element) => ({
+      type: element.type as MapElementType,
+      title: element.title,
+      text: element.text,
+      color: element.color,
+      imageUrl: element.imageUrl,
+      emoji: element.emoji,
+      fontSize: element.fontSize,
+      fontFamily: element.fontFamily,
+      fontWeight: element.fontWeight,
+      fontStyle: element.fontStyle,
+      positionX: element.position.x,
+      positionY: element.position.y,
+      positioning: element.positioning,
+      offsetX: element.offset.x,
+      offsetY: element.offset.y,
+      width: element.width,
+      height: element.height,
+      rotation: element.rotation || 0,
+      isActive: element.isActive,
+      stars: element.stars,
+      breakpoints: element.breakpoints,
+    }));
+  };
+
+  // Функция сохранения карты
+  const saveMap = async () => {
+    try {
+      setSaveState({ isSaving: true, isSuccess: false });
+
+      if (!courseId) {
+        throw new Error("Course ID не найден в URL");
+      }
+
+      const mapData = {
+        courseId,
+        width: mapSize.width,
+        height: mapSize.height,
+        backgroundColor: mapBackground.color,
+        backgroundImage: mapBackground.image,
+        backgroundRepeat: mapBackground.repeat,
+        backgroundSize: mapBackground.size,
+      };
+
+      if (mapId) {
+        // Обновляем существующую карту
+        await MapService.updateCourseMap(mapId, mapData);
+
+        // Сначала получаем существующие элементы
+        const existingElements = await MapService.getMapElements(mapId);
+        const existingElementIds = new Set(existingElements.map((el) => el.id));
+        const currentElementIds = new Set(elements.map((el) => el.id));
+
+        // Удаляем элементы, которые были удалены на клиенте
+        for (const existingElement of existingElements) {
+          if (!currentElementIds.has(existingElement.id)) {
+            await MapService.deleteMapElement(existingElement.id);
+          }
+        }
+
+        // Обновляем/добавляем элементы
+        const apiElements = convertElementsToApiFormat(elements);
+        const elementsToUpdate: Array<{ id: string; data: UpdateMapElementRequest }> = [];
+        const elementsToCreate: CreateMapElementRequest[] = [];
+
+        for (let i = 0; i < apiElements.length; i++) {
+          const apiElement = apiElements[i];
+          const element = elements[i];
+
+          if (existingElementIds.has(element.id)) {
+            // Элемент существует - обновляем
+            elementsToUpdate.push({
+              id: element.id,
+              data: apiElement,
+            });
+          } else {
+            // Новый элемент - создаем
+            elementsToCreate.push(apiElement);
+          }
+        }
+
+        // Выполняем пакетные операции
+        if (elementsToCreate.length > 0) {
+          await MapService.batchSaveMapElements(mapId, elementsToCreate);
+        }
+
+        if (elementsToUpdate.length > 0) {
+          await MapService.batchUpdateMapElements(elementsToUpdate);
+        }
+      } else {
+        // Создаем новую карту
+        const createdMap = await MapService.createCourseMap({
+          ...mapData,
+          elements: convertElementsToApiFormat(elements),
+        });
+
+        setMapId(createdMap.id);
+      }
+
+      setSaveState({ isSaving: false, isSuccess: true });
+
+      // Сбрасываем успешное состояние через 3 секунды
+      setTimeout(() => {
+        setSaveState((prev) => ({ ...prev, isSuccess: false }));
+      }, 3000);
+    } catch (error: any) {
+      console.error("Save map error:", error);
+      setSaveState({
+        isSaving: false,
+        isSuccess: false,
+        error: error.message || "Ошибка при сохранении",
+      });
+    }
+  };
+
+  console.log("COURSE ID", courseId);
+  // Функция автосохранения (по таймеру)
+  useEffect(() => {
+    if (!isMapLoaded) return;
+
+    const autoSaveTimer = setTimeout(() => {
+      if (elements.length > 0) {
+        saveMap();
+      }
+    }, 30000); // Автосохранение каждые 30 секунд
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [elements, isMapLoaded]);
 
   // Рендер элемента в зависимости от типа
   const renderElement = (
@@ -752,7 +989,6 @@ const Map: React.FC = () => {
     }
   };
 
-  // Эмулятор
   const openEmulator = () => {
     setShowEmulator(true);
     setSelectedDevice(devices[0]);
@@ -767,7 +1003,6 @@ const Map: React.FC = () => {
     setSelectedDevice(device);
   };
 
-  // Размер карты для отображения в эмуляторе
   const emulatorMapSize = selectedDevice
     ? {
         width: selectedDevice.width,
@@ -775,7 +1010,6 @@ const Map: React.FC = () => {
       }
     : { width: 800, height: 2000 };
 
-  // Стили для фона карты
   const mapBackgroundStyle = {
     backgroundColor: mapBackground.color,
     backgroundImage: mapBackground.image ? `url(${mapBackground.image})` : "none",
@@ -787,7 +1021,6 @@ const Map: React.FC = () => {
     <div className={styles.pageWrapper}>
       <div className={styles.globalStyle} />
 
-      {/* Основной интерфейс */}
       {!showEmulator ? (
         <div className={styles.wrapperContainer}>
           {/* Левая панель */}
@@ -950,6 +1183,7 @@ const Map: React.FC = () => {
               </div>
               <div className={styles.sizeInfo}>
                 Размер карты: {mapSize.width} × {mapSize.height}px | Брейкпоинт: {activeBreakpoint}
+                {courseId && ` | Курс: ${courseId}`}
               </div>
             </div>
           </div>
@@ -1404,6 +1638,8 @@ const Map: React.FC = () => {
                   Высота контента: {emulatorMapSize.height}px
                   <br />
                   Брейкпоинт: {activeBreakpoint}
+                  {courseId && <br />}
+                  {courseId && `Курс: ${courseId}`}
                 </div>
               </div>
             )}
@@ -1411,7 +1647,6 @@ const Map: React.FC = () => {
         </div>
       )}
 
-      {/* Модальное окно со смайликами */}
       <div id="emoji-modal" className={styles.emojiModal}>
         <div className={styles.emojiModalContent}>
           <button
@@ -1435,6 +1670,40 @@ const Map: React.FC = () => {
               </button>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className={styles.saveControls}>
+        <button
+          className={`${styles.saveButton} ${saveState.isSuccess ? styles.success : ""}`}
+          onClick={saveMap}
+          disabled={saveState.isSaving || !courseId}
+        >
+          {saveState.isSaving ? (
+            <>
+              <span className={styles.spinner}></span>
+              Сохранение...
+            </>
+          ) : saveState.isSuccess ? (
+            <>
+              <span className={styles.checkmark}>✓</span>
+              Сохранено
+            </>
+          ) : (
+            "Сохранить карту"
+          )}
+        </button>
+
+        {saveState.error && <div className={styles.errorMessage}>{saveState.error}</div>}
+
+        {!courseId && (
+          <div className={styles.warningMessage}>Для сохранения необходимо указать ID курса</div>
+        )}
+
+        <div className={styles.saveInfo}>
+          Элементов: {elements.length} | Последнее сохранение:{" "}
+          {saveState.isSuccess ? "только что" : "еще не сохранено"}
+          {courseId && ` | Курс: ${courseId}`}
         </div>
       </div>
     </div>
