@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 import styles from "./index.module.scss";
@@ -18,7 +18,7 @@ interface Position {
 }
 
 interface MapElement {
-  id: string; // ТОЛЬКО СЕРВЕРНЫЙ ID!
+  id: string;
   type: "circle" | "image" | "lesson" | "text" | "checkpoint" | "emoji";
   color?: string;
   position: Position;
@@ -37,10 +37,28 @@ interface MapElement {
   height?: number;
   rotation?: number;
   emoji?: string;
-  breakpoints?: Record<string, any>;
+  breakpoints?: {
+    [breakpoint: string]: {
+      hidden?: boolean;
+      positioning?: "left" | "center" | "right" | "free";
+      offset?: Position;
+    };
+  };
 }
 
 interface MapSize {
+  width: number;
+  height: number;
+}
+
+interface Breakpoint {
+  name: string;
+  width: number;
+  height: number;
+}
+
+interface Device {
+  name: string;
   width: number;
   height: number;
 }
@@ -50,6 +68,12 @@ interface MapBackground {
   image?: string;
   repeat?: string;
   size?: string;
+}
+
+interface SaveState {
+  isSaving: boolean;
+  isSuccess: boolean;
+  error?: string;
 }
 
 const Map: React.FC = () => {
@@ -73,12 +97,134 @@ const Map: React.FC = () => {
   });
   const [elements, setElements] = useState<MapElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-
+  const [isResizing, setIsResizing] = useState<"right" | "bottom" | null>(null);
+  const [dragStart, setDragStart] = useState<{
+    position: Position;
+    type: "resize" | "element";
+    elementStart?: Position;
+    elementType?: "free" | "fixed";
+  } | null>(null);
+  const [activeBreakpoint, setActiveBreakpoint] = useState<string>("desktop");
+  const [showEmulator, setShowEmulator] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [mapId, setMapId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>({
+    isSaving: false,
+    isSuccess: false,
+  });
+
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
+  const backgroundFileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedElement = elements.find((el) => el.id === selectedElementId);
+
+  const breakpoints: Breakpoint[] = [
+    { name: "desktop", width: 1200, height: 800 },
+    { name: "tablet", width: 768, height: 1024 },
+    { name: "mobile", width: 375, height: 667 },
+  ];
+
+  const devices: Device[] = [
+    { name: "iPhone 12", width: 390, height: 844 },
+    { name: "iPad Air", width: 820, height: 1180 },
+    { name: "Samsung Galaxy", width: 360, height: 740 },
+    { name: "Desktop", width: 1200, height: 800 },
+  ];
+
+  const emojis = [
+    "😀",
+    "😃",
+    "😄",
+    "😁",
+    "😆",
+    "😅",
+    "😂",
+    "🤣",
+    "😊",
+    "😇",
+    "🙂",
+    "🙃",
+    "😉",
+    "😌",
+    "😍",
+    "🥰",
+    "😘",
+    "😗",
+    "😙",
+    "😚",
+    "😋",
+    "😛",
+    "😝",
+    "😜",
+    "🤪",
+    "🤨",
+    "🧐",
+    "🤓",
+    "😎",
+    "🥸",
+    "🤩",
+    "🥳",
+    "😏",
+    "😒",
+    "😞",
+    "😔",
+    "😟",
+    "😕",
+    "🙁",
+    "☹️",
+    "😣",
+    "😖",
+    "😫",
+    "😩",
+    "🥺",
+    "😢",
+    "😭",
+    "😤",
+    "😠",
+    "😡",
+    "🤬",
+    "🤯",
+    "😳",
+    "🥵",
+    "🥶",
+    "😱",
+    "😨",
+    "😰",
+    "😥",
+    "😓",
+    "🤗",
+    "🤔",
+    "🤭",
+    "🤫",
+    "🤥",
+    "😶",
+    "😐",
+    "😑",
+    "😬",
+    "🙄",
+    "😯",
+    "😦",
+    "😧",
+    "😮",
+    "😲",
+    "🥱",
+    "😴",
+    "🤤",
+    "😪",
+    "😵",
+    "🤐",
+    "🥴",
+    "🤢",
+    "🤮",
+    "🤧",
+    "😷",
+    "🤒",
+    "🤕",
+    "🤑",
+    "🤠",
+  ];
 
   // Загрузка карты при монтировании
   useEffect(() => {
@@ -108,7 +254,7 @@ const Map: React.FC = () => {
 
       // Преобразуем элементы из серверного формата
       const loadedElements = mapData.elements.map((element: MapElementResponse) => ({
-        id: element.id, // СЕРВЕРНЫЙ ID
+        id: element.id,
         type: element.type as MapElement["type"],
         color: element.color,
         position: { x: element.positionX, y: element.positionY },
@@ -183,7 +329,7 @@ const Map: React.FC = () => {
       // Собираем данные для нового элемента
       const elementData: CreateMapElementRequest = {
         type: type as MapElementType,
-        positionX: 50, // Позиция по умолчанию
+        positionX: 50,
         positionY: 50,
         positioning: "free",
         offsetX: 0,
@@ -247,7 +393,7 @@ const Map: React.FC = () => {
 
       // Преобразуем серверный элемент в формат клиента
       const newElement: MapElement = {
-        id: serverElement.id, // СЕРВЕРНЫЙ ID
+        id: serverElement.id,
         type: serverElement.type as MapElement["type"],
         color: serverElement.color,
         position: { x: serverElement.positionX, y: serverElement.positionY },
@@ -348,6 +494,7 @@ const Map: React.FC = () => {
   const addLesson = () => createElement("lesson");
   const addText = () => createElement("text");
   const addCheckpoint = () => createElement("checkpoint");
+  const addEmoji = (emoji: string) => createElement("emoji", { emoji });
 
   // Обновление свойства выбранного элемента
   const updateSelectedElementProperty = (property: string, value: any) => {
@@ -356,15 +503,121 @@ const Map: React.FC = () => {
     updateElement(selectedElementId, { [property]: value });
   };
 
-  // Drag & Drop
-  const [dragStart, setDragStart] = useState<{
-    elementId: string;
-    startX: number;
-    startY: number;
-    elementStartX: number;
-    elementStartY: number;
-  } | null>(null);
+  // Обработка загрузки изображения для элемента
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
 
+      reader.onload = (event) => {
+        if (selectedElement && selectedElement.type === "image" && event.target?.result) {
+          updateSelectedElementProperty("imageUrl", event.target.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Обработка загрузки фонового изображения
+  const handleBackgroundImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setMapBackground((prev) => ({ ...prev, image: event.target!.result as string }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Функция для получения настроек элемента для текущего брейкпоинта
+  const getElementBreakpointSettings = (element: MapElement) => {
+    if (!element.breakpoints || !element.breakpoints[activeBreakpoint]) {
+      return {};
+    }
+
+    return element.breakpoints[activeBreakpoint];
+  };
+
+  // Управление брейкпоинтами
+  const updateElementBreakpointSetting = (elementId: string, setting: string, value: any) => {
+    const element = elements.find((el) => el.id === elementId);
+
+    if (!element) return;
+
+    const breakpoints = { ...element.breakpoints };
+
+    if (!breakpoints[activeBreakpoint]) {
+      breakpoints[activeBreakpoint] = {};
+    }
+
+    breakpoints[activeBreakpoint] = {
+      ...breakpoints[activeBreakpoint],
+      [setting]: value,
+    };
+
+    updateElement(elementId, { breakpoints });
+  };
+
+  const resetBreakpointSettings = (elementId: string) => {
+    const element = elements.find((el) => el.id === elementId);
+
+    if (!element) return;
+
+    const breakpoints = { ...element.breakpoints };
+
+    delete breakpoints[activeBreakpoint];
+
+    updateElement(elementId, { breakpoints });
+  };
+
+  // Обработчики изменения размера карты
+  const handleResizeStart = (direction: "right" | "bottom") => (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(direction);
+    setDragStart({
+      position: { x: e.clientX, y: e.clientY },
+      type: "resize",
+    });
+  };
+
+  const handleResizeMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing || !dragStart || dragStart.type !== "resize") return;
+
+      if (isResizing === "right") {
+        const deltaX = e.clientX - dragStart.position.x;
+
+        setMapSize((prev) => ({
+          ...prev,
+          width: Math.max(400, prev.width + deltaX),
+        }));
+      } else if (isResizing === "bottom") {
+        const deltaY = e.clientY - dragStart.position.y;
+
+        setMapSize((prev) => ({
+          ...prev,
+          height: Math.max(300, prev.height + deltaY),
+        }));
+      }
+
+      setDragStart({
+        position: { x: e.clientX, y: e.clientY },
+        type: "resize",
+      });
+    },
+    [isResizing, dragStart]
+  );
+
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(null);
+    setDragStart(null);
+  }, []);
+
+  // Drag & Drop для элементов
   const handleElementDragStart = (elementId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -374,81 +627,164 @@ const Map: React.FC = () => {
     if (!element) return;
 
     setSelectedElementId(elementId);
+
+    const breakpointSettings = getElementBreakpointSettings(element);
+    const currentPositioning = breakpointSettings.positioning || element.positioning;
+    const currentOffset = breakpointSettings.offset || element.offset;
+
     setDragStart({
-      elementId,
-      startX: e.clientX,
-      startY: e.clientY,
-      elementStartX: element.position.x,
-      elementStartY: element.position.y,
+      position: { x: e.clientX, y: e.clientY },
+      type: "element",
+      elementStart: currentPositioning === "free" ? element.position : currentOffset,
+      elementType: currentPositioning === "free" ? "free" : "fixed",
     });
   };
 
   const handleElementDragMove = useCallback(
     (e: MouseEvent) => {
-      if (!dragStart) return;
+      if (
+        !dragStart ||
+        dragStart.type !== "element" ||
+        !selectedElementId ||
+        !dragStart.elementStart
+      )
+        return;
 
-      const deltaX = e.clientX - dragStart.startX;
-      const deltaY = e.clientY - dragStart.startY;
+      const element = elements.find((el) => el.id === selectedElementId);
 
-      // Рассчитываем новую позицию в процентах
-      const newPositionX = Math.max(
-        0,
-        Math.min(100, dragStart.elementStartX + (deltaX / mapSize.width) * 100)
-      );
-      const newPositionY = Math.max(
-        0,
-        Math.min(100, dragStart.elementStartY + (deltaY / mapSize.height) * 100)
-      );
+      if (!element) return;
+
+      const deltaX = e.clientX - dragStart.position.x;
+      const deltaY = e.clientY - dragStart.position.y;
+
+      const updates: Partial<MapElement> = {};
+      const breakpointSettings = getElementBreakpointSettings(element);
+
+      if (dragStart.elementType === "free") {
+        // Для свободного позиционирования - плавное перемещение
+        updates.position = {
+          x: Math.max(0, Math.min(100, dragStart.elementStart.x + (deltaX / mapSize.width) * 100)),
+          y: Math.max(0, Math.min(100, dragStart.elementStart.y + (deltaY / mapSize.height) * 100)),
+        };
+      } else {
+        // Для фиксированного позиционирования
+        const newOffset = {
+          x: dragStart.elementStart.x + deltaX,
+          y: dragStart.elementStart.y + deltaY,
+        };
+
+        if (activeBreakpoint !== "desktop") {
+          // Для не-десктоп брейкпоинтов
+          updates.breakpoints = {
+            ...element.breakpoints,
+            [activeBreakpoint]: {
+              ...breakpointSettings,
+              offset: newOffset,
+            },
+          };
+        } else {
+          // Для десктопа
+          updates.offset = newOffset;
+        }
+      }
 
       // Обновляем локальное состояние
       setElements((prev) =>
-        prev.map((el) =>
-          el.id === dragStart.elementId
-            ? { ...el, position: { x: newPositionX, y: newPositionY } }
-            : el
-        )
+        prev.map((el) => (el.id === selectedElementId ? { ...el, ...updates } : el))
       );
     },
-    [dragStart, mapSize]
+    [dragStart, selectedElementId, elements, mapSize, activeBreakpoint]
   );
 
   const handleElementDragEnd = useCallback(() => {
-    if (!dragStart) return;
+    if (!dragStart || dragStart.type !== "element" || !selectedElementId) return;
 
     // Сохраняем изменения на сервере
-    const element = elements.find((el) => el.id === dragStart.elementId);
+    const element = elements.find((el) => el.id === selectedElementId);
 
     if (element) {
-      updateElement(dragStart.elementId, { position: element.position });
+      updateElement(selectedElementId, element);
     }
 
     setDragStart(null);
-  }, [dragStart, elements]);
+  }, [dragStart, selectedElementId, elements]);
 
+  // Эффекты для обработки событий мыши
   useEffect(() => {
     if (dragStart) {
-      document.addEventListener("mousemove", handleElementDragMove);
-      document.addEventListener("mouseup", handleElementDragEnd);
+      if (dragStart.type === "resize") {
+        document.addEventListener("mousemove", handleResizeMove);
+        document.addEventListener("mouseup", handleResizeEnd);
+      } else if (dragStart.type === "element") {
+        document.addEventListener("mousemove", handleElementDragMove);
+        document.addEventListener("mouseup", handleElementDragEnd);
+      }
 
       return () => {
+        document.removeEventListener("mousemove", handleResizeMove);
         document.removeEventListener("mousemove", handleElementDragMove);
+        document.removeEventListener("mouseup", handleResizeEnd);
         document.removeEventListener("mouseup", handleElementDragEnd);
       };
     }
-  }, [dragStart, handleElementDragMove, handleElementDragEnd]);
+  }, [dragStart, handleResizeMove, handleElementDragMove, handleResizeEnd, handleElementDragEnd]);
+
+  // Функция для вычисления позиции элемента с учетом брейкпоинта и размера карты
+  const calculateElementPosition = (element: MapElement, targetMapSize: MapSize): Position => {
+    const breakpointSettings = getElementBreakpointSettings(element);
+    const isHidden = breakpointSettings.hidden;
+
+    if (isHidden) {
+      return { x: -1000, y: -1000 };
+    }
+
+    const currentPositioning = breakpointSettings.positioning || element.positioning;
+    const currentOffset = breakpointSettings.offset || element.offset;
+
+    const basePosition = { x: 0, y: 0 };
+
+    switch (currentPositioning) {
+      case "left":
+        basePosition.x = currentOffset.x;
+        break;
+
+      case "center":
+        basePosition.x = targetMapSize.width / 2 + currentOffset.x;
+        break;
+
+      case "right":
+        basePosition.x = targetMapSize.width + currentOffset.x;
+        break;
+
+      case "free":
+        basePosition.x = (element.position.x / 100) * targetMapSize.width;
+        basePosition.y = (element.position.y / 100) * targetMapSize.height;
+        break;
+    }
+
+    if (currentPositioning !== "free") {
+      basePosition.y = currentOffset.y;
+    }
+
+    return basePosition;
+  };
 
   // Рендер элемента
-  const renderElement = (element: MapElement) => {
-    const isSelected = element.id === selectedElementId;
-    const left = (element.position.x / 100) * mapSize.width;
-    const top = (element.position.y / 100) * mapSize.height;
+  const renderElement = (
+    element: MapElement,
+    targetMapSize: MapSize = mapSize,
+    isEmulator: boolean = false
+  ) => {
+    const isSelected = element.id === selectedElementId && !isEmulator;
+    const position = calculateElementPosition(element, targetMapSize);
+    const breakpointSettings = getElementBreakpointSettings(element);
+    const isHidden = breakpointSettings.hidden;
+    const rotation = element.rotation || 0;
 
-    const commonStyle: React.CSSProperties = {
-      position: "absolute",
-      left: left,
-      top: top,
-      transform: `translate(-50%, -50%) rotate(${element.rotation || 0}deg)`,
-      cursor: "move",
+    const style = {
+      left: position.x,
+      top: position.y,
+      transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
     };
 
     switch (element.type) {
@@ -456,15 +792,15 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
+            className={`${styles.elementCircle} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...commonStyle,
+              ...style,
               backgroundColor: element.color || "#ff6b6b",
               width: element.width || 40,
               height: element.height || 40,
-              borderRadius: "50%",
-              border: isSelected ? "2px solid #007bff" : "none",
+              display: isHidden ? "none" : "block",
             }}
-            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
+            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
           />
         );
 
@@ -472,61 +808,25 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
+            className={`${styles.imageContainer} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...commonStyle,
+              ...style,
               width: element.width || 60,
               height: element.height || 60,
-              border: isSelected ? "2px solid #007bff" : "none",
-              overflow: "hidden",
+              display: isHidden ? "none" : "flex",
             }}
-            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
+            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
           >
             {element.imageUrl ? (
               <img
                 src={element.imageUrl}
                 alt="Element"
+                className={styles.elementImage}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             ) : (
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "#f5f5f5",
-                  color: "#999",
-                  fontSize: "12px",
-                }}
-              >
-                Изображение
-              </div>
+              <div className={styles.imagePlaceholder}>Изображение</div>
             )}
-          </div>
-        );
-
-      case "text":
-        return (
-          <div
-            key={element.id}
-            style={{
-              ...commonStyle,
-              fontSize: element.fontSize || 16,
-              fontFamily: element.fontFamily || "Arial, sans-serif",
-              fontWeight: element.fontWeight || "normal",
-              fontStyle: element.fontStyle || "normal",
-              color: element.color || "#000000",
-              width: element.width || "auto",
-              padding: "4px",
-              whiteSpace: "nowrap",
-              backgroundColor: isSelected ? "rgba(0, 123, 255, 0.1)" : "transparent",
-              border: isSelected ? "2px solid #007bff" : "none",
-              borderRadius: "4px",
-            }}
-            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
-          >
-            {element.text}
           </div>
         );
 
@@ -534,70 +834,48 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
+            className={`${styles.lessonContainer} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...commonStyle,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              padding: isSelected ? "4px" : "0",
-              border: isSelected ? "2px solid #007bff" : "none",
-              borderRadius: "8px",
+              ...style,
+              display: isHidden ? "none" : "flex",
             }}
-            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
+            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
           >
             <div
-              style={{
-                width: 50,
-                height: 50,
-                borderRadius: "50%",
-                backgroundColor: element.isActive ? "#28a745" : "#4a90e2",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: "bold",
-                fontSize: "18px",
-              }}
+              className={`${styles.lessonCircle} ${element.isActive ? styles.lessonActive : ""}`}
             >
               {element.title?.charAt(0) || "У"}
             </div>
-            {element.stars && element.stars > 0 && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: -10,
-                  display: "flex",
-                  gap: "2px",
-                }}
-              >
-                {[1, 2, 3].map((star) => (
-                  <div
-                    key={star}
-                    style={{
-                      width: 10,
-                      height: 10,
-                      backgroundColor: star <= (element.stars || 0) ? "#ffd700" : "#ddd",
-                      clipPath:
-                        "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-            <div
-              style={{
-                marginTop: "5px",
-                fontSize: "12px",
-                color: "#333",
-                textAlign: "center",
-                maxWidth: "100px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {element.title}
+            <div className={styles.starsArc}>
+              {[1, 2, 3].map((star) => (
+                <div
+                  key={star}
+                  className={`${styles.star} ${star <= (element.stars || 0) ? styles.starFilled : ""}`}
+                />
+              ))}
             </div>
+            <div className={styles.lessonTitle}>{element.title}</div>
+          </div>
+        );
+
+      case "text":
+        return (
+          <div
+            key={element.id}
+            className={`${styles.textElement} ${isSelected ? styles.elementSelected : ""}`}
+            style={{
+              ...style,
+              fontSize: element.fontSize || 16,
+              fontFamily: element.fontFamily || "Arial, sans-serif",
+              fontWeight: element.fontWeight || "normal",
+              fontStyle: element.fontStyle || "normal",
+              color: element.color || "#000000",
+              width: element.width || "auto",
+              display: isHidden ? "none" : "block",
+            }}
+            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
+          >
+            {element.text}
           </div>
         );
 
@@ -605,51 +883,24 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
+            className={`${styles.checkpointContainer} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...commonStyle,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              padding: isSelected ? "4px" : "0",
-              border: isSelected ? "2px solid #007bff" : "none",
-              borderRadius: "8px",
+              ...style,
+              display: isHidden ? "none" : "flex",
             }}
-            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
+            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
           >
             <div
+              className={styles.checkpointElement}
               style={{
+                backgroundColor: element.color || "#ff0000",
                 width: element.width || 40,
                 height: element.height || 40,
-                borderRadius: "50%",
-                backgroundColor: element.color || "#ff0000",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
               }}
             >
-              <div
-                style={{
-                  width: "50%",
-                  height: "50%",
-                  backgroundColor: "white",
-                  borderRadius: "50%",
-                }}
-              />
+              <div className={styles.checkpointInner}></div>
             </div>
-            <div
-              style={{
-                marginTop: "5px",
-                fontSize: "12px",
-                color: "#333",
-                textAlign: "center",
-                maxWidth: "100px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {element.title}
-            </div>
+            <div className={styles.checkpointTitle}>{element.title}</div>
           </div>
         );
 
@@ -657,18 +908,15 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
+            className={`${styles.emojiElement} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...commonStyle,
+              ...style,
               fontSize: element.fontSize || 40,
               width: element.width || 40,
               height: element.height || 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: isSelected ? "2px solid #007bff" : "none",
-              borderRadius: "8px",
+              display: isHidden ? "none" : "flex",
             }}
-            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
+            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
           >
             {element.emoji}
           </div>
@@ -679,50 +927,118 @@ const Map: React.FC = () => {
     }
   };
 
+  // Эмулятор
+  const openEmulator = () => {
+    setShowEmulator(true);
+    setSelectedDevice(devices[0]);
+  };
+
+  const closeEmulator = () => {
+    setShowEmulator(false);
+    setSelectedDevice(null);
+  };
+
+  const handleDeviceChange = (device: Device) => {
+    setSelectedDevice(device);
+  };
+
+  // Размер карты для отображения в эмуляторе
+  const emulatorMapSize = selectedDevice
+    ? {
+        width: selectedDevice.width,
+        height: Math.max(selectedDevice.height, 2000),
+      }
+    : { width: 800, height: 2000 };
+
+  // Стили для фона карты
+  const mapBackgroundStyle = {
+    backgroundColor: mapBackground.color,
+    backgroundImage: mapBackground.image ? `url(${mapBackground.image})` : "none",
+    backgroundRepeat: mapBackground.repeat as any,
+    backgroundSize: mapBackground.size as any,
+  };
+
+  // Сохранение карты
+  const saveMap = async () => {
+    try {
+      setSaveState({ isSaving: true, isSuccess: false, error: undefined });
+
+      if (!mapId) {
+        throw new Error("Карта не загружена");
+      }
+
+      // Обновляем настройки карты
+      await MapService.updateCourseMap(mapId, {
+        width: mapSize.width,
+        height: mapSize.height,
+        backgroundColor: mapBackground.color,
+        backgroundImage: mapBackground.image,
+        backgroundRepeat: mapBackground.repeat,
+        backgroundSize: mapBackground.size,
+      });
+
+      setSaveState({ isSaving: false, isSuccess: true, error: undefined });
+      console.log("✅ Карта сохранена");
+    } catch (error: any) {
+      console.error("❌ Ошибка сохранения карты:", error);
+      setSaveState({
+        isSaving: false,
+        isSuccess: false,
+        error: error.message || "Ошибка при сохранении карты",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        Загрузка карты...
+      <div className={styles.pageWrapper}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          Загрузка карты...
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          gap: "20px",
-        }}
-      >
-        <div style={{ color: "red" }}>{error}</div>
-        <button onClick={loadCourseMap}>Повторить попытку</button>
+      <div className={styles.pageWrapper}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            gap: "20px",
+          }}
+        >
+          <div style={{ color: "red" }}>{error}</div>
+          <button onClick={loadCourseMap}>Повторить попытку</button>
+        </div>
       </div>
     );
   }
 
   if (!courseId) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        Курс не найден в URL
+      <div className={styles.pageWrapper}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          Курс не найден в URL
+        </div>
       </div>
     );
   }
@@ -731,257 +1047,719 @@ const Map: React.FC = () => {
     <div className={styles.pageWrapper}>
       <div className={styles.globalStyle} />
 
-      <div className={styles.wrapperContainer}>
-        {/* Левая панель */}
-        <div className={styles.leftPanel}>
-          <div className={styles.panelSection}>
-            <h3 className={styles.sectionTitle}>Элементы</h3>
-            <button className={styles.elementButton} onClick={addCircle}>
-              Кружок
-            </button>
-            <button className={styles.elementButton} onClick={addImage}>
-              Картинка
-            </button>
-            <button className={styles.elementButton} onClick={addLesson}>
-              Урок
-            </button>
-            <button className={styles.elementButton} onClick={addText}>
-              Текст
-            </button>
-            <button className={styles.elementButton} onClick={addCheckpoint}>
-              Контрольная точка
-            </button>
-
-            {selectedElement && (
-              <button
-                className={`${styles.elementButton} ${styles.deleteButton}`}
-                onClick={() => deleteElement(selectedElement.id)}
-              >
-                Удалить выбранный
+      {/* Основной интерфейс */}
+      {!showEmulator ? (
+        <div className={styles.wrapperContainer}>
+          {/* Левая панель */}
+          <div className={styles.leftPanel}>
+            <div className={styles.panelSection}>
+              <h3 className={styles.sectionTitle}>Элементы</h3>
+              <button className={styles.elementButton} onClick={addCircle}>
+                Кружок
               </button>
-            )}
-          </div>
+              <button className={styles.elementButton} onClick={addImage}>
+                Картинка
+              </button>
+              <button className={styles.elementButton} onClick={addLesson}>
+                Урок
+              </button>
+              <button className={styles.elementButton} onClick={addText}>
+                Текст
+              </button>
+              <button className={styles.elementButton} onClick={addCheckpoint}>
+                Контрольная точка
+              </button>
 
-          <div className={styles.panelSection}>
-            <h3 className={styles.sectionTitle}>Информация</h3>
-            <div style={{ fontSize: "12px", color: "#666", lineHeight: "1.5" }}>
-              <div>
-                <strong>Элементов:</strong> {elements.length}
-              </div>
-              <div>
-                <strong>Размер карты:</strong> {mapSize.width}×{mapSize.height}
-              </div>
-              {mapId && (
-                <div>
-                  <strong>ID карты:</strong> {mapId}
-                </div>
-              )}
-              <div>
-                <strong>Курс:</strong> {courseId}
-              </div>
               {selectedElement && (
-                <div
-                  style={{
-                    marginTop: "10px",
-                    padding: "10px",
-                    backgroundColor: "#f5f5f5",
-                    borderRadius: "4px",
-                  }}
+                <button
+                  className={`${styles.elementButton} ${styles.deleteButton}`}
+                  onClick={() => deleteElement(selectedElement.id)}
                 >
-                  <div>
-                    <strong>Выбран элемент:</strong>
-                  </div>
-                  <div>ID: {selectedElement.id}</div>
-                  <div>Тип: {selectedElement.type}</div>
-                  <div>
-                    Позиция: {selectedElement.position.x.toFixed(1)}%,{" "}
-                    {selectedElement.position.y.toFixed(1)}%
-                  </div>
-                </div>
+                  Удалить выбранный
+                </button>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Основное содержимое */}
-        <div className={styles.mainContent}>
-          <div className={styles.contentWrapper}>
-            <div
-              className={styles.mapContainer}
-              style={{
-                width: mapSize.width,
-                height: mapSize.height,
-                backgroundColor: mapBackground.color,
-                backgroundImage: mapBackground.image ? `url(${mapBackground.image})` : "none",
-                backgroundRepeat: mapBackground.repeat as any,
-                backgroundSize: mapBackground.size as any,
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              {elements.map((element) => renderElement(element))}
+            <div className={styles.panelSection}>
+              <h3 className={styles.sectionTitle}>Смайлики</h3>
+              <div className={styles.emojiGrid}>
+                {emojis.slice(0, 20).map((emoji, index) => (
+                  <button
+                    key={index}
+                    className={styles.emojiButton}
+                    onClick={() => addEmoji(emoji)}
+                    title={emoji}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              <button
+                className={styles.elementButton}
+                onClick={() => document.getElementById("emoji-modal")?.classList.add(styles.show)}
+              >
+                Все смайлики
+              </button>
             </div>
-            <div
-              style={{
-                marginTop: "10px",
-                fontSize: "12px",
-                color: "#666",
-                textAlign: "center",
-              }}
-            >
-              Перетаскивайте элементы мышкой | Двойной клик для редактирования
-            </div>
-          </div>
-        </div>
 
-        {/* Правая панель свойств */}
-        <div className={styles.rightPanel}>
-          {selectedElement ? (
-            <>
-              <h3 className={styles.sectionTitle}>Свойства элемента</h3>
-
+            <div className={styles.panelSection}>
+              <h3 className={styles.sectionTitle}>Фон карты</h3>
               <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>ID элемента</label>
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: "#666",
-                    wordBreak: "break-all",
-                    padding: "5px",
-                    backgroundColor: "#f5f5f5",
-                    borderRadius: "4px",
-                  }}
+                <label className={styles.propertyLabel}>Цвет фона</label>
+                <input
+                  className={styles.colorInput}
+                  type="color"
+                  value={mapBackground.color}
+                  onChange={(e) => setMapBackground((prev) => ({ ...prev, color: e.target.value }))}
+                />
+              </div>
+              <div className={styles.propertyGroup}>
+                <label className={styles.propertyLabel}>Фоновое изображение</label>
+                <input
+                  type="file"
+                  ref={backgroundFileInputRef}
+                  onChange={handleBackgroundImageUpload}
+                  accept="image/*"
+                  style={{ display: "none" }}
+                />
+                <button
+                  className={styles.uploadButton}
+                  onClick={() => backgroundFileInputRef.current?.click()}
                 >
-                  {selectedElement.id}
-                </div>
+                  Выбрать изображение
+                </button>
+                {mapBackground.image && (
+                  <div className={styles.imagePreviewContainer}>
+                    <img src={mapBackground.image} alt="Фон" className={styles.backgroundPreview} />
+                    <button
+                      className={styles.removeImageButton}
+                      onClick={() => setMapBackground((prev) => ({ ...prev, image: undefined }))}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
               </div>
-
               <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>Позиция X (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={selectedElement.position.x.toFixed(1)}
+                <label className={styles.propertyLabel}>Повторение</label>
+                <select
+                  className={styles.propertySelect}
+                  value={mapBackground.repeat}
                   onChange={(e) =>
-                    updateSelectedElementProperty("position", {
-                      ...selectedElement.position,
-                      x: parseFloat(e.target.value) || 0,
-                    })
+                    setMapBackground((prev) => ({ ...prev, repeat: e.target.value }))
                   }
-                  className={styles.propertyInput}
-                />
+                >
+                  <option value="no-repeat">Не повторять</option>
+                  <option value="repeat">Повторять</option>
+                  <option value="repeat-x">Повторять по X</option>
+                  <option value="repeat-y">Повторять по Y</option>
+                </select>
               </div>
-
               <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>Позиция Y (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={selectedElement.position.y.toFixed(1)}
-                  onChange={(e) =>
-                    updateSelectedElementProperty("position", {
-                      ...selectedElement.position,
-                      y: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className={styles.propertyInput}
-                />
+                <label className={styles.propertyLabel}>Размер</label>
+                <select
+                  className={styles.propertySelect}
+                  value={mapBackground.size}
+                  onChange={(e) => setMapBackground((prev) => ({ ...prev, size: e.target.value }))}
+                >
+                  <option value="cover">Обложка</option>
+                  <option value="contain">Вместить</option>
+                  <option value="auto">Авто</option>
+                </select>
               </div>
+            </div>
 
-              <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>Поворот (°)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="360"
-                  value={selectedElement.rotation || 0}
-                  onChange={(e) =>
-                    updateSelectedElementProperty("rotation", parseInt(e.target.value) || 0)
-                  }
-                  className={styles.propertyInput}
-                />
-              </div>
+            <div className={styles.breakpointsSection}>
+              <h3 className={styles.sectionTitle}>Брейкпоинты</h3>
+              {breakpoints.map((bp) => (
+                <button
+                  key={bp.name}
+                  className={`${styles.breakpointButton} ${activeBreakpoint === bp.name ? styles.active : ""}`}
+                  onClick={() => setActiveBreakpoint(bp.name)}
+                >
+                  {bp.name} ({bp.width}px)
+                </button>
+              ))}
+              <button className={styles.elementButton} onClick={openEmulator}>
+                Эмулятор
+              </button>
+            </div>
+          </div>
 
-              {selectedElement.type === "circle" && (
-                <div className={styles.propertyGroup}>
-                  <label className={styles.propertyLabel}>Цвет</label>
-                  <input
-                    type="color"
-                    value={selectedElement.color || "#ff6b6b"}
-                    onChange={(e) => updateSelectedElementProperty("color", e.target.value)}
-                    className={styles.colorInput}
+          {/* Основное содержимое */}
+          <div className={styles.mainContent}>
+            <button className={styles.toggleButton} onClick={openEmulator}>
+              Эмулятор
+            </button>
+
+            <div className={styles.contentWrapper}>
+              <div
+                className={`${styles.mapContainer} ${styles.centered}`}
+                style={{
+                  width: mapSize.width,
+                  height: "auto",
+                  minHeight: mapSize.height,
+                  ...mapBackgroundStyle,
+                }}
+              >
+                <div
+                  className={styles.mapContent}
+                  style={{ width: mapSize.width, height: mapSize.height }}
+                >
+                  {elements.map((element) => renderElement(element, mapSize, false))}
+                  <div
+                    className={styles.resizeHandleRight}
+                    onMouseDown={handleResizeStart("right")}
+                  />
+                  <div
+                    className={styles.resizeHandleBottom}
+                    onMouseDown={handleResizeStart("bottom")}
                   />
                 </div>
-              )}
+              </div>
+              <div className={styles.sizeInfo}>
+                Размер карты: {mapSize.width} × {mapSize.height}px | Брейкпоинт: {activeBreakpoint}
+                {courseId && ` | Курс: ${courseId}`}
+                {mapId && ` | ID карты: ${mapId.substring(0, 20)}...`}
+              </div>
+            </div>
+          </div>
 
-              {selectedElement.type === "text" && (
-                <>
-                  <div className={styles.propertyGroup}>
-                    <label className={styles.propertyLabel}>Текст</label>
-                    <textarea
-                      value={selectedElement.text || ""}
-                      onChange={(e) => updateSelectedElementProperty("text", e.target.value)}
-                      className={styles.propertyInput}
-                      rows={3}
-                    />
+          {/* Правая панель свойств */}
+          <div className={styles.rightPanel}>
+            {selectedElement ? (
+              <>
+                <h3 className={styles.sectionTitle}>Свойства элемента</h3>
+
+                <div className={styles.propertyGroup}>
+                  <label className={styles.propertyLabel}>
+                    Позиционирование ({activeBreakpoint})
+                  </label>
+                  <select
+                    className={styles.propertySelect}
+                    value={
+                      getElementBreakpointSettings(selectedElement).positioning ||
+                      selectedElement.positioning
+                    }
+                    onChange={(e) => {
+                      if (activeBreakpoint === "desktop") {
+                        updateSelectedElementProperty("positioning", e.target.value);
+                      } else {
+                        updateElementBreakpointSetting(
+                          selectedElement.id,
+                          "positioning",
+                          e.target.value
+                        );
+                      }
+                    }}
+                  >
+                    <option value="left">Слева</option>
+                    <option value="center">По центру</option>
+                    <option value="right">Справа</option>
+                    <option value="free">Произвольно</option>
+                  </select>
+                </div>
+
+                <div className={styles.propertyGroup}>
+                  <label className={styles.propertyLabel}>Смещение ({activeBreakpoint})</label>
+                  <div className={styles.offsetDisplay}>
+                    X:{" "}
+                    <span className={styles.offsetValue}>
+                      {Math.round(
+                        (
+                          getElementBreakpointSettings(selectedElement).offset ||
+                          selectedElement.offset
+                        ).x
+                      )}
+                      px
+                    </span>
+                    <br />
+                    Y:{" "}
+                    <span className={styles.offsetValue}>
+                      {Math.round(
+                        (
+                          getElementBreakpointSettings(selectedElement).offset ||
+                          selectedElement.offset
+                        ).y
+                      )}
+                      px
+                    </span>
                   </div>
-                  <div className={styles.propertyGroup}>
-                    <label className={styles.propertyLabel}>Цвет текста</label>
+                </div>
+
+                <div className={styles.propertyGroup}>
+                  <label className={styles.propertyLabel}>Поворот</label>
+                  <div className={styles.rotationControl}>
                     <input
-                      type="color"
-                      value={selectedElement.color || "#000000"}
-                      onChange={(e) => updateSelectedElementProperty("color", e.target.value)}
-                      className={styles.colorInput}
+                      type="range"
+                      min="0"
+                      max="360"
+                      value={selectedElement.rotation || 0}
+                      onChange={(e) =>
+                        updateSelectedElementProperty("rotation", parseInt(e.target.value))
+                      }
+                      className={styles.rotationSlider}
                     />
+                    <span className={styles.rotationValue}>{selectedElement.rotation || 0}°</span>
                   </div>
-                </>
-              )}
+                </div>
 
-              <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>Ширина</label>
-                <input
-                  type="number"
-                  value={selectedElement.width || ""}
-                  onChange={(e) =>
-                    updateSelectedElementProperty("width", parseInt(e.target.value) || undefined)
-                  }
-                  className={styles.propertyInput}
-                />
+                {activeBreakpoint !== "desktop" && (
+                  <div className={styles.breakpointPropertyGroup}>
+                    <label className={styles.propertyLabel}>Настройки для {activeBreakpoint}</label>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>
+                        <input
+                          type="checkbox"
+                          checked={!!getElementBreakpointSettings(selectedElement).hidden}
+                          onChange={(e) =>
+                            updateElementBreakpointSetting(
+                              selectedElement.id,
+                              "hidden",
+                              e.target.checked
+                            )
+                          }
+                        />
+                        Скрыть элемент
+                      </label>
+                    </div>
+                    <div className={styles.breakpointControls}>
+                      <button
+                        className={styles.smallButton}
+                        onClick={() => resetBreakpointSettings(selectedElement.id)}
+                      >
+                        Сбросить
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {selectedElement.type === "circle" && (
+                  <div className={styles.propertyGroup}>
+                    <label className={styles.propertyLabel}>Цвет</label>
+                    <input
+                      className={styles.colorInput}
+                      type="color"
+                      value={selectedElement.color || "#ff6b6b"}
+                      onChange={(e) => updateSelectedElementProperty("color", e.target.value)}
+                    />
+                    <div className={styles.sizeControl}>
+                      <div className={styles.sizeRow}>
+                        <label>Ширина:</label>
+                        <input
+                          type="number"
+                          value={selectedElement.width || 40}
+                          onChange={(e) =>
+                            updateSelectedElementProperty("width", parseInt(e.target.value))
+                          }
+                          className={styles.sizeInput}
+                        />
+                      </div>
+                      <div className={styles.sizeRow}>
+                        <label>Высота:</label>
+                        <input
+                          type="number"
+                          value={selectedElement.height || 40}
+                          onChange={(e) =>
+                            updateSelectedElementProperty("height", parseInt(e.target.value))
+                          }
+                          className={styles.sizeInput}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedElement.type === "image" && (
+                  <>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Изображение</label>
+                      <input
+                        type="file"
+                        ref={imageFileInputRef}
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        className={styles.uploadButton}
+                        onClick={() => imageFileInputRef.current?.click()}
+                      >
+                        Выбрать изображение
+                      </button>
+                      {selectedElement.imageUrl && (
+                        <div className={styles.imagePreviewContainer}>
+                          <img
+                            src={selectedElement.imageUrl}
+                            alt="Preview"
+                            className={styles.imagePreview}
+                          />
+                          <button
+                            className={styles.removeImageButton}
+                            onClick={() => updateSelectedElementProperty("imageUrl", "")}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Размер</label>
+                      <div className={styles.sizeControl}>
+                        <div className={styles.sizeRow}>
+                          <label>Ширина:</label>
+                          <input
+                            type="number"
+                            value={selectedElement.width || 60}
+                            onChange={(e) =>
+                              updateSelectedElementProperty("width", parseInt(e.target.value))
+                            }
+                            className={styles.sizeInput}
+                          />
+                        </div>
+                        <div className={styles.sizeRow}>
+                          <label>Высота:</label>
+                          <input
+                            type="number"
+                            value={selectedElement.height || 60}
+                            onChange={(e) =>
+                              updateSelectedElementProperty("height", parseInt(e.target.value))
+                            }
+                            className={styles.sizeInput}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {selectedElement.type === "lesson" && (
+                  <>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Название урока</label>
+                      <input
+                        className={styles.propertyInput}
+                        type="text"
+                        value={selectedElement.title || ""}
+                        onChange={(e) => updateSelectedElementProperty("title", e.target.value)}
+                      />
+                    </div>
+
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Звезды</label>
+                      <select
+                        className={styles.propertySelect}
+                        value={selectedElement.stars || 0}
+                        onChange={(e) =>
+                          updateSelectedElementProperty("stars", parseInt(e.target.value))
+                        }
+                      >
+                        <option value={0}>0 звезд</option>
+                        <option value={1}>1 звезда</option>
+                        <option value={2}>2 звезды</option>
+                        <option value={3}>3 звезды</option>
+                      </select>
+                    </div>
+
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Статус</label>
+                      <select
+                        className={styles.propertySelect}
+                        value={selectedElement.isActive ? "active" : "inactive"}
+                        onChange={(e) =>
+                          updateSelectedElementProperty("isActive", e.target.value === "active")
+                        }
+                      >
+                        <option value="active">Активный</option>
+                        <option value="inactive">Неактивный</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {selectedElement.type === "text" && (
+                  <>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Текст</label>
+                      <textarea
+                        className={styles.textInput}
+                        value={selectedElement.text || ""}
+                        onChange={(e) => updateSelectedElementProperty("text", e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Шрифт</label>
+                      <select
+                        className={styles.propertySelect}
+                        value={selectedElement.fontFamily || "Arial, sans-serif"}
+                        onChange={(e) =>
+                          updateSelectedElementProperty("fontFamily", e.target.value)
+                        }
+                      >
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Times New Roman', serif">Times New Roman</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="Verdana, sans-serif">Verdana</option>
+                      </select>
+                    </div>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Размер шрифта</label>
+                      <input
+                        type="number"
+                        className={styles.propertyInput}
+                        value={selectedElement.fontSize || 16}
+                        onChange={(e) =>
+                          updateSelectedElementProperty("fontSize", parseInt(e.target.value))
+                        }
+                      />
+                    </div>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Цвет</label>
+                      <input
+                        className={styles.colorInput}
+                        type="color"
+                        value={selectedElement.color || "#000000"}
+                        onChange={(e) => updateSelectedElementProperty("color", e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Начертание</label>
+                      <div className={styles.fontStyleControls}>
+                        <button
+                          className={`${styles.fontStyleButton} ${selectedElement.fontWeight === "bold" ? styles.active : ""}`}
+                          onClick={() =>
+                            updateSelectedElementProperty(
+                              "fontWeight",
+                              selectedElement.fontWeight === "bold" ? "normal" : "bold"
+                            )
+                          }
+                        >
+                          Ж
+                        </button>
+                        <button
+                          className={`${styles.fontStyleButton} ${selectedElement.fontStyle === "italic" ? styles.active : ""}`}
+                          onClick={() =>
+                            updateSelectedElementProperty(
+                              "fontStyle",
+                              selectedElement.fontStyle === "italic" ? "normal" : "italic"
+                            )
+                          }
+                        >
+                          К
+                        </button>
+                      </div>
+                    </div>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Ширина</label>
+                      <input
+                        type="number"
+                        className={styles.propertyInput}
+                        value={selectedElement.width || 200}
+                        onChange={(e) =>
+                          updateSelectedElementProperty("width", parseInt(e.target.value))
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                {selectedElement.type === "checkpoint" && (
+                  <>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Цвет</label>
+                      <input
+                        className={styles.colorInput}
+                        type="color"
+                        value={selectedElement.color || "#ff0000"}
+                        onChange={(e) => updateSelectedElementProperty("color", e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Название</label>
+                      <input
+                        className={styles.propertyInput}
+                        type="text"
+                        value={selectedElement.title || ""}
+                        onChange={(e) => updateSelectedElementProperty("title", e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Размер</label>
+                      <div className={styles.sizeControl}>
+                        <div className={styles.sizeRow}>
+                          <input
+                            type="number"
+                            value={selectedElement.width || 40}
+                            onChange={(e) => {
+                              updateSelectedElementProperty("width", parseInt(e.target.value));
+                              updateSelectedElementProperty("height", parseInt(e.target.value));
+                            }}
+                            className={styles.sizeInput}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {selectedElement.type === "emoji" && (
+                  <div className={styles.propertyGroup}>
+                    <label className={styles.propertyLabel}>Смайлик</label>
+                    <div className={styles.emojiDisplay}>{selectedElement.emoji}</div>
+                    <div className={styles.propertyGroup}>
+                      <label className={styles.propertyLabel}>Размер</label>
+                      <div className={styles.sizeControl}>
+                        <div className={styles.sizeRow}>
+                          <input
+                            type="number"
+                            value={selectedElement.fontSize || 40}
+                            onChange={(e) =>
+                              updateSelectedElementProperty("fontSize", parseInt(e.target.value))
+                            }
+                            className={styles.sizeInput}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  className={`${styles.elementButton} ${styles.saveButton}`}
+                  onClick={() => updateElement(selectedElement.id, selectedElement)}
+                >
+                  Сохранить изменения
+                </button>
+
+                <button
+                  className={`${styles.elementButton} ${styles.deleteButton}`}
+                  onClick={() => deleteElement(selectedElement.id)}
+                >
+                  Удалить элемент
+                </button>
+              </>
+            ) : (
+              <h3 className={styles.sectionTitle}>Выберите элемент</h3>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Эмулятор */
+        <div className={styles.emulatorOverlay}>
+          <div className={styles.emulatorContainer}>
+            <button className={styles.closeButton} onClick={closeEmulator}>
+              ×
+            </button>
+            <h3 className={styles.sectionTitle}>Эмулятор устройств</h3>
+
+            <div className={styles.deviceSelector}>
+              {devices.map((device) => (
+                <button
+                  key={device.name}
+                  className={`${styles.deviceButton} ${selectedDevice?.name === device.name ? styles.active : ""}`}
+                  onClick={() => handleDeviceChange(device)}
+                >
+                  {device.name}
+                </button>
+              ))}
+            </div>
+
+            {selectedDevice && (
+              <div className={styles.contentWrapper}>
+                <div
+                  className={styles.emulatorScreen}
+                  style={{
+                    width: selectedDevice.width,
+                    height: selectedDevice.height,
+                  }}
+                >
+                  <div
+                    className={`${styles.mapContainer} ${styles.centered}`}
+                    style={{
+                      width: selectedDevice.width,
+                      height: emulatorMapSize.height,
+                      ...mapBackgroundStyle,
+                    }}
+                  >
+                    <div
+                      className={styles.mapContent}
+                      style={{ width: emulatorMapSize.width, height: emulatorMapSize.height }}
+                    >
+                      {elements.map((element) => renderElement(element, emulatorMapSize, true))}
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.sizeInfo}>
+                  Устройство: {selectedDevice.name}
+                  <br />
+                  Размер экрана: {selectedDevice.width} × {selectedDevice.height}px
+                  <br />
+                  Высота контента: {emulatorMapSize.height}px
+                  <br />
+                  Брейкпоинт: {activeBreakpoint}
+                </div>
               </div>
+            )}
+          </div>
+        </div>
+      )}
 
-              <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>Высота</label>
-                <input
-                  type="number"
-                  value={selectedElement.height || ""}
-                  onChange={(e) =>
-                    updateSelectedElementProperty("height", parseInt(e.target.value) || undefined)
-                  }
-                  className={styles.propertyInput}
-                />
-              </div>
-
+      {/* Модальное окно со смайликами */}
+      <div id="emoji-modal" className={styles.emojiModal}>
+        <div className={styles.emojiModalContent}>
+          <button
+            className={styles.closeButton}
+            onClick={() => document.getElementById("emoji-modal")?.classList.remove(styles.show)}
+          >
+            ×
+          </button>
+          <h3 className={styles.sectionTitle}>Выберите смайлик</h3>
+          <div className={styles.emojiModalGrid}>
+            {emojis.map((emoji, index) => (
               <button
-                className={`${styles.elementButton} ${styles.saveButton}`}
-                onClick={() => updateElement(selectedElement.id, selectedElement)}
+                key={index}
+                className={styles.emojiModalButton}
+                onClick={() => {
+                  addEmoji(emoji);
+                  document.getElementById("emoji-modal")?.classList.remove(styles.show);
+                }}
               >
-                Сохранить изменения
+                {emoji}
               </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-              <button
-                className={`${styles.elementButton} ${styles.deleteButton}`}
-                onClick={() => deleteElement(selectedElement.id)}
-              >
-                Удалить элемент
-              </button>
+      {/* Кнопка сохранения */}
+      <div className={styles.saveControls}>
+        <button
+          className={`${styles.saveButton} ${saveState.isSuccess ? styles.success : ""}`}
+          onClick={saveMap}
+          disabled={saveState.isSaving || !mapId}
+        >
+          {saveState.isSaving ? (
+            <>
+              <span className={styles.spinner}></span>
+              Сохранение...
+            </>
+          ) : saveState.isSuccess ? (
+            <>
+              <span className={styles.checkmark}>✓</span>
+              Сохранено
             </>
           ) : (
-            <h3 className={styles.sectionTitle}>Выберите элемент</h3>
+            "Сохранить настройки карты"
           )}
+        </button>
+
+        {saveState.error && <div className={styles.errorMessage}>{saveState.error}</div>}
+
+        <div className={styles.saveInfo}>
+          Элементов: {elements.length} | Последнее сохранение:{" "}
+          {saveState.isSuccess ? "только что" : "еще не сохранено"}
         </div>
       </div>
     </div>
