@@ -1,15 +1,8 @@
-import type {
-  CourseMapResponse,
-  CreateCourseMapRequest,
-  CreateMapElementRequest,
-  MapElementResponse,
-  UpdateCourseMapRequest,
-  UpdateMapElementRequest,
-} from "./types/map";
+import type { MapElementResponse, UpdateMapElementRequest } from "./types/map";
 import $api from "./api";
 
 export class MapService {
-  static async createCourseMap(data: CreateCourseMapRequest): Promise<CourseMapResponse> {
+  static async createCourseMap(data: any): Promise<any> {
     try {
       const token = localStorage.getItem("accessToken");
       const response = await $api.post(`/course-maps`, data, {
@@ -21,39 +14,22 @@ export class MapService {
       return response.data;
     } catch (error: any) {
       console.error("Create course map error:", error);
-      throw new Error(error.response?.data?.message || "Failed to create course map");
+      throw error;
     }
   }
 
-  // Получение карты курса по ID
-  static async getCourseMap(id: string): Promise<CourseMapResponse> {
-    try {
-      const response = await $api.get(`/course-maps/${id}`);
-
-      return response.data;
-    } catch (error: any) {
-      console.error("Get course map error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch course map");
-    }
-  }
-
-  // Получение карты курса по ID курса
-  static async getCourseMapByCourseId(courseId: string): Promise<CourseMapResponse> {
+  static async getCourseMapByCourseId(courseId: string): Promise<any> {
     try {
       const response = await $api.get(`/course-maps/course/${courseId}`);
 
       return response.data;
     } catch (error: any) {
       console.error("Get course map by course id error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch course map");
+      throw error;
     }
   }
 
-  // Обновление карты курса
-  static async updateCourseMap(
-    id: string,
-    data: UpdateCourseMapRequest
-  ): Promise<CourseMapResponse> {
+  static async updateCourseMap(id: string, data: any): Promise<any> {
     try {
       const token = localStorage.getItem("accessToken");
       const response = await $api.put(`/course-maps/${id}`, data, {
@@ -65,35 +41,11 @@ export class MapService {
       return response.data;
     } catch (error: any) {
       console.error("Update course map error:", error);
-      throw new Error(error.response?.data?.message || "Failed to update course map");
+      throw error;
     }
   }
 
-  // Удаление карты курса
-  static async deleteCourseMap(id: string): Promise<{ success: boolean }> {
-    try {
-      const token = localStorage.getItem("accessToken");
-
-      await $api.delete(`/course-maps/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      return { success: true };
-    } catch (error: any) {
-      console.error("Delete course map error:", error);
-      throw new Error(error.response?.data?.message || "Failed to delete course map");
-    }
-  }
-
-  // Элементы карты
-
-  // Добавление элемента на карту
-  static async addMapElement(
-    mapId: string,
-    data: CreateMapElementRequest
-  ): Promise<MapElementResponse> {
+  static async addMapElement(mapId: string, data: any): Promise<any> {
     try {
       const token = localStorage.getItem("accessToken");
       const response = await $api.post(`/course-maps/${mapId}/elements`, data, {
@@ -105,50 +57,33 @@ export class MapService {
       return response.data;
     } catch (error: any) {
       console.error("Add map element error:", error);
-      throw new Error(error.response?.data?.message || "Failed to add map element");
+      throw error;
     }
   }
 
-  // Получение элемента по ID
-  static async getMapElement(elementId: string): Promise<MapElementResponse> {
+  static async getMapElements(mapId: string): Promise<any[]> {
     try {
-      const response = await $api.get(`/course-maps/elements/${elementId}`);
-
-      return response.data;
-    } catch (error: any) {
-      console.error("Get map element error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch map element");
-    }
-  }
-
-  // Получение всех элементов карты
-  static async getMapElements(mapId: string, type?: string): Promise<MapElementResponse[]> {
-    try {
-      const params = new URLSearchParams();
-
-      if (type) params.append("type", type);
-
-      const queryString = params.toString();
-      const url = queryString
-        ? `/course-maps/${mapId}/elements?${queryString}`
-        : `/course-maps/${mapId}/elements`;
-
-      const response = await $api.get(url);
+      const response = await $api.get(`/course-maps/${mapId}/elements`);
 
       return response.data;
     } catch (error: any) {
       console.error("Get map elements error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch map elements");
+      throw error;
     }
   }
-
-  // Обновление элемента
   static async updateMapElement(
     elementId: string,
     data: UpdateMapElementRequest
   ): Promise<MapElementResponse> {
     try {
       const token = localStorage.getItem("accessToken");
+
+      // Если это временный ID, пробуем найти реальный ID
+      if (elementId.startsWith("temp_")) {
+        console.warn("⚠️ Попытка обновить элемент с временным ID:", elementId);
+        throw new Error("Элемент еще не сохранен на сервере");
+      }
+
       const response = await $api.put(`/course-maps/elements/${elementId}`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -158,11 +93,17 @@ export class MapService {
       return response.data;
     } catch (error: any) {
       console.error("Update map element error:", error);
+
+      // Более подробная информация об ошибке
+      if (error.response?.status === 404) {
+        console.error(`Элемент с ID ${elementId} не найден на сервере`);
+        throw new Error(`Элемент с ID ${elementId} не найден. Возможно, он был удален.`);
+      }
+
       throw new Error(error.response?.data?.message || "Failed to update map element");
     }
   }
 
-  // Удаление элемента
   static async deleteMapElement(elementId: string): Promise<{ success: boolean }> {
     try {
       const token = localStorage.getItem("accessToken");
@@ -176,44 +117,12 @@ export class MapService {
       return { success: true };
     } catch (error: any) {
       console.error("Delete map element error:", error);
-      throw new Error(error.response?.data?.message || "Failed to delete map element");
-    }
-  }
 
-  static async batchSaveMapElements(
-    mapId: string,
-    elements: CreateMapElementRequest[]
-  ): Promise<MapElementResponse[]> {
-    try {
-      const token = localStorage.getItem("accessToken");
-      const response = await $api.post(`/course-maps/${mapId}/elements/batch`, elements, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      if (error.response?.status === 404) {
+        return { success: true }; // Элемент уже удален
+      }
 
-      return response.data;
-    } catch (error: any) {
-      console.error("Batch save map elements error:", error);
-      throw new Error(error.response?.data?.message || "Failed to batch save map elements");
-    }
-  }
-
-  static async batchUpdateMapElements(
-    elements: Array<{ id: string; data: UpdateMapElementRequest }>
-  ): Promise<MapElementResponse[]> {
-    try {
-      const token = localStorage.getItem("accessToken");
-      const response = await $api.put(`/course-maps/elements/batch`, elements, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      return response.data;
-    } catch (error: any) {
-      console.error("Batch update map elements error:", error);
-      throw new Error(error.response?.data?.message || "Failed to batch update map elements");
+      throw error;
     }
   }
 }

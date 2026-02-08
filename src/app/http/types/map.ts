@@ -72,9 +72,11 @@ export interface UpdateCourseMapRequest {
   backgroundImage?: string;
   backgroundRepeat?: string;
   backgroundSize?: string;
+  elements?: CreateMapElementRequest[];
 }
 
 export interface CreateMapElementRequest {
+  id?: string;
   type: MapElementType;
   title?: string;
   text?: string;

@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, usePathname } from "next/navigation";
+import React, { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import styles from "./index.module.scss";
 
 import { MapService } from "@/app/http/mapService";
 import type {
   CreateMapElementRequest,
+  MapElementResponse,
   MapElementType,
-  UpdateMapElementRequest,
 } from "@/app/http/types/map";
 
 interface Position {
@@ -17,8 +17,8 @@ interface Position {
   y: number;
 }
 
-interface Element {
-  id: string;
+interface MapElement {
+  id: string; // ТОЛЬКО СЕРВЕРНЫЙ ID!
   type: "circle" | "image" | "lesson" | "text" | "checkpoint" | "emoji";
   color?: string;
   position: Position;
@@ -37,28 +37,10 @@ interface Element {
   height?: number;
   rotation?: number;
   emoji?: string;
-  breakpoints?: {
-    [breakpoint: string]: {
-      hidden?: boolean;
-      positioning?: "left" | "center" | "right" | "free";
-      offset?: Position;
-    };
-  };
+  breakpoints?: Record<string, any>;
 }
 
 interface MapSize {
-  width: number;
-  height: number;
-}
-
-interface Breakpoint {
-  name: string;
-  width: number;
-  height: number;
-}
-
-interface Device {
-  name: string;
   width: number;
   height: number;
 }
@@ -70,53 +52,18 @@ interface MapBackground {
   size?: string;
 }
 
-interface SaveState {
-  isSaving: boolean;
-  isSuccess: boolean;
-  error?: string;
-}
-
 const Map: React.FC = () => {
-  // Получаем courseId из URL параметров
-  const params = useParams();
-  let courseId = params.courseId as string;
-
   const pathname = usePathname();
 
-  // Способ 1: Пробуем получить напрямую из params
-  if (params.courseId) {
-    courseId = params.courseId as string;
-  }
-  // Способ 2: Если нет courseId, ищем id или другие имена параметров
-  else if (params.id) {
-    courseId = params.id as string;
-  }
-  // Способ 3: Если в params нет нужного параметра, извлекаем из пути
-  else {
-    // Разбираем путь вручную
-    const pathSegments = pathname?.split("/") || [];
+  const getCourseIdFromUrl = () => {
+    if (!pathname) return null;
 
-    console.log("pathSegments:", pathSegments);
+    const match = pathname.match(/\/courses\/(course_[^/]+)/);
 
-    // Ищем сегмент, который начинается с "course_"
-    for (const segment of pathSegments) {
-      if (segment.startsWith("course_")) {
-        courseId = segment;
-        break;
-      }
-    }
+    return match ? match[1] : null;
+  };
 
-    // Если не нашли по префиксу, берем последний сегмент перед "map"
-    if (!courseId) {
-      const mapIndex = pathSegments.indexOf("map");
-
-      if (mapIndex > 0) {
-        courseId = pathSegments[mapIndex - 1];
-      }
-    }
-  }
-
-  console.log("Extracted courseId:", courseId);
+  const courseId = getCourseIdFromUrl();
 
   const [mapSize, setMapSize] = useState<MapSize>({ width: 800, height: 600 });
   const [mapBackground, setMapBackground] = useState<MapBackground>({
@@ -124,139 +71,16 @@ const Map: React.FC = () => {
     repeat: "no-repeat",
     size: "cover",
   });
-  const [elements, setElements] = useState<Element[]>([]);
+  const [elements, setElements] = useState<MapElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [isResizing, setIsResizing] = useState<"right" | "bottom" | null>(null);
-  const [dragStart, setDragStart] = useState<{
-    position: Position;
-    type: "resize" | "element";
-    elementStart?: Position;
-    elementType?: "free" | "fixed";
-  } | null>(null);
-  const [activeBreakpoint, setActiveBreakpoint] = useState<string>("desktop");
-  const [showEmulator, setShowEmulator] = useState(false);
-  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
-  const imageFileInputRef = useRef<HTMLInputElement>(null);
-  const backgroundFileInputRef = useRef<HTMLInputElement>(null);
+  const [mapId, setMapId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedElement = elements.find((el) => el.id === selectedElementId);
 
-  // Брейкпоинты
-  const breakpoints: Breakpoint[] = [
-    { name: "desktop", width: 1200, height: 800 },
-    { name: "tablet", width: 768, height: 1024 },
-    { name: "mobile", width: 375, height: 667 },
-  ];
-
-  const devices: Device[] = [
-    { name: "iPhone 12", width: 390, height: 844 },
-    { name: "iPad Air", width: 820, height: 1180 },
-    { name: "Samsung Galaxy", width: 360, height: 740 },
-    { name: "Desktop", width: 1200, height: 800 },
-  ];
-
-  const emojis = [
-    "😀",
-    "😃",
-    "😄",
-    "😁",
-    "😆",
-    "😅",
-    "😂",
-    "🤣",
-    "😊",
-    "😇",
-    "🙂",
-    "🙃",
-    "😉",
-    "😌",
-    "😍",
-    "🥰",
-    "😘",
-    "😗",
-    "😙",
-    "😚",
-    "😋",
-    "😛",
-    "😝",
-    "😜",
-    "🤪",
-    "🤨",
-    "🧐",
-    "🤓",
-    "😎",
-    "🥸",
-    "🤩",
-    "🥳",
-    "😏",
-    "😒",
-    "😞",
-    "😔",
-    "😟",
-    "😕",
-    "🙁",
-    "☹️",
-    "😣",
-    "😖",
-    "😫",
-    "😩",
-    "🥺",
-    "😢",
-    "😭",
-    "😤",
-    "😠",
-    "😡",
-    "🤬",
-    "🤯",
-    "😳",
-    "🥵",
-    "🥶",
-    "😱",
-    "😨",
-    "😰",
-    "😥",
-    "😓",
-    "🤗",
-    "🤔",
-    "🤭",
-    "🤫",
-    "🤥",
-    "😶",
-    "😐",
-    "😑",
-    "😬",
-    "🙄",
-    "😯",
-    "😦",
-    "😧",
-    "😮",
-    "😲",
-    "🥱",
-    "😴",
-    "🤤",
-    "😪",
-    "😵",
-    "🤐",
-    "🥴",
-    "🤢",
-    "🤮",
-    "🤧",
-    "😷",
-    "🤒",
-    "🤕",
-    "🤑",
-    "🤠",
-  ];
-
-  const [saveState, setSaveState] = useState<SaveState>({
-    isSaving: false,
-    isSuccess: false,
-  });
-  const [mapId, setMapId] = useState<string>("");
-  const [isMapLoaded, setIsMapLoaded] = useState(false);
-
-  // Функция загрузки карты при монтировании
+  // Загрузка карты при монтировании
   useEffect(() => {
     if (courseId) {
       loadCourseMap();
@@ -265,8 +89,13 @@ const Map: React.FC = () => {
 
   const loadCourseMap = async () => {
     try {
-      setSaveState({ isSaving: true, isSuccess: false });
-      const mapData = await MapService.getCourseMapByCourseId(courseId);
+      setIsLoading(true);
+      setError(null);
+      console.log("🔄 Загрузка карты для курса:", courseId);
+
+      const mapData = await MapService.getCourseMapByCourseId(courseId!);
+
+      console.log("✅ Карта загружена. ID:", mapData.id, "Элементов:", mapData.elements.length);
 
       setMapId(mapData.id);
       setMapSize({ width: mapData.width, height: mapData.height });
@@ -277,13 +106,13 @@ const Map: React.FC = () => {
         size: mapData.backgroundSize,
       });
 
-      // Преобразуем элементы из формата API в формат компонента
-      const elements = mapData.elements.map((element) => ({
-        id: element.id,
-        type: element.type as Element["type"],
+      // Преобразуем элементы из серверного формата
+      const loadedElements = mapData.elements.map((element: MapElementResponse) => ({
+        id: element.id, // СЕРВЕРНЫЙ ID
+        type: element.type as MapElement["type"],
         color: element.color,
         position: { x: element.positionX, y: element.positionY },
-        positioning: element.positioning as Element["positioning"],
+        positioning: element.positioning as MapElement["positioning"],
         offset: { x: element.offsetX, y: element.offsetY },
         imageUrl: element.imageUrl,
         title: element.title,
@@ -296,410 +125,24 @@ const Map: React.FC = () => {
         fontStyle: element.fontStyle,
         width: element.width,
         height: element.height,
-        rotation: element.rotation,
+        rotation: element.rotation || 0,
         emoji: element.emoji,
         breakpoints: element.breakpoints,
       }));
 
-      setElements(elements);
-      setIsMapLoaded(true);
-      setSaveState({ isSaving: false, isSuccess: true });
-    } catch (error) {
-      console.error("Failed to load course map:", error);
-      setSaveState({
-        isSaving: false,
-        isSuccess: false,
-        error: "Не удалось загрузить карту",
-      });
-      setIsMapLoaded(false);
+      setElements(loadedElements);
+      console.log(`✅ Загружено ${loadedElements.length} элементов с сервера`);
+    } catch (error: any) {
+      console.error("❌ Ошибка загрузки карты:", error);
+      setError("Не удалось загрузить карту.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getElementBreakpointSettings = (element: Element) => {
-    if (!element.breakpoints || !element.breakpoints[activeBreakpoint]) {
-      return {};
-    }
-
-    return element.breakpoints[activeBreakpoint];
-  };
-
-  const calculateElementPosition = (element: Element, targetMapSize: MapSize): Position => {
-    const breakpointSettings = getElementBreakpointSettings(element);
-    const isHidden = breakpointSettings.hidden;
-
-    if (isHidden) {
-      return { x: -1000, y: -1000 };
-    }
-
-    const currentPositioning = breakpointSettings.positioning || element.positioning;
-    const currentOffset = breakpointSettings.offset || element.offset;
-
-    const basePosition = { x: 0, y: 0 };
-
-    switch (currentPositioning) {
-      case "left":
-        basePosition.x = currentOffset.x;
-        break;
-
-      case "center":
-        basePosition.x = targetMapSize.width / 2 + currentOffset.x;
-        break;
-
-      case "right":
-        basePosition.x = targetMapSize.width + currentOffset.x;
-        break;
-
-      case "free":
-        basePosition.x = (element.position.x / 100) * targetMapSize.width;
-        basePosition.y = (element.position.y / 100) * targetMapSize.height;
-        break;
-    }
-
-    if (currentPositioning !== "free") {
-      basePosition.y = currentOffset.y;
-    }
-
-    return basePosition;
-  };
-
-  const addCircle = () => {
-    const newElement: Element = {
-      id: `circle-${Date.now()}`,
-      type: "circle",
-      color: "#ff6b6b",
-      position: { x: 50, y: 50 },
-      positioning: "free",
-      offset: { x: 0, y: 0 },
-      width: 40,
-      height: 40,
-      rotation: 0,
-    };
-
-    setElements((prev) => [...prev, newElement]);
-    setSelectedElementId(newElement.id);
-  };
-
-  const addImage = () => {
-    const newElement: Element = {
-      id: `image-${Date.now()}`,
-      type: "image",
-      imageUrl: "",
-      position: { x: 50, y: 50 },
-      positioning: "free",
-      offset: { x: 0, y: 0 },
-      width: 60,
-      height: 60,
-      rotation: 0,
-    };
-
-    setElements((prev) => [...prev, newElement]);
-    setSelectedElementId(newElement.id);
-  };
-
-  const addLesson = () => {
-    const isFirstLesson = elements.filter((el) => el.type === "lesson").length === 0;
-    const newElement: Element = {
-      id: `lesson-${Date.now()}`,
-      type: "lesson",
-      position: { x: 50, y: 50 },
-      positioning: "free",
-      offset: { x: 0, y: 0 },
-      title: `Урок ${elements.filter((el) => el.type === "lesson").length + 1}`,
-      isActive: isFirstLesson,
-      stars: isFirstLesson ? 3 : 0,
-      width: 60,
-      height: 60,
-      rotation: 0,
-    };
-
-    setElements((prev) => [...prev, newElement]);
-    setSelectedElementId(newElement.id);
-  };
-
-  const addText = () => {
-    const newElement: Element = {
-      id: `text-${Date.now()}`,
-      type: "text",
-      position: { x: 50, y: 50 },
-      positioning: "free",
-      offset: { x: 0, y: 0 },
-      text: "Новый текст",
-      fontSize: 16,
-      fontFamily: "Arial, sans-serif",
-      fontWeight: "normal",
-      fontStyle: "normal",
-      color: "#000000",
-      width: 200,
-      rotation: 0,
-    };
-
-    setElements((prev) => [...prev, newElement]);
-    setSelectedElementId(newElement.id);
-  };
-
-  const addCheckpoint = () => {
-    const newElement: Element = {
-      id: `checkpoint-${Date.now()}`,
-      type: "checkpoint",
-      color: "#ff0000",
-      position: { x: 50, y: 50 },
-      positioning: "free",
-      offset: { x: 0, y: 0 },
-      title: "Контрольная точка",
-      width: 40,
-      height: 40,
-      rotation: 0,
-    };
-
-    setElements((prev) => [...prev, newElement]);
-    setSelectedElementId(newElement.id);
-  };
-
-  const addEmoji = (emoji: string) => {
-    const newElement: Element = {
-      id: `emoji-${Date.now()}`,
-      type: "emoji",
-      position: { x: 50, y: 50 },
-      positioning: "free",
-      offset: { x: 0, y: 0 },
-      emoji: emoji,
-      fontSize: 40,
-      width: 40,
-      height: 40,
-      rotation: 0,
-    };
-
-    setElements((prev) => [...prev, newElement]);
-    setSelectedElementId(newElement.id);
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = (event) => {
-        if (selectedElement && selectedElement.type === "image" && event.target?.result) {
-          updateElementProperty("imageUrl", event.target.result);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleBackgroundImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setMapBackground((prev) => ({ ...prev, image: event.target!.result as string }));
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const updateElementBreakpointSetting = (elementId: string, setting: string, value: any) => {
-    setElements((prev) =>
-      prev.map((el) => {
-        if (el.id === elementId) {
-          const breakpoints = { ...el.breakpoints };
-
-          if (!breakpoints[activeBreakpoint]) {
-            breakpoints[activeBreakpoint] = {};
-          }
-
-          breakpoints[activeBreakpoint] = {
-            ...breakpoints[activeBreakpoint],
-            [setting]: value,
-          };
-
-          return { ...el, breakpoints };
-        }
-
-        return el;
-      })
-    );
-  };
-
-  const resetBreakpointSettings = (elementId: string) => {
-    setElements((prev) =>
-      prev.map((el) => {
-        if (el.id === elementId) {
-          const breakpoints = { ...el.breakpoints };
-
-          delete breakpoints[activeBreakpoint];
-
-          return { ...el, breakpoints };
-        }
-
-        return el;
-      })
-    );
-  };
-
-  const handleResizeStart = (direction: "right" | "bottom") => (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(direction);
-    setDragStart({
-      position: { x: e.clientX, y: e.clientY },
-      type: "resize",
-    });
-  };
-
-  const handleResizeMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isResizing || !dragStart || dragStart.type !== "resize") return;
-
-      if (isResizing === "right") {
-        const deltaX = e.clientX - dragStart.position.x;
-
-        setMapSize((prev) => ({
-          ...prev,
-          width: Math.max(400, prev.width + deltaX),
-        }));
-      } else if (isResizing === "bottom") {
-        const deltaY = e.clientY - dragStart.position.y;
-
-        setMapSize((prev) => ({
-          ...prev,
-          height: Math.max(300, prev.height + deltaY),
-        }));
-      }
-
-      setDragStart({
-        position: { x: e.clientX, y: e.clientY },
-        type: "resize",
-      });
-    },
-    [isResizing, dragStart]
-  );
-
-  const handleResizeEnd = useCallback(() => {
-    setIsResizing(null);
-    setDragStart(null);
-  }, []);
-
-  const handleElementDragStart = (elementId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setSelectedElementId(elementId);
-    const element = elements.find((el) => el.id === elementId);
-
-    if (element) {
-      const breakpointSettings = getElementBreakpointSettings(element);
-      const currentPositioning = breakpointSettings.positioning || element.positioning;
-      const currentOffset = breakpointSettings.offset || element.offset;
-
-      setDragStart({
-        position: { x: e.clientX, y: e.clientY },
-        type: "element",
-        elementStart: currentPositioning === "free" ? element.position : currentOffset,
-        elementType: currentPositioning === "free" ? "free" : "fixed",
-      });
-    }
-  };
-
-  const handleElementDragMove = useCallback(
-    (e: MouseEvent) => {
-      if (
-        !dragStart ||
-        dragStart.type !== "element" ||
-        !selectedElementId ||
-        !dragStart.elementStart
-      )
-        return;
-
-      const element = elements.find((el) => el.id === selectedElementId);
-
-      if (!element) return;
-
-      const deltaX = e.clientX - dragStart.position.x;
-      const deltaY = e.clientY - dragStart.position.y;
-
-      setElements((prev) =>
-        prev.map((el) => {
-          if (el.id === selectedElementId) {
-            const breakpointSettings = getElementBreakpointSettings(el);
-
-            if (dragStart.elementType === "free") {
-              const newPosition = {
-                x: Math.max(
-                  0,
-                  Math.min(100, dragStart.elementStart!.x + (deltaX / mapSize.width) * 100)
-                ),
-                y: Math.max(
-                  0,
-                  Math.min(100, dragStart.elementStart!.y + (deltaY / mapSize.height) * 100)
-                ),
-              };
-
-              return { ...el, position: newPosition };
-            } else {
-              // Для фиксированного позиционирования
-              const newOffset = {
-                x: dragStart.elementStart!.x + deltaX,
-                y: dragStart.elementStart!.y + deltaY,
-              };
-
-              if (breakpointSettings && Object.keys(breakpointSettings).length > 0) {
-                const breakpoints = { ...el.breakpoints };
-
-                breakpoints[activeBreakpoint] = {
-                  ...breakpoints[activeBreakpoint],
-                  offset: newOffset,
-                };
-
-                return { ...el, breakpoints };
-              } else {
-                return { ...el, offset: newOffset };
-              }
-            }
-          }
-
-          return el;
-        })
-      );
-    },
-    [dragStart, selectedElementId, elements, mapSize, activeBreakpoint]
-  );
-
-  const handleElementDragEnd = useCallback(() => {
-    setDragStart(null);
-  }, []);
-
-  useEffect(() => {
-    if (dragStart) {
-      if (dragStart.type === "resize") {
-        document.addEventListener("mousemove", handleResizeMove);
-        document.addEventListener("mouseup", handleResizeEnd);
-      } else if (dragStart.type === "element") {
-        document.addEventListener("mousemove", handleElementDragMove);
-        document.addEventListener("mouseup", handleElementDragEnd);
-      }
-
-      return () => {
-        document.removeEventListener("mousemove", handleResizeMove);
-        document.removeEventListener("mousemove", handleElementDragMove);
-        document.removeEventListener("mouseup", handleResizeEnd);
-        document.removeEventListener("mouseup", handleElementDragEnd);
-      };
-    }
-  }, [dragStart, handleResizeMove, handleElementDragMove, handleResizeEnd, handleElementDragEnd]);
-
-  const updateElementProperty = (property: string, value: any) => {
-    if (!selectedElementId) return;
-
-    setElements((prev) =>
-      prev.map((el) => (el.id === selectedElementId ? { ...el, [property]: value } : el))
-    );
-  };
-
-  // Функция преобразования элементов в формат API
-  const convertElementsToApiFormat = (elements: Element[]): CreateMapElementRequest[] => {
-    return elements.map((element) => ({
+  // Преобразование элемента в формат API
+  const convertElementToApiFormat = (element: MapElement): CreateMapElementRequest => {
+    return {
       type: element.type as MapElementType,
       title: element.title,
       text: element.text,
@@ -721,129 +164,291 @@ const Map: React.FC = () => {
       isActive: element.isActive,
       stars: element.stars,
       breakpoints: element.breakpoints,
-    }));
+    };
   };
 
-  // Функция сохранения карты
-  const saveMap = async () => {
+  // Создание нового элемента
+  const createElement = async (
+    type: MapElement["type"],
+    defaultProps: Partial<MapElement> = {}
+  ) => {
     try {
-      setSaveState({ isSaving: true, isSuccess: false });
+      if (!mapId) {
+        console.error("❌ Нет mapId для создания элемента");
+        setError("Карта не загружена");
 
-      if (!courseId) {
-        throw new Error("Course ID не найден в URL");
+        return;
       }
 
-      const mapData = {
-        courseId,
-        width: mapSize.width,
-        height: mapSize.height,
-        backgroundColor: mapBackground.color,
-        backgroundImage: mapBackground.image,
-        backgroundRepeat: mapBackground.repeat,
-        backgroundSize: mapBackground.size,
+      // Собираем данные для нового элемента
+      const elementData: CreateMapElementRequest = {
+        type: type as MapElementType,
+        positionX: 50, // Позиция по умолчанию
+        positionY: 50,
+        positioning: "free",
+        offsetX: 0,
+        offsetY: 0,
+        rotation: 0,
       };
 
-      if (mapId) {
-        // Обновляем существующую карту
-        await MapService.updateCourseMap(mapId, mapData);
+      // Добавляем специфичные для типа свойства
+      switch (type) {
+        case "circle":
+          elementData.color = "#ff6b6b";
+          elementData.width = 40;
+          elementData.height = 40;
+          break;
 
-        // Сначала получаем существующие элементы
-        const existingElements = await MapService.getMapElements(mapId);
-        const existingElementIds = new Set(existingElements.map((el) => el.id));
-        const currentElementIds = new Set(elements.map((el) => el.id));
+        case "image":
+          elementData.width = 60;
+          elementData.height = 60;
+          break;
 
-        // Удаляем элементы, которые были удалены на клиенте
-        for (const existingElement of existingElements) {
-          if (!currentElementIds.has(existingElement.id)) {
-            await MapService.deleteMapElement(existingElement.id);
-          }
-        }
+        case "lesson":
+          elementData.title = `Урок ${elements.filter((el) => el.type === "lesson").length + 1}`;
+          elementData.isActive = elements.filter((el) => el.type === "lesson").length === 0;
+          elementData.stars = elements.filter((el) => el.type === "lesson").length === 0 ? 3 : 0;
+          elementData.width = 60;
+          elementData.height = 60;
+          break;
 
-        // Обновляем/добавляем элементы
-        const apiElements = convertElementsToApiFormat(elements);
-        const elementsToUpdate: Array<{ id: string; data: UpdateMapElementRequest }> = [];
-        const elementsToCreate: CreateMapElementRequest[] = [];
+        case "text":
+          elementData.text = "Новый текст";
+          elementData.fontSize = 16;
+          elementData.fontFamily = "Arial, sans-serif";
+          elementData.fontWeight = "normal";
+          elementData.fontStyle = "normal";
+          elementData.color = "#000000";
+          elementData.width = 200;
+          break;
 
-        for (let i = 0; i < apiElements.length; i++) {
-          const apiElement = apiElements[i];
-          const element = elements[i];
+        case "checkpoint":
+          elementData.color = "#ff0000";
+          elementData.title = "Контрольная точка";
+          elementData.width = 40;
+          elementData.height = 40;
+          break;
 
-          if (existingElementIds.has(element.id)) {
-            // Элемент существует - обновляем
-            elementsToUpdate.push({
-              id: element.id,
-              data: apiElement,
-            });
-          } else {
-            // Новый элемент - создаем
-            elementsToCreate.push(apiElement);
-          }
-        }
-
-        // Выполняем пакетные операции
-        if (elementsToCreate.length > 0) {
-          await MapService.batchSaveMapElements(mapId, elementsToCreate);
-        }
-
-        if (elementsToUpdate.length > 0) {
-          await MapService.batchUpdateMapElements(elementsToUpdate);
-        }
-      } else {
-        // Создаем новую карту
-        const createdMap = await MapService.createCourseMap({
-          ...mapData,
-          elements: convertElementsToApiFormat(elements),
-        });
-
-        setMapId(createdMap.id);
+        case "emoji":
+          elementData.emoji = "😀";
+          elementData.fontSize = 40;
+          elementData.width = 40;
+          elementData.height = 40;
+          break;
       }
 
-      setSaveState({ isSaving: false, isSuccess: true });
+      // Применяем кастомные свойства
+      Object.assign(elementData, defaultProps);
 
-      // Сбрасываем успешное состояние через 3 секунды
-      setTimeout(() => {
-        setSaveState((prev) => ({ ...prev, isSuccess: false }));
-      }, 3000);
+      console.log("🆕 Создание элемента на сервере...");
+      const serverElement = await MapService.addMapElement(mapId, elementData);
+
+      console.log("✅ Элемент создан на сервере с ID:", serverElement.id);
+
+      // Преобразуем серверный элемент в формат клиента
+      const newElement: MapElement = {
+        id: serverElement.id, // СЕРВЕРНЫЙ ID
+        type: serverElement.type as MapElement["type"],
+        color: serverElement.color,
+        position: { x: serverElement.positionX, y: serverElement.positionY },
+        positioning: serverElement.positioning as MapElement["positioning"],
+        offset: { x: serverElement.offsetX, y: serverElement.offsetY },
+        imageUrl: serverElement.imageUrl,
+        title: serverElement.title,
+        isActive: serverElement.isActive,
+        stars: serverElement.stars,
+        text: serverElement.text,
+        fontSize: serverElement.fontSize,
+        fontFamily: serverElement.fontFamily,
+        fontWeight: serverElement.fontWeight,
+        fontStyle: serverElement.fontStyle,
+        width: serverElement.width,
+        height: serverElement.height,
+        rotation: serverElement.rotation || 0,
+        emoji: serverElement.emoji,
+        breakpoints: serverElement.breakpoints,
+      };
+
+      // Добавляем элемент в состояние
+      setElements((prev) => [...prev, newElement]);
+      setSelectedElementId(serverElement.id);
     } catch (error: any) {
-      console.error("Save map error:", error);
-      setSaveState({
-        isSaving: false,
-        isSuccess: false,
-        error: error.message || "Ошибка при сохранении",
-      });
+      console.error("❌ Ошибка создания элемента:", error);
+      setError("Не удалось создать элемент: " + (error.message || "Неизвестная ошибка"));
     }
   };
 
-  console.log("COURSE ID", courseId);
-  // Функция автосохранения (по таймеру)
-  useEffect(() => {
-    if (!isMapLoaded) return;
+  // Обновление элемента
+  const updateElement = async (elementId: string, updates: Partial<MapElement>) => {
+    try {
+      const element = elements.find((el) => el.id === elementId);
 
-    const autoSaveTimer = setTimeout(() => {
-      if (elements.length > 0) {
-        saveMap();
+      if (!element) {
+        console.error("❌ Элемент не найден для обновления:", elementId);
+
+        return;
       }
-    }, 30000); // Автосохранение каждые 30 секунд
 
-    return () => clearTimeout(autoSaveTimer);
-  }, [elements, isMapLoaded]);
+      // Создаем обновленный элемент
+      const updatedElement = { ...element, ...updates };
 
-  // Рендер элемента в зависимости от типа
-  const renderElement = (
-    element: Element,
-    targetMapSize: MapSize = mapSize,
-    isEmulator: boolean = false
-  ) => {
-    const isSelected = element.id === selectedElementId && !isEmulator;
-    const position = calculateElementPosition(element, targetMapSize);
-    const breakpointSettings = getElementBreakpointSettings(element);
-    const isHidden = breakpointSettings.hidden;
-    const rotation = element.rotation || 0;
+      // Конвертируем в формат API
+      const elementData = convertElementToApiFormat(updatedElement);
 
-    const style = {
-      left: position.x,
-      top: position.y,
-      transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+      console.log("🔄 Обновление элемента с ID:", elementId);
+      await MapService.updateMapElement(elementId, elementData);
+
+      // Обновляем локальное состояние
+      setElements((prev) => prev.map((el) => (el.id === elementId ? updatedElement : el)));
+
+      console.log("✅ Элемент обновлен:", elementId);
+    } catch (error: any) {
+      console.error("❌ Ошибка обновления элемента:", elementId, error);
+
+      // Если элемент не найден (404), перезагружаем карту
+      if (error.response?.status === 404) {
+        console.log("🔄 Элемент не найден, перезагружаем карту...");
+        loadCourseMap();
+      }
+    }
+  };
+
+  // Удаление элемента
+  const deleteElement = async (elementId: string) => {
+    try {
+      console.log("🗑️ Удаление элемента с ID:", elementId);
+      await MapService.deleteMapElement(elementId);
+
+      // Удаляем из локального состояния
+      setElements((prev) => prev.filter((el) => el.id !== elementId));
+
+      if (selectedElementId === elementId) {
+        setSelectedElementId(null);
+      }
+
+      console.log("✅ Элемент удален:", elementId);
+    } catch (error: any) {
+      console.error("❌ Ошибка удаления элемента:", elementId, error);
+
+      // Если элемент не найден (404), все равно удаляем из локального состояния
+      if (error.response?.status === 404) {
+        console.log("ℹ️ Элемент не найден на сервере, удаляем локально");
+        setElements((prev) => prev.filter((el) => el.id !== elementId));
+
+        if (selectedElementId === elementId) {
+          setSelectedElementId(null);
+        }
+      }
+    }
+  };
+
+  // Функции добавления элементов
+  const addCircle = () => createElement("circle");
+  const addImage = () => createElement("image");
+  const addLesson = () => createElement("lesson");
+  const addText = () => createElement("text");
+  const addCheckpoint = () => createElement("checkpoint");
+
+  // Обновление свойства выбранного элемента
+  const updateSelectedElementProperty = (property: string, value: any) => {
+    if (!selectedElementId) return;
+
+    updateElement(selectedElementId, { [property]: value });
+  };
+
+  // Drag & Drop
+  const [dragStart, setDragStart] = useState<{
+    elementId: string;
+    startX: number;
+    startY: number;
+    elementStartX: number;
+    elementStartY: number;
+  } | null>(null);
+
+  const handleElementDragStart = (elementId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const element = elements.find((el) => el.id === elementId);
+
+    if (!element) return;
+
+    setSelectedElementId(elementId);
+    setDragStart({
+      elementId,
+      startX: e.clientX,
+      startY: e.clientY,
+      elementStartX: element.position.x,
+      elementStartY: element.position.y,
+    });
+  };
+
+  const handleElementDragMove = useCallback(
+    (e: MouseEvent) => {
+      if (!dragStart) return;
+
+      const deltaX = e.clientX - dragStart.startX;
+      const deltaY = e.clientY - dragStart.startY;
+
+      // Рассчитываем новую позицию в процентах
+      const newPositionX = Math.max(
+        0,
+        Math.min(100, dragStart.elementStartX + (deltaX / mapSize.width) * 100)
+      );
+      const newPositionY = Math.max(
+        0,
+        Math.min(100, dragStart.elementStartY + (deltaY / mapSize.height) * 100)
+      );
+
+      // Обновляем локальное состояние
+      setElements((prev) =>
+        prev.map((el) =>
+          el.id === dragStart.elementId
+            ? { ...el, position: { x: newPositionX, y: newPositionY } }
+            : el
+        )
+      );
+    },
+    [dragStart, mapSize]
+  );
+
+  const handleElementDragEnd = useCallback(() => {
+    if (!dragStart) return;
+
+    // Сохраняем изменения на сервере
+    const element = elements.find((el) => el.id === dragStart.elementId);
+
+    if (element) {
+      updateElement(dragStart.elementId, { position: element.position });
+    }
+
+    setDragStart(null);
+  }, [dragStart, elements]);
+
+  useEffect(() => {
+    if (dragStart) {
+      document.addEventListener("mousemove", handleElementDragMove);
+      document.addEventListener("mouseup", handleElementDragEnd);
+
+      return () => {
+        document.removeEventListener("mousemove", handleElementDragMove);
+        document.removeEventListener("mouseup", handleElementDragEnd);
+      };
+    }
+  }, [dragStart, handleElementDragMove, handleElementDragEnd]);
+
+  // Рендер элемента
+  const renderElement = (element: MapElement) => {
+    const isSelected = element.id === selectedElementId;
+    const left = (element.position.x / 100) * mapSize.width;
+    const top = (element.position.y / 100) * mapSize.height;
+
+    const commonStyle: React.CSSProperties = {
+      position: "absolute",
+      left: left,
+      top: top,
+      transform: `translate(-50%, -50%) rotate(${element.rotation || 0}deg)`,
+      cursor: "move",
     };
 
     switch (element.type) {
@@ -851,15 +456,15 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
-            className={`${styles.elementCircle} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...style,
-              backgroundColor: element.color,
+              ...commonStyle,
+              backgroundColor: element.color || "#ff6b6b",
               width: element.width || 40,
               height: element.height || 40,
-              display: isHidden ? "none" : "block",
+              borderRadius: "50%",
+              border: isSelected ? "2px solid #007bff" : "none",
             }}
-            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
+            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
           />
         );
 
@@ -867,56 +472,37 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
-            className={`${styles.imageContainer} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...style,
+              ...commonStyle,
               width: element.width || 60,
               height: element.height || 60,
-              display: isHidden ? "none" : "flex",
+              border: isSelected ? "2px solid #007bff" : "none",
+              overflow: "hidden",
             }}
-            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
+            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
           >
             {element.imageUrl ? (
               <img
                 src={element.imageUrl}
                 alt="Element"
-                className={styles.elementImage}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <div
                 style={{
                   width: "100%",
                   height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#f5f5f5",
+                  color: "#999",
+                  fontSize: "12px",
                 }}
-              />
-            ) : (
-              <div className={styles.imagePlaceholder}>Изображение</div>
+              >
+                Изображение
+              </div>
             )}
-          </div>
-        );
-
-      case "lesson":
-        return (
-          <div
-            key={element.id}
-            className={`${styles.lessonContainer} ${isSelected ? styles.elementSelected : ""}`}
-            style={{
-              ...style,
-              display: isHidden ? "none" : "flex",
-            }}
-            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
-          >
-            <div
-              className={`${styles.lessonCircle} ${element.isActive ? styles.lessonActive : ""}`}
-            >
-              {element.title?.charAt(0) || "У"}
-            </div>
-            <div className={styles.starsArc}>
-              {[1, 2, 3].map((star) => (
-                <div
-                  key={star}
-                  className={`${styles.star} ${star <= (element.stars || 0) ? styles.starFilled : ""}`}
-                />
-              ))}
-            </div>
-            <div className={styles.lessonTitle}>{element.title}</div>
           </div>
         );
 
@@ -924,20 +510,94 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
-            className={`${styles.textElement} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...style,
+              ...commonStyle,
               fontSize: element.fontSize || 16,
               fontFamily: element.fontFamily || "Arial, sans-serif",
               fontWeight: element.fontWeight || "normal",
               fontStyle: element.fontStyle || "normal",
               color: element.color || "#000000",
               width: element.width || "auto",
-              display: isHidden ? "none" : "block",
+              padding: "4px",
+              whiteSpace: "nowrap",
+              backgroundColor: isSelected ? "rgba(0, 123, 255, 0.1)" : "transparent",
+              border: isSelected ? "2px solid #007bff" : "none",
+              borderRadius: "4px",
             }}
-            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
+            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
           >
             {element.text}
+          </div>
+        );
+
+      case "lesson":
+        return (
+          <div
+            key={element.id}
+            style={{
+              ...commonStyle,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: isSelected ? "4px" : "0",
+              border: isSelected ? "2px solid #007bff" : "none",
+              borderRadius: "8px",
+            }}
+            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
+          >
+            <div
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: "50%",
+                backgroundColor: element.isActive ? "#28a745" : "#4a90e2",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "bold",
+                fontSize: "18px",
+              }}
+            >
+              {element.title?.charAt(0) || "У"}
+            </div>
+            {element.stars && element.stars > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: -10,
+                  display: "flex",
+                  gap: "2px",
+                }}
+              >
+                {[1, 2, 3].map((star) => (
+                  <div
+                    key={star}
+                    style={{
+                      width: 10,
+                      height: 10,
+                      backgroundColor: star <= (element.stars || 0) ? "#ffd700" : "#ddd",
+                      clipPath:
+                        "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+            <div
+              style={{
+                marginTop: "5px",
+                fontSize: "12px",
+                color: "#333",
+                textAlign: "center",
+                maxWidth: "100px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {element.title}
+            </div>
           </div>
         );
 
@@ -945,24 +605,51 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
-            className={`${styles.checkpointContainer} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...style,
-              display: isHidden ? "none" : "flex",
+              ...commonStyle,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: isSelected ? "4px" : "0",
+              border: isSelected ? "2px solid #007bff" : "none",
+              borderRadius: "8px",
             }}
-            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
+            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
           >
             <div
-              className={styles.checkpointElement}
               style={{
-                backgroundColor: element.color || "#ff0000",
                 width: element.width || 40,
                 height: element.height || 40,
+                borderRadius: "50%",
+                backgroundColor: element.color || "#ff0000",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <div className={styles.checkpointInner}></div>
+              <div
+                style={{
+                  width: "50%",
+                  height: "50%",
+                  backgroundColor: "white",
+                  borderRadius: "50%",
+                }}
+              />
             </div>
-            <div className={styles.checkpointTitle}>{element.title}</div>
+            <div
+              style={{
+                marginTop: "5px",
+                fontSize: "12px",
+                color: "#333",
+                textAlign: "center",
+                maxWidth: "100px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {element.title}
+            </div>
           </div>
         );
 
@@ -970,15 +657,18 @@ const Map: React.FC = () => {
         return (
           <div
             key={element.id}
-            className={`${styles.emojiElement} ${isSelected ? styles.elementSelected : ""}`}
             style={{
-              ...style,
+              ...commonStyle,
               fontSize: element.fontSize || 40,
               width: element.width || 40,
               height: element.height || 40,
-              display: isHidden ? "none" : "flex",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: isSelected ? "2px solid #007bff" : "none",
+              borderRadius: "8px",
             }}
-            onMouseDown={isEmulator ? undefined : (e) => handleElementDragStart(element.id, e)}
+            onMouseDown={(e: React.MouseEvent) => handleElementDragStart(element.id, e)}
           >
             {element.emoji}
           </div>
@@ -989,721 +679,309 @@ const Map: React.FC = () => {
     }
   };
 
-  const openEmulator = () => {
-    setShowEmulator(true);
-    setSelectedDevice(devices[0]);
-  };
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        Загрузка карты...
+      </div>
+    );
+  }
 
-  const closeEmulator = () => {
-    setShowEmulator(false);
-    setSelectedDevice(null);
-  };
+  if (error) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          gap: "20px",
+        }}
+      >
+        <div style={{ color: "red" }}>{error}</div>
+        <button onClick={loadCourseMap}>Повторить попытку</button>
+      </div>
+    );
+  }
 
-  const handleDeviceChange = (device: Device) => {
-    setSelectedDevice(device);
-  };
-
-  const emulatorMapSize = selectedDevice
-    ? {
-        width: selectedDevice.width,
-        height: Math.max(selectedDevice.height, 2000),
-      }
-    : { width: 800, height: 2000 };
-
-  const mapBackgroundStyle = {
-    backgroundColor: mapBackground.color,
-    backgroundImage: mapBackground.image ? `url(${mapBackground.image})` : "none",
-    backgroundRepeat: mapBackground.repeat as any,
-    backgroundSize: mapBackground.size as any,
-  };
+  if (!courseId) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        Курс не найден в URL
+      </div>
+    );
+  }
 
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.globalStyle} />
 
-      {!showEmulator ? (
-        <div className={styles.wrapperContainer}>
-          {/* Левая панель */}
-          <div className={styles.leftPanel}>
-            <div className={styles.panelSection}>
-              <h3 className={styles.sectionTitle}>Элементы</h3>
-              <button className={styles.elementButton} onClick={addCircle}>
-                Кружок
-              </button>
-              <button className={styles.elementButton} onClick={addImage}>
-                Картинка
-              </button>
-              <button className={styles.elementButton} onClick={addLesson}>
-                Урок
-              </button>
-              <button className={styles.elementButton} onClick={addText}>
-                Текст
-              </button>
-              <button className={styles.elementButton} onClick={addCheckpoint}>
-                Контрольная точка
-              </button>
-            </div>
-
-            <div className={styles.panelSection}>
-              <h3 className={styles.sectionTitle}>Смайлики</h3>
-              <div className={styles.emojiGrid}>
-                {emojis.slice(0, 20).map((emoji, index) => (
-                  <button
-                    key={index}
-                    className={styles.emojiButton}
-                    onClick={() => addEmoji(emoji)}
-                    title={emoji}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-              <button
-                className={styles.elementButton}
-                onClick={() => document.getElementById("emoji-modal")?.classList.add(styles.show)}
-              >
-                Все смайлики
-              </button>
-            </div>
-
-            <div className={styles.panelSection}>
-              <h3 className={styles.sectionTitle}>Фон карты</h3>
-              <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>Цвет фона</label>
-                <input
-                  className={styles.colorInput}
-                  type="color"
-                  value={mapBackground.color}
-                  onChange={(e) => setMapBackground((prev) => ({ ...prev, color: e.target.value }))}
-                />
-              </div>
-              <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>Фоновое изображение</label>
-                <input
-                  type="file"
-                  ref={backgroundFileInputRef}
-                  onChange={handleBackgroundImageUpload}
-                  accept="image/*"
-                  style={{ display: "none" }}
-                />
-                <button
-                  className={styles.uploadButton}
-                  onClick={() => backgroundFileInputRef.current?.click()}
-                >
-                  Выбрать изображение
-                </button>
-                {mapBackground.image && (
-                  <div className={styles.imagePreviewContainer}>
-                    <img src={mapBackground.image} alt="Фон" className={styles.backgroundPreview} />
-                    <button
-                      className={styles.removeImageButton}
-                      onClick={() => setMapBackground((prev) => ({ ...prev, image: undefined }))}
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>Повторение</label>
-                <select
-                  className={styles.propertySelect}
-                  value={mapBackground.repeat}
-                  onChange={(e) =>
-                    setMapBackground((prev) => ({ ...prev, repeat: e.target.value }))
-                  }
-                >
-                  <option value="no-repeat">Не повторять</option>
-                  <option value="repeat">Повторять</option>
-                  <option value="repeat-x">Повторять по X</option>
-                  <option value="repeat-y">Повторять по Y</option>
-                </select>
-              </div>
-              <div className={styles.propertyGroup}>
-                <label className={styles.propertyLabel}>Размер</label>
-                <select
-                  className={styles.propertySelect}
-                  value={mapBackground.size}
-                  onChange={(e) => setMapBackground((prev) => ({ ...prev, size: e.target.value }))}
-                >
-                  <option value="cover">Обложка</option>
-                  <option value="contain">Вместить</option>
-                  <option value="auto">Авто</option>
-                </select>
-              </div>
-            </div>
-
-            <div className={styles.breakpointsSection}>
-              <h3 className={styles.sectionTitle}>Брейкпоинты</h3>
-              {breakpoints.map((bp) => (
-                <button
-                  key={bp.name}
-                  className={`${styles.breakpointButton} ${activeBreakpoint === bp.name ? styles.active : ""}`}
-                  onClick={() => setActiveBreakpoint(bp.name)}
-                >
-                  {bp.name} ({bp.width}px)
-                </button>
-              ))}
-              <button className={styles.elementButton} onClick={openEmulator}>
-                Эмулятор
-              </button>
-            </div>
-          </div>
-
-          {/* Основное содержимое */}
-          <div className={styles.mainContent}>
-            <button className={styles.toggleButton} onClick={openEmulator}>
-              Эмулятор
+      <div className={styles.wrapperContainer}>
+        {/* Левая панель */}
+        <div className={styles.leftPanel}>
+          <div className={styles.panelSection}>
+            <h3 className={styles.sectionTitle}>Элементы</h3>
+            <button className={styles.elementButton} onClick={addCircle}>
+              Кружок
+            </button>
+            <button className={styles.elementButton} onClick={addImage}>
+              Картинка
+            </button>
+            <button className={styles.elementButton} onClick={addLesson}>
+              Урок
+            </button>
+            <button className={styles.elementButton} onClick={addText}>
+              Текст
+            </button>
+            <button className={styles.elementButton} onClick={addCheckpoint}>
+              Контрольная точка
             </button>
 
-            <div className={styles.contentWrapper}>
-              <div
-                className={`${styles.mapContainer} ${styles.centered}`}
-                style={{
-                  width: mapSize.width,
-                  height: "auto",
-                  minHeight: mapSize.height,
-                  ...mapBackgroundStyle,
-                }}
+            {selectedElement && (
+              <button
+                className={`${styles.elementButton} ${styles.deleteButton}`}
+                onClick={() => deleteElement(selectedElement.id)}
               >
-                <div
-                  className={styles.mapContent}
-                  style={{ width: mapSize.width, height: mapSize.height }}
-                >
-                  {elements.map((element) => renderElement(element, mapSize, false))}
-                  <div
-                    className={styles.resizeHandleRight}
-                    onMouseDown={handleResizeStart("right")}
-                  />
-                  <div
-                    className={styles.resizeHandleBottom}
-                    onMouseDown={handleResizeStart("bottom")}
-                  />
-                </div>
-              </div>
-              <div className={styles.sizeInfo}>
-                Размер карты: {mapSize.width} × {mapSize.height}px | Брейкпоинт: {activeBreakpoint}
-                {courseId && ` | Курс: ${courseId}`}
-              </div>
-            </div>
-          </div>
-
-          {/* Правая панель свойств */}
-          <div className={styles.rightPanel}>
-            {selectedElement ? (
-              <>
-                <h3 className={styles.sectionTitle}>Свойства элемента</h3>
-
-                <div className={styles.propertyGroup}>
-                  <label className={styles.propertyLabel}>
-                    Позиционирование ({activeBreakpoint})
-                  </label>
-                  <select
-                    className={styles.propertySelect}
-                    value={
-                      getElementBreakpointSettings(selectedElement).positioning ||
-                      selectedElement.positioning
-                    }
-                    onChange={(e) => {
-                      if (activeBreakpoint === "desktop") {
-                        updateElementProperty("positioning", e.target.value);
-                      } else {
-                        updateElementBreakpointSetting(
-                          selectedElement.id,
-                          "positioning",
-                          e.target.value
-                        );
-                      }
-                    }}
-                  >
-                    <option value="left">Слева</option>
-                    <option value="center">По центру</option>
-                    <option value="right">Справа</option>
-                    <option value="free">Произвольно</option>
-                  </select>
-                </div>
-
-                <div className={styles.propertyGroup}>
-                  <label className={styles.propertyLabel}>Смещение ({activeBreakpoint})</label>
-                  <div className={styles.offsetDisplay}>
-                    X:{" "}
-                    <span className={styles.offsetValue}>
-                      {Math.round(
-                        (
-                          getElementBreakpointSettings(selectedElement).offset ||
-                          selectedElement.offset
-                        ).x
-                      )}
-                      px
-                    </span>
-                    <br />
-                    Y:{" "}
-                    <span className={styles.offsetValue}>
-                      {Math.round(
-                        (
-                          getElementBreakpointSettings(selectedElement).offset ||
-                          selectedElement.offset
-                        ).y
-                      )}
-                      px
-                    </span>
-                  </div>
-                </div>
-
-                <div className={styles.propertyGroup}>
-                  <label className={styles.propertyLabel}>Поворот</label>
-                  <div className={styles.rotationControl}>
-                    <input
-                      type="range"
-                      min="0"
-                      max="360"
-                      value={selectedElement.rotation || 0}
-                      onChange={(e) => updateElementProperty("rotation", parseInt(e.target.value))}
-                      className={styles.rotationSlider}
-                    />
-                    <span className={styles.rotationValue}>{selectedElement.rotation || 0}°</span>
-                  </div>
-                </div>
-
-                {activeBreakpoint !== "desktop" && (
-                  <div className={styles.breakpointPropertyGroup}>
-                    <label className={styles.propertyLabel}>Настройки для {activeBreakpoint}</label>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>
-                        <input
-                          type="checkbox"
-                          checked={!!getElementBreakpointSettings(selectedElement).hidden}
-                          onChange={(e) =>
-                            updateElementBreakpointSetting(
-                              selectedElement.id,
-                              "hidden",
-                              e.target.checked
-                            )
-                          }
-                        />
-                        Скрыть элемент
-                      </label>
-                    </div>
-                    <div className={styles.breakpointControls}>
-                      <button
-                        className={styles.smallButton}
-                        onClick={() => resetBreakpointSettings(selectedElement.id)}
-                      >
-                        Сбросить
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {selectedElement.type === "circle" && (
-                  <div className={styles.propertyGroup}>
-                    <label className={styles.propertyLabel}>Цвет</label>
-                    <input
-                      className={styles.colorInput}
-                      type="color"
-                      value={selectedElement.color}
-                      onChange={(e) => updateElementProperty("color", e.target.value)}
-                    />
-                    <div className={styles.sizeControl}>
-                      <div className={styles.sizeRow}>
-                        <label>Ширина:</label>
-                        <input
-                          type="number"
-                          value={selectedElement.width || 40}
-                          onChange={(e) => updateElementProperty("width", parseInt(e.target.value))}
-                          className={styles.sizeInput}
-                        />
-                      </div>
-                      <div className={styles.sizeRow}>
-                        <label>Высота:</label>
-                        <input
-                          type="number"
-                          value={selectedElement.height || 40}
-                          onChange={(e) =>
-                            updateElementProperty("height", parseInt(e.target.value))
-                          }
-                          className={styles.sizeInput}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedElement.type === "image" && (
-                  <>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Изображение</label>
-                      <input
-                        type="file"
-                        ref={imageFileInputRef}
-                        onChange={handleImageUpload}
-                        accept="image/*"
-                        style={{ display: "none" }}
-                      />
-                      <button
-                        className={styles.uploadButton}
-                        onClick={() => imageFileInputRef.current?.click()}
-                      >
-                        Выбрать изображение
-                      </button>
-                      {selectedElement.imageUrl && (
-                        <div className={styles.imagePreviewContainer}>
-                          <img
-                            src={selectedElement.imageUrl}
-                            alt="Preview"
-                            className={styles.imagePreview}
-                          />
-                          <button
-                            className={styles.removeImageButton}
-                            onClick={() => updateElementProperty("imageUrl", "")}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Размер</label>
-                      <div className={styles.sizeControl}>
-                        <div className={styles.sizeRow}>
-                          <label>Ширина:</label>
-                          <input
-                            type="number"
-                            value={selectedElement.width || 60}
-                            onChange={(e) =>
-                              updateElementProperty("width", parseInt(e.target.value))
-                            }
-                            className={styles.sizeInput}
-                          />
-                        </div>
-                        <div className={styles.sizeRow}>
-                          <label>Высота:</label>
-                          <input
-                            type="number"
-                            value={selectedElement.height || 60}
-                            onChange={(e) =>
-                              updateElementProperty("height", parseInt(e.target.value))
-                            }
-                            className={styles.sizeInput}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {selectedElement.type === "lesson" && (
-                  <>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Название урока</label>
-                      <input
-                        className={styles.propertyInput}
-                        type="text"
-                        value={selectedElement.title}
-                        onChange={(e) => updateElementProperty("title", e.target.value)}
-                      />
-                    </div>
-
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Звезды</label>
-                      <select
-                        className={styles.propertySelect}
-                        value={selectedElement.stars}
-                        onChange={(e) => updateElementProperty("stars", parseInt(e.target.value))}
-                      >
-                        <option value={0}>0 звезд</option>
-                        <option value={1}>1 звезда</option>
-                        <option value={2}>2 звезды</option>
-                        <option value={3}>3 звезды</option>
-                      </select>
-                    </div>
-
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Статус</label>
-                      <select
-                        className={styles.propertySelect}
-                        value={selectedElement.isActive ? "active" : "inactive"}
-                        onChange={(e) =>
-                          updateElementProperty("isActive", e.target.value === "active")
-                        }
-                      >
-                        <option value="active">Активный</option>
-                        <option value="inactive">Неактивный</option>
-                      </select>
-                    </div>
-                  </>
-                )}
-
-                {selectedElement.type === "text" && (
-                  <>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Текст</label>
-                      <textarea
-                        className={styles.textInput}
-                        value={selectedElement.text}
-                        onChange={(e) => updateElementProperty("text", e.target.value)}
-                        rows={3}
-                      />
-                    </div>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Шрифт</label>
-                      <select
-                        className={styles.propertySelect}
-                        value={selectedElement.fontFamily}
-                        onChange={(e) => updateElementProperty("fontFamily", e.target.value)}
-                      >
-                        <option value="Arial, sans-serif">Arial</option>
-                        <option value="'Times New Roman', serif">Times New Roman</option>
-                        <option value="'Courier New', monospace">Courier New</option>
-                        <option value="Georgia, serif">Georgia</option>
-                        <option value="Verdana, sans-serif">Verdana</option>
-                      </select>
-                    </div>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Размер шрифта</label>
-                      <input
-                        type="number"
-                        className={styles.propertyInput}
-                        value={selectedElement.fontSize}
-                        onChange={(e) =>
-                          updateElementProperty("fontSize", parseInt(e.target.value))
-                        }
-                      />
-                    </div>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Цвет</label>
-                      <input
-                        className={styles.colorInput}
-                        type="color"
-                        value={selectedElement.color}
-                        onChange={(e) => updateElementProperty("color", e.target.value)}
-                      />
-                    </div>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Начертание</label>
-                      <div className={styles.fontStyleControls}>
-                        <button
-                          className={`${styles.fontStyleButton} ${selectedElement.fontWeight === "bold" ? styles.active : ""}`}
-                          onClick={() =>
-                            updateElementProperty(
-                              "fontWeight",
-                              selectedElement.fontWeight === "bold" ? "normal" : "bold"
-                            )
-                          }
-                        >
-                          Ж
-                        </button>
-                        <button
-                          className={`${styles.fontStyleButton} ${selectedElement.fontStyle === "italic" ? styles.active : ""}`}
-                          onClick={() =>
-                            updateElementProperty(
-                              "fontStyle",
-                              selectedElement.fontStyle === "italic" ? "normal" : "italic"
-                            )
-                          }
-                        >
-                          К
-                        </button>
-                      </div>
-                    </div>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Ширина</label>
-                      <input
-                        type="number"
-                        className={styles.propertyInput}
-                        value={selectedElement.width}
-                        onChange={(e) => updateElementProperty("width", parseInt(e.target.value))}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {selectedElement.type === "checkpoint" && (
-                  <>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Цвет</label>
-                      <input
-                        className={styles.colorInput}
-                        type="color"
-                        value={selectedElement.color}
-                        onChange={(e) => updateElementProperty("color", e.target.value)}
-                      />
-                    </div>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Название</label>
-                      <input
-                        className={styles.propertyInput}
-                        type="text"
-                        value={selectedElement.title}
-                        onChange={(e) => updateElementProperty("title", e.target.value)}
-                      />
-                    </div>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Размер</label>
-                      <div className={styles.sizeControl}>
-                        <div className={styles.sizeRow}>
-                          <input
-                            type="number"
-                            value={selectedElement.width || 40}
-                            onChange={(e) => {
-                              updateElementProperty("width", parseInt(e.target.value));
-                              updateElementProperty("height", parseInt(e.target.value));
-                            }}
-                            className={styles.sizeInput}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {selectedElement.type === "emoji" && (
-                  <div className={styles.propertyGroup}>
-                    <label className={styles.propertyLabel}>Смайлик</label>
-                    <div className={styles.emojiDisplay}>{selectedElement.emoji}</div>
-                    <div className={styles.propertyGroup}>
-                      <label className={styles.propertyLabel}>Размер</label>
-                      <div className={styles.sizeControl}>
-                        <div className={styles.sizeRow}>
-                          <input
-                            type="number"
-                            value={selectedElement.fontSize || 40}
-                            onChange={(e) =>
-                              updateElementProperty("fontSize", parseInt(e.target.value))
-                            }
-                            className={styles.sizeInput}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <h3 className={styles.sectionTitle}>Выберите элемент</h3>
+                Удалить выбранный
+              </button>
             )}
           </div>
-        </div>
-      ) : (
-        /* Эмулятор */
-        <div className={styles.emulatorOverlay}>
-          <div className={styles.emulatorContainer}>
-            <button className={styles.closeButton} onClick={closeEmulator}>
-              ×
-            </button>
-            <h3 className={styles.sectionTitle}>Эмулятор устройств</h3>
 
-            <div className={styles.deviceSelector}>
-              {devices.map((device) => (
-                <button
-                  key={device.name}
-                  className={`${styles.deviceButton} ${selectedDevice?.name === device.name ? styles.active : ""}`}
-                  onClick={() => handleDeviceChange(device)}
-                >
-                  {device.name}
-                </button>
-              ))}
-            </div>
-
-            {selectedDevice && (
-              <div className={styles.contentWrapper}>
+          <div className={styles.panelSection}>
+            <h3 className={styles.sectionTitle}>Информация</h3>
+            <div style={{ fontSize: "12px", color: "#666", lineHeight: "1.5" }}>
+              <div>
+                <strong>Элементов:</strong> {elements.length}
+              </div>
+              <div>
+                <strong>Размер карты:</strong> {mapSize.width}×{mapSize.height}
+              </div>
+              {mapId && (
+                <div>
+                  <strong>ID карты:</strong> {mapId}
+                </div>
+              )}
+              <div>
+                <strong>Курс:</strong> {courseId}
+              </div>
+              {selectedElement && (
                 <div
-                  className={styles.emulatorScreen}
                   style={{
-                    width: selectedDevice.width,
-                    height: selectedDevice.height,
+                    marginTop: "10px",
+                    padding: "10px",
+                    backgroundColor: "#f5f5f5",
+                    borderRadius: "4px",
                   }}
                 >
-                  <div
-                    className={`${styles.mapContainer} ${styles.centered}`}
-                    style={{
-                      width: selectedDevice.width,
-                      height: emulatorMapSize.height,
-                      ...mapBackgroundStyle,
-                    }}
-                  >
-                    <div
-                      className={styles.mapContent}
-                      style={{ width: emulatorMapSize.width, height: emulatorMapSize.height }}
-                    >
-                      {elements.map((element) => renderElement(element, emulatorMapSize, true))}
-                    </div>
+                  <div>
+                    <strong>Выбран элемент:</strong>
+                  </div>
+                  <div>ID: {selectedElement.id}</div>
+                  <div>Тип: {selectedElement.type}</div>
+                  <div>
+                    Позиция: {selectedElement.position.x.toFixed(1)}%,{" "}
+                    {selectedElement.position.y.toFixed(1)}%
                   </div>
                 </div>
-                <div className={styles.sizeInfo}>
-                  Устройство: {selectedDevice.name}
-                  <br />
-                  Размер экрана: {selectedDevice.width} × {selectedDevice.height}px
-                  <br />
-                  Высота контента: {emulatorMapSize.height}px
-                  <br />
-                  Брейкпоинт: {activeBreakpoint}
-                  {courseId && <br />}
-                  {courseId && `Курс: ${courseId}`}
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Основное содержимое */}
+        <div className={styles.mainContent}>
+          <div className={styles.contentWrapper}>
+            <div
+              className={styles.mapContainer}
+              style={{
+                width: mapSize.width,
+                height: mapSize.height,
+                backgroundColor: mapBackground.color,
+                backgroundImage: mapBackground.image ? `url(${mapBackground.image})` : "none",
+                backgroundRepeat: mapBackground.repeat as any,
+                backgroundSize: mapBackground.size as any,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {elements.map((element) => renderElement(element))}
+            </div>
+            <div
+              style={{
+                marginTop: "10px",
+                fontSize: "12px",
+                color: "#666",
+                textAlign: "center",
+              }}
+            >
+              Перетаскивайте элементы мышкой | Двойной клик для редактирования
+            </div>
+          </div>
+        </div>
+
+        {/* Правая панель свойств */}
+        <div className={styles.rightPanel}>
+          {selectedElement ? (
+            <>
+              <h3 className={styles.sectionTitle}>Свойства элемента</h3>
+
+              <div className={styles.propertyGroup}>
+                <label className={styles.propertyLabel}>ID элемента</label>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#666",
+                    wordBreak: "break-all",
+                    padding: "5px",
+                    backgroundColor: "#f5f5f5",
+                    borderRadius: "4px",
+                  }}
+                >
+                  {selectedElement.id}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      <div id="emoji-modal" className={styles.emojiModal}>
-        <div className={styles.emojiModalContent}>
-          <button
-            className={styles.closeButton}
-            onClick={() => document.getElementById("emoji-modal")?.classList.remove(styles.show)}
-          >
-            ×
-          </button>
-          <h3 className={styles.sectionTitle}>Выберите смайлик</h3>
-          <div className={styles.emojiModalGrid}>
-            {emojis.map((emoji, index) => (
+              <div className={styles.propertyGroup}>
+                <label className={styles.propertyLabel}>Позиция X (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={selectedElement.position.x.toFixed(1)}
+                  onChange={(e) =>
+                    updateSelectedElementProperty("position", {
+                      ...selectedElement.position,
+                      x: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className={styles.propertyInput}
+                />
+              </div>
+
+              <div className={styles.propertyGroup}>
+                <label className={styles.propertyLabel}>Позиция Y (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={selectedElement.position.y.toFixed(1)}
+                  onChange={(e) =>
+                    updateSelectedElementProperty("position", {
+                      ...selectedElement.position,
+                      y: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className={styles.propertyInput}
+                />
+              </div>
+
+              <div className={styles.propertyGroup}>
+                <label className={styles.propertyLabel}>Поворот (°)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="360"
+                  value={selectedElement.rotation || 0}
+                  onChange={(e) =>
+                    updateSelectedElementProperty("rotation", parseInt(e.target.value) || 0)
+                  }
+                  className={styles.propertyInput}
+                />
+              </div>
+
+              {selectedElement.type === "circle" && (
+                <div className={styles.propertyGroup}>
+                  <label className={styles.propertyLabel}>Цвет</label>
+                  <input
+                    type="color"
+                    value={selectedElement.color || "#ff6b6b"}
+                    onChange={(e) => updateSelectedElementProperty("color", e.target.value)}
+                    className={styles.colorInput}
+                  />
+                </div>
+              )}
+
+              {selectedElement.type === "text" && (
+                <>
+                  <div className={styles.propertyGroup}>
+                    <label className={styles.propertyLabel}>Текст</label>
+                    <textarea
+                      value={selectedElement.text || ""}
+                      onChange={(e) => updateSelectedElementProperty("text", e.target.value)}
+                      className={styles.propertyInput}
+                      rows={3}
+                    />
+                  </div>
+                  <div className={styles.propertyGroup}>
+                    <label className={styles.propertyLabel}>Цвет текста</label>
+                    <input
+                      type="color"
+                      value={selectedElement.color || "#000000"}
+                      onChange={(e) => updateSelectedElementProperty("color", e.target.value)}
+                      className={styles.colorInput}
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className={styles.propertyGroup}>
+                <label className={styles.propertyLabel}>Ширина</label>
+                <input
+                  type="number"
+                  value={selectedElement.width || ""}
+                  onChange={(e) =>
+                    updateSelectedElementProperty("width", parseInt(e.target.value) || undefined)
+                  }
+                  className={styles.propertyInput}
+                />
+              </div>
+
+              <div className={styles.propertyGroup}>
+                <label className={styles.propertyLabel}>Высота</label>
+                <input
+                  type="number"
+                  value={selectedElement.height || ""}
+                  onChange={(e) =>
+                    updateSelectedElementProperty("height", parseInt(e.target.value) || undefined)
+                  }
+                  className={styles.propertyInput}
+                />
+              </div>
+
               <button
-                key={index}
-                className={styles.emojiModalButton}
-                onClick={() => {
-                  addEmoji(emoji);
-                  document.getElementById("emoji-modal")?.classList.remove(styles.show);
-                }}
+                className={`${styles.elementButton} ${styles.saveButton}`}
+                onClick={() => updateElement(selectedElement.id, selectedElement)}
               >
-                {emoji}
+                Сохранить изменения
               </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      <div className={styles.saveControls}>
-        <button
-          className={`${styles.saveButton} ${saveState.isSuccess ? styles.success : ""}`}
-          onClick={saveMap}
-          disabled={saveState.isSaving || !courseId}
-        >
-          {saveState.isSaving ? (
-            <>
-              <span className={styles.spinner}></span>
-              Сохранение...
-            </>
-          ) : saveState.isSuccess ? (
-            <>
-              <span className={styles.checkmark}>✓</span>
-              Сохранено
+              <button
+                className={`${styles.elementButton} ${styles.deleteButton}`}
+                onClick={() => deleteElement(selectedElement.id)}
+              >
+                Удалить элемент
+              </button>
             </>
           ) : (
-            "Сохранить карту"
+            <h3 className={styles.sectionTitle}>Выберите элемент</h3>
           )}
-        </button>
-
-        {saveState.error && <div className={styles.errorMessage}>{saveState.error}</div>}
-
-        {!courseId && (
-          <div className={styles.warningMessage}>Для сохранения необходимо указать ID курса</div>
-        )}
-
-        <div className={styles.saveInfo}>
-          Элементов: {elements.length} | Последнее сохранение:{" "}
-          {saveState.isSuccess ? "только что" : "еще не сохранено"}
-          {courseId && ` | Курс: ${courseId}`}
         </div>
       </div>
     </div>
