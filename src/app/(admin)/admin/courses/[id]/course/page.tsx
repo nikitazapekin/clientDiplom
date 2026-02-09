@@ -1,7 +1,8 @@
-import CourseMapView from "@/app/components/CourseMapView";
+import MapViewer from "@/app/components/MapViewer";
 
 const CoursePage = () => {
-  return <CourseMapView />;
+  return <MapViewer />;
+  // return <CourseMapView />;
 };
 
 export default CoursePage;
