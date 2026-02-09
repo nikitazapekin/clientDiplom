@@ -1,120 +1,47 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import Course from "../Course";
-import CourseCategory from "../CourseCategory";
-import SearchCourses from "../SearchCourses";
+import CourseFilters from "../CourseFilters";
 
 import styles from "./index.module.scss";
 
-const categories = [
-  {
-    id: 1,
-    title: "Языки программирования",
-    courses: [
-      {
-        id: "1",
-        title: "JavaScript для новичков",
-        logo: "../../../assets/courses/JS.png",
-        lessonCount: 32,
-        description: "Практичный курс для самых новичков в программировании",
-        tags: ["12"],
-      },
-      {
-        id: "12",
-        title: "Python для начинающих",
-        logo: "../../../assets/courses/JS.png",
-        lessonCount: 28,
-        description: "Основы программирования на Python",
-        tags: ["12"],
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "Мои курсы",
-    courses: [
-      {
-        id: "3",
-        title: "React продвинутый",
-        logo: "../../../assets/courses/JS.png",
-        lessonCount: 45,
-        description: "Продвинутые техники в React",
-        tags: ["12"],
-      },
-    ],
-  },
-  {
-    id: 3,
-    title: "Алгоритмы и структуры данных",
-    courses: [
-      {
-        id: "4",
-        title: "Алгоритмы на JavaScript",
-        logo: "../../../assets/logo/logo.png",
-        lessonCount: 35,
-        description: "Изучение основных алгоритмов",
-        tags: ["12"],
-      },
+import type { CourseListResponse } from "@/app/http/types/course";
 
-      {
-        id: "5",
-        title: "Алгоритмы на JavaScript",
-        logo: "../../../assets/logo/logo.png",
-        lessonCount: 35,
-        description: "Изучение основных алгоритмов",
-        tags: ["12"],
-      },
-    ],
-  },
-];
+const Courses = ({ initialCourses }: { initialCourses: CourseListResponse }) => {
+  console.log("INIT", initialCourses);
 
-const Courses = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOption, setSortOption] = useState("Все");
+  const [isOpenCourse, setIsOpenCourse] = useState(false);
 
-  const getAllCourses = () => {
-    return categories.flatMap((category) =>
-      category.courses.map((course) => ({
-        ...course,
-        categoryTitle: category.title,
-      }))
-    );
+  console.log(isOpenCourse);
+  const handleOpen = () => {
+    setIsOpenCourse((prev) => !prev);
   };
 
-  const filteredCourses = useMemo(() => {
-    let courses = getAllCourses();
-
-    if (searchQuery.trim()) {
-      courses = courses.filter(
-        (course) =>
-          course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          course.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (sortOption !== "Все") {
-      switch (sortOption) {
-        case "По алфавиту":
-          courses.sort((a, b) => a.title.localeCompare(b.title));
-          break;
-
-        case "По количеству уроков":
-          courses.sort((a, b) => b.lessonCount - a.lessonCount);
-          break;
-
-        default:
-          break;
-      }
-    }
-
-    return courses;
-  }, [searchQuery, sortOption]);
-
-  const shouldShowCategories = !searchQuery.trim() && sortOption === "Все";
-
   return (
+    <div className={styles.courses}>
+      <div className={styles.courses__container}>
+        <CourseFilters handleOpen={handleOpen} />
+
+        <p>hello</p>
+
+        {(initialCourses?.courses ?? []).map((itemm) => {
+          const item = {
+            id: itemm.id,
+            title: itemm.title,
+            logo: itemm.logo,
+            lessonCount: 0,
+            description: itemm.description,
+            tags: itemm.tags,
+          };
+
+          return <Course key={item.id} item={item} />;
+        })}
+      </div>
+    </div>
+  );
+  /*   return (
     <div className={styles.courses}>
       <div className={styles.courses__container}>
         <div className={styles.courses__preview}>
@@ -140,6 +67,7 @@ const Courses = () => {
       </div>
     </div>
   );
+}; */
 };
 
 export default Courses;

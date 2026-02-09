@@ -6,8 +6,31 @@ import { useRouter } from "next/navigation";
 import styles from "./index.module.scss";
 import type { CourseItem } from "./types";
 
+import { getBaseUrl } from "@/app/http/api";
+
+const getValidImageSrc = (logo: string): string | null => {
+  if (!logo || typeof logo !== "string" || !logo.trim()) return null;
+
+  const trimmed = logo.trim();
+
+  if (trimmed.startsWith("data:")) return trimmed;
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+
+  if (trimmed.startsWith("/")) return `${getBaseUrl()}${trimmed}`;
+
+  try {
+    new URL(trimmed);
+
+    return trimmed;
+  } catch {
+    return null;
+  }
+};
+
 const Course = ({ item }: CourseItem) => {
   const router = useRouter();
+  const imageSrc = getValidImageSrc(item.logo);
 
   const handleNavigate = () => {
     router.push(`/admin/courses/${item.id}`);
@@ -15,13 +38,20 @@ const Course = ({ item }: CourseItem) => {
 
   return (
     <div className={styles.course} onClick={handleNavigate}>
-      <Image
-        src={item.logo}
-        alt="preview"
-        className={styles.course__image}
-        width={100}
-        height={100}
-      />
+      {imageSrc ? (
+        <Image
+          src={imageSrc}
+          alt="preview"
+          className={styles.course__image}
+          width={100}
+          height={100}
+        />
+      ) : (
+        <div
+          className={styles.course__image}
+          style={{ width: 100, height: 100, background: "#eee" }}
+        />
+      )}
       <div className={styles.course__preview}>
         <h3 className={styles.course__title}>{item.title}</h3>
         <p className={styles.course__description}>{item.description}</p>
