@@ -1,6 +1,6 @@
 import $api from "./api";
 
-export type CodeLanguage = "javascript" | "python" | "csharp" | "golang";
+export type CodeLanguage = "javascript" | "python" | "csharp" | "golang" | "java";
 
 export interface ExecuteCodeRequest {
   language: CodeLanguage;
@@ -9,6 +9,8 @@ export interface ExecuteCodeRequest {
 
 export interface ExecuteCodeResponse {
   output: string;
+  /** Compile or runtime error from server (stderr). */
+  error?: string;
 }
 
 export class CodeService {
@@ -41,7 +43,7 @@ export class CodeService {
         error?.message ||
         "Не удалось выполнить код";
 
-      return { output: `Ошибка: ${message}` };
+      return { output: "", error: `Ошибка: ${message}` };
     }
   }
 }

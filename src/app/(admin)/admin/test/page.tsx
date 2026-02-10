@@ -17,6 +17,8 @@ print(a + b)`,
 Console.WriteLine(11 + 444);`,
   golang: `// Go
 fmt.Println(11 + 444)`,
+  java: `// Java
+System.out.println(11 + 444);`,
 };
 
 const languages: { value: CodeLanguage; label: string }[] = [
@@ -24,6 +26,7 @@ const languages: { value: CodeLanguage; label: string }[] = [
   { value: "python", label: "Python" },
   { value: "csharp", label: "C#" },
   { value: "golang", label: "Go" },
+  { value: "java", label: "Java" },
 ];
 
 const Page = () => {
@@ -50,7 +53,11 @@ const Page = () => {
     try {
       const result = await CodeService.executeCode({ language, code });
 
-      setOutput(result.output || "Код выполнен, но вывода нет");
+      if (result.error) {
+        setOutput(`Ошибка компиляции/выполнения:\n${result.error}`);
+      } else {
+        setOutput(result.output || "Код выполнен, но вывода нет");
+      }
     } catch (e: any) {
       setOutput(`Ошибка при выполнении: ${e?.message || "Неизвестная ошибка"}`);
     } finally {
