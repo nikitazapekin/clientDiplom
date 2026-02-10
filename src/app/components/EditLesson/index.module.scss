@@ -1,0 +1,20 @@
+@use "../../styles/index.scss" as *;
+
+.lesson {
+  width: 100%;
+  margin-top: px($spacing-lg);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  &__container {
+    max-width: $container-md;
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    row-gap: px($spacing-lg);
+  }
+
+}

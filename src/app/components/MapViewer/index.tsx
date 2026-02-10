@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import styles from "./index.module.scss";
 
@@ -323,15 +323,17 @@ const MapViewer: React.FC = () => {
   const handleElementMouseLeave = () => {
     setHoveredElementId(null);
   };
-
+  const router = useRouter();
   // Обработчик перехода к уроку или контрольной точке
   const handleNavigate = () => {
     if (!modalData || !modalData.targetId) return;
 
     if (modalData.type === "lesson") {
-      window.location.href = `/lessons/${modalData.targetId}`;
+      router.push(`/admin/lesson/${modalData.targetId}`);
+      //   window.location.href = `/lessons/${modalData.targetId}`;
     } else if (modalData.type === "checkpoint") {
-      window.location.href = `/checkpoints/${modalData.targetId}`;
+      router.push(`/admin/checkpoint/${modalData.targetId}`);
+      //  window.location.href = `/checkpoints/${modalData.targetId}`;
     }
   };
 
