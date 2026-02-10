@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+
+import Button from "../Button";
 
 import styles from "./index.module.scss";
 
@@ -1205,6 +1207,11 @@ const Map: React.FC = () => {
     setSelectedDevice(device);
   };
 
+  const router = useRouter();
+
+  const handleNavigateToMap = () => {
+    router.push(`/admin/courses/${courseId}/course`);
+  };
   // Размер карты для отображения в эмуляторе
   const emulatorMapSize = selectedDevice
     ? {
@@ -1480,7 +1487,7 @@ const Map: React.FC = () => {
                   />
                 </div>
               </div>
-              <div className={styles.sizeInfo}>
+              {/*    <div className={styles.sizeInfo}>
                 Размер карты: {mapSize.width} × {mapSize.height}px | Брейкпоинт: {activeBreakpoint}
                 {courseId && ` | Курс: ${courseId}`}
                 {mapId && ` | ID карты: ${mapId.substring(0, 20)}...`}
@@ -1497,7 +1504,15 @@ const Map: React.FC = () => {
                     {checkpointsData[selectedElement.id]?.id?.substring(0, 8)}...
                   </span>
                 )}
-              </div>
+              </div> */}
+
+              <Button
+                text="Просмотр карты"
+                onClick={handleNavigateToMap}
+                color="#9F0FA7"
+                textColor="#fff"
+                width="413px"
+              />
             </div>
           </div>
 
