@@ -6,6 +6,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
+
   &__container {
     max-width: $container-md;
     width: 100%;
@@ -25,19 +26,19 @@
 
 
 .form {
- // background-color: $color-darkLight;
+  // background-color: $color-darkLight;
 
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
- 
+
   &__content {
     display: flex;
     align-items: center;
     justify-content: center;
-   // box-shadow: 9px 10px 4px 0 rgba(0, 0, 0, 0.25);
+    // box-shadow: 9px 10px 4px 0 rgba(0, 0, 0, 0.25);
     background-color: $color-white;
     max-width: $container-xs;
     width: 100%;
@@ -46,6 +47,7 @@
     row-gap: px($spacing-md);
     border-radius: px($radius-large);
   }
+
   &__preview {
     display: flex;
     column-gap: px($spacing-lg);
@@ -65,7 +67,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-  max-width: 613px;
+    max-width: 613px;
   }
 
   &__subpreview {
@@ -75,7 +77,7 @@
     flex-direction: row;
   }
 
-  &__input { 
+  &__input {
     border: none;
     outline: none;
     cursor: pointer;
@@ -84,6 +86,7 @@
     border-radius: $radius-small;
     width: 100%;
   }
+
   &__wrapper {
     display: flex;
     align-items: center;
@@ -91,14 +94,121 @@
     flex-direction: row;
     column-gap: px($spacing-xs);
     width: 100%;
- 
-  }
-  &__label {
 
   }
+
+  &__label {}
+
   &__error {
     margin-left: 20px;
     text-align: right;
     color: $color-red
   }
 }
+
+
+.preview {
+  width: 100%;
+  height: auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-direction: column;
+  max-width: $container-sm;
+
+  &__title {}
+
+  &__wrapper {
+
+
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // box-shadow: 9px 10px 4px 0 rgba(0, 0, 0, 0.25);
+
+    background-color: $color-black;
+    max-width: 100%;
+    width: 100%;
+    height: 400px;
+
+    padding: px($spacing-lg);
+
+    margin-bottom: px($spacing-lg);
+  }
+
+
+  &__content {
+
+    padding: 20px;
+    max-width: $container-xs;
+    width: 100%;
+    height: 100%;
+    background-color: $color-white;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  //  justify-content: center;
+
+    gap: px($spacing-lg)
+  }
+}
+
+
+
+
+
+
+
+/*
+
+ @use "../../styles/index.scss" as *;
+$color-white: #ffffff;
+$color-black: #000000;
+ 
+$color-white: #ffffff;
+$color-black: #000000;
+
+ 
+$color-white: #ffffff;
+$color-black: #000000;
+$color-green: #379c07;
+$color-orange: #e29f22;
+
+
+$color-grayLight:  #f0f0f0;
+$color-gray: #d8d8d8;
+$color-purple: #9f0fa7;
+$color-white: #fff;
+$color-darkLight: #303027;
+$color-dark: #222121;
+$color-red: #d80909;
+
+$container-sm: 1280;
+$container-md: 1400;
+$container-xs: 700;
+
+ 
+$font-xs: 14;
+$font-sx: 20;
+$font-md: 24;
+$font-lg: 32;
+
+$radius-small: 4;
+$radius-medium: 8;
+$radius-large: 16;
+$radius-xlarge: 24;
+$radius-circle: 9999;
+
+$spacing-xs: 4;
+$spacing-sm: 8;
+$spacing-md: 16;
+$spacing-lg: 24;
+$spacing-xl: 32;
+$spacing-xxl: 48;
+$spacing-bg: 60;
+$spacing-vg: 80;
+*/

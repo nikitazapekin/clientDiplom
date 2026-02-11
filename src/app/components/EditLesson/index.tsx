@@ -182,32 +182,41 @@ const EditLesson = () => {
                 <Button color="#9F0FA7" width="50px" textColor="#fff" text="+" onClick={() => {}} />
               </div>
             </div>
-
-            <Button
-              color="#9F0FA7"
-              width="413px"
-              textColor="#fff"
-              text="Сохранить изменения"
-              onClick={() => {}}
-            />
-
-            <Button
-              color="#F5F4F4"
-              width="413px"
-              textColor="#000"
-              text="Комментарии пользователей"
-              onClick={() => {}}
-            />
-
-            <Button
-              color="#F5F4F4"
-              width="413px"
-              textColor="#000"
-              text="Обсуждения"
-              onClick={() => {}}
-            />
           </div>
         </form>
+
+        <div className={styles.preview}>
+          <h2 className={styles.preview__title}>Превью урока</h2>
+
+          <div className={styles.preview__wrapper}>
+            <div className={styles.preview__content}>
+              <h3 className={styles.preview__subtitle}>Переменные var let const</h3>
+            </div>
+          </div>
+        </div>
+        <Button
+          color="#9F0FA7"
+          width="413px"
+          textColor="#fff"
+          text="Сохранить изменения"
+          onClick={() => {}}
+        />
+
+        <Button
+          color="#F5F4F4"
+          width="413px"
+          textColor="#000"
+          text="Комментарии пользователей"
+          onClick={() => {}}
+        />
+
+        <Button
+          color="#F5F4F4"
+          width="413px"
+          textColor="#000"
+          text="Обсуждения"
+          onClick={() => {}}
+        />
       </div>
     </section>
   );
