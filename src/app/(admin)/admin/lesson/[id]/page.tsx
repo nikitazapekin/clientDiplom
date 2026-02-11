@@ -1,9 +1,7 @@
+import EditLesson from "@/app/components/EditLesson";
+
 const Page = () => {
-  return (
-    <div>
-      <h1>Lesson</h1>
-    </div>
-  );
+  return <EditLesson />;
 };
 
 export default Page;
