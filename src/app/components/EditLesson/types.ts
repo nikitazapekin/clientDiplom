@@ -50,6 +50,7 @@ export interface CodeConstraint {
 export interface CodeTaskBlock extends BaseBlock {
   type: "codeTask";
   description?: string;
+  language?: CodeLanguage;
   runnable: boolean;
   startCode?: string;
   expectedOutput?: string;

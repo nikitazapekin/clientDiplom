@@ -79,6 +79,7 @@ const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
   order,
   type: "codeTask",
   runnable: true,
+  language: "javascript",
   startCode: "",
   testCases: [],
 });
@@ -752,12 +753,29 @@ function BlockEditor({
 
     return (
       <div className={styles.blockEditor}>
-        <input
-          className={styles.form__input}
+        <label>Описание задачи (включая базовую функцию/класс)</label>
+        <textarea
+          className={styles.form__textarea}
           value={block.description ?? ""}
           onChange={(e) => updateBlock(slideIndex, block.id, { description: e.target.value })}
-          placeholder="Описание задачи"
+          placeholder="Например: Напишите функцию fibonacci(n) { //... }, которая возвращает n-ое число Фибоначчи"
+          rows={3}
         />
+        <div className={styles.form__wrapper}>
+          <span>Язык программирования:</span>
+          <select
+            value={block.language ?? "javascript"}
+            onChange={(e) =>
+              updateBlock(slideIndex, block.id, { language: e.target.value as CodeLanguage })
+            }
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l.value} value={l.value}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className={styles.form__wrapper}>
           <span>Тип:</span>
           <select
@@ -776,7 +794,7 @@ function BlockEditor({
             <CodeEditor
               value={block.startCode ?? ""}
               onChange={(v) => updateBlock(slideIndex, block.id, { startCode: v })}
-              language="javascript"
+              language={block.language ?? "javascript"}
               height={180}
               className={styles.codeEditorWrap}
             />
@@ -793,12 +811,12 @@ function BlockEditor({
                   <input
                     value={tc.input}
                     onChange={(e) => updateTestCase(i, "input", e.target.value)}
-                    placeholder="Вход"
+                    placeholder="Аргументы функции (например: 5)"
                   />
                   <input
                     value={tc.expectedOutput}
                     onChange={(e) => updateTestCase(i, "expectedOutput", e.target.value)}
-                    placeholder="Ожидаемый вывод"
+                    placeholder="Ожидаемый возврат функции (например: 5)"
                   />
                 </div>
               ))}
@@ -1085,7 +1103,10 @@ function PreviewBlock({
         if (block.testCases?.length) {
           for (const tc of block.testCases) {
             const codeToRun = `const input = ${JSON.stringify(tc.input)};\n${userCode}`;
-            const res = await CodeService.executeCode({ language: "javascript", code: codeToRun });
+            const res = await CodeService.executeCode({
+              language: block.language ?? "javascript",
+              code: codeToRun,
+            });
             const out = (res.output || "").trim();
 
             if (out !== (tc.expectedOutput || "").trim()) {
@@ -1098,7 +1119,10 @@ function PreviewBlock({
 
         onCorrect();
       } else if (!block.runnable) {
-        const res = await CodeService.executeCode({ language: "javascript", code: userCode });
+        const res = await CodeService.executeCode({
+          language: block.language ?? "javascript",
+          code: userCode,
+        });
         const out = (res.output || "").trim();
 
         if (out === (block.expectedOutput || "").trim()) onCorrect();
@@ -1112,7 +1136,7 @@ function PreviewBlock({
         <CodeEditor
           value={userCode}
           onChange={setUserCode}
-          language="javascript"
+          language={block.language ?? "javascript"}
           height={200}
           className={styles.codeEditorWrap}
         />
