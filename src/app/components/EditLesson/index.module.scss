@@ -132,8 +132,8 @@
     background-color: $color-black;
     max-width: 100%;
     width: 100%;
-    height: 400px;
-
+    min-height: 400px;
+height: 100%;
     padding: px($spacing-lg);
 
     margin-bottom: px($spacing-lg);
@@ -310,6 +310,13 @@
   max-width: 100%;
   height: auto;
   border-radius: px($radius-small);
+}
+
+.codeEditorWrap {
+  width: 100%;
+  border-radius: px($radius-small);
+  overflow: hidden;
+  border: 1px solid $color-gray;
 }
 
 

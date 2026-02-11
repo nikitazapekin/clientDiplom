@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 
 import Button from "../Button";
+import CodeEditor from "../CodeEditor";
 
 import styles from "./index.module.scss";
 import type {
@@ -611,26 +612,17 @@ function BlockEditor({
           <option value="demo">Демо (не запускаемый)</option>
           <option value="run">Запускаемый</option>
         </select>
-        <textarea
-          className={styles.form__textarea}
+        <CodeEditor
           value={block.code}
-          onChange={(e) => updateBlock(slideIndex, block.id, { code: e.target.value })}
-          placeholder="Код"
-          rows={6}
-          readOnly={block.runnable}
+          onChange={(v) => updateBlock(slideIndex, block.id, { code: v })}
+          language={block.language}
+          height={220}
+          className={styles.codeEditorWrap}
+          onRun={block.runnable ? () => runCode(block.id, block.language, block.code) : undefined}
+          runLoading={block.runnable && !!codeRunLoading}
         />
-        {block.runnable && (
-          <>
-            <Button
-              color="#9F0FA7"
-              width="120px"
-              textColor="#fff"
-              text={codeRunLoading ? "..." : "Запустить"}
-              onClick={() => runCode(block.id, block.language, block.code)}
-              disabled={!!codeRunLoading}
-            />
-            {codeRunOutput != null && <pre className={styles.codeOutput}>{codeRunOutput}</pre>}
-          </>
+        {block.runnable && codeRunOutput != null && (
+          <pre className={styles.codeOutput}>{codeRunOutput}</pre>
         )}
       </div>
     );
@@ -781,12 +773,12 @@ function BlockEditor({
         {block.runnable ? (
           <>
             <label>Стартовый код</label>
-            <textarea
-              className={styles.form__textarea}
+            <CodeEditor
               value={block.startCode ?? ""}
-              onChange={(e) => updateBlock(slideIndex, block.id, { startCode: e.target.value })}
-              placeholder="Стартовый код"
-              rows={4}
+              onChange={(v) => updateBlock(slideIndex, block.id, { startCode: v })}
+              language="javascript"
+              height={180}
+              className={styles.codeEditorWrap}
             />
             <div>
               <Button
@@ -903,12 +895,12 @@ function BlockEditor({
           onChange={(e) => updateBlock(slideIndex, block.id, { text: e.target.value })}
           placeholder="Текст вопроса"
         />
-        <textarea
-          className={styles.form__textarea}
+        <CodeEditor
           value={block.code ?? ""}
-          onChange={(e) => updateBlock(slideIndex, block.id, { code: e.target.value })}
-          placeholder="Код (опционально)"
-          rows={3}
+          onChange={(v) => updateBlock(slideIndex, block.id, { code: v })}
+          language="javascript"
+          height={120}
+          className={styles.codeEditorWrap}
         />
         <input
           className={styles.form__input}
@@ -954,7 +946,16 @@ function PreviewBlockStatic({ block }: { block: SlideBlock }) {
   if (block.type === "text") return <p>{block.content || "(пусто)"}</p>;
 
   if (block.type === "codeExample")
-    return <pre className={styles.previewCode}>{block.code || "(пусто)"}</pre>;
+    return (
+      <CodeEditor
+        value={block.code || ""}
+        onChange={() => {}}
+        language={block.language}
+        readOnly
+        height={200}
+        className={styles.codeEditorWrap}
+      />
+    );
 
   if (block.type === "source")
     return (
@@ -1024,19 +1025,18 @@ function PreviewBlock({
   if (block.type === "codeExample") {
     return (
       <div>
-        <pre className={styles.previewCode}>{block.code || ""}</pre>
-        {block.runnable && (
-          <>
-            <Button
-              color="#9F0FA7"
-              width="120px"
-              textColor="#fff"
-              text={codeRunLoading ? "..." : "Запустить"}
-              onClick={() => runCode(block.id, block.language, block.code)}
-              disabled={!!codeRunLoading}
-            />
-            {codeRunOutput != null && <pre className={styles.codeOutput}>{codeRunOutput}</pre>}
-          </>
+        <CodeEditor
+          value={block.code || ""}
+          onChange={() => {}}
+          language={block.language}
+          readOnly
+          height={200}
+          className={styles.codeEditorWrap}
+          onRun={block.runnable ? () => runCode(block.id, block.language, block.code) : undefined}
+          runLoading={block.runnable && !!codeRunLoading}
+        />
+        {block.runnable && codeRunOutput != null && (
+          <pre className={styles.codeOutput}>{codeRunOutput}</pre>
         )}
       </div>
     );
@@ -1109,12 +1109,12 @@ function PreviewBlock({
     return (
       <div>
         <p>{block.description}</p>
-        <textarea
+        <CodeEditor
           value={userCode}
-          onChange={(e) => setUserCode(e.target.value)}
-          placeholder="Введите код"
-          className={styles.form__textarea}
-          rows={6}
+          onChange={setUserCode}
+          language="javascript"
+          height={200}
+          className={styles.codeEditorWrap}
         />
         <Button color="#9F0FA7" width="120px" textColor="#fff" text="Проверить" onClick={check} />
         {testError && <p className={styles.form__error}>{testError}</p>}
@@ -1131,7 +1131,16 @@ function PreviewBlock({
     return (
       <div>
         <p>{block.text}</p>
-        {block.code && <pre className={styles.previewCode}>{block.code}</pre>}
+        {block.code && (
+          <CodeEditor
+            value={block.code}
+            onChange={() => {}}
+            language="javascript"
+            readOnly
+            height={120}
+            className={styles.codeEditorWrap}
+          />
+        )}
         {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
         <div>
           {block.options.map((opt, i) => (
