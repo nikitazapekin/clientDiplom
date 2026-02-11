@@ -1,7 +1,7 @@
 import styles from "./index.module.scss";
 import type { ButtonProps } from "./types";
 
-const Button = ({ text, onClick, color, width, textColor }: ButtonProps) => {
+const Button = ({ text, onClick, color, width, textColor, disabled }: ButtonProps) => {
   const buttonStyle = {
     backgroundColor: color,
     maxWidth: width,
@@ -9,7 +9,7 @@ const Button = ({ text, onClick, color, width, textColor }: ButtonProps) => {
   };
 
   return (
-    <button onClick={onClick} className={styles.button} style={buttonStyle}>
+    <button onClick={onClick} className={styles.button} style={buttonStyle} disabled={disabled}>
       {text}
     </button>
   );

@@ -6,4 +6,5 @@ export interface ButtonProps {
   width?: string;
   textColor?: string;
   onClick: MouseEventHandler<HTMLButtonElement>;
+  disabled?: boolean;
 }

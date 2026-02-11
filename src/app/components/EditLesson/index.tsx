@@ -1,318 +1,1162 @@
 "use client";
 
+import { useCallback, useState } from "react";
+
 import Button from "../Button";
 
 import styles from "./index.module.scss";
+import type {
+  CodeConstraintType,
+  CodeExampleBlock,
+  CodeTaskBlock,
+  ImageBlock,
+  Slide,
+  SlideBlock,
+  SlideType,
+  SourceBlock,
+  TableBlock,
+  TextBlock,
+  TheoryQuestionBlock,
+} from "./types";
 
-const EditLesson = () => {
+import type { CodeLanguage } from "@/app/http/codeService";
+import { CodeService } from "@/app/http/codeService";
+
+const genId = () => `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+const LANGUAGES: { value: CodeLanguage; label: string }[] = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "python", label: "Python" },
+  { value: "csharp", label: "C#" },
+  { value: "java", label: "Java" },
+  { value: "golang", label: "Go" },
+];
+
+const createTextBlock = (order: number): TextBlock => ({
+  id: genId(),
+  order,
+  type: "text",
+  content: "",
+});
+
+const createCodeExampleBlock = (order: number): CodeExampleBlock => ({
+  id: genId(),
+  order,
+  type: "codeExample",
+  code: "",
+  language: "javascript",
+  runnable: false,
+});
+
+const createSourceBlock = (order: number): SourceBlock => ({
+  id: genId(),
+  order,
+  type: "source",
+  url: "",
+});
+
+const createTableBlock = (order: number, rows = 2, cols = 2): TableBlock => ({
+  id: genId(),
+  order,
+  type: "table",
+  rows,
+  cols,
+  cells: Array(rows)
+    .fill(null)
+    .map(() => Array(cols).fill("")),
+});
+
+const createImageBlock = (order: number): ImageBlock => ({
+  id: genId(),
+  order,
+  type: "image",
+  url: "",
+});
+
+const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
+  id: genId(),
+  order,
+  type: "codeTask",
+  runnable: true,
+  startCode: "",
+  testCases: [],
+});
+
+const createTheoryQuestionBlock = (order: number): TheoryQuestionBlock => ({
+  id: genId(),
+  order,
+  type: "theoryQuestion",
+  options: ["", ""],
+  correctIndex: 0,
+});
+
+function sortBlocks(blocks: SlideBlock[]): SlideBlock[] {
+  return [...blocks].sort((a, b) => a.order - b.order);
+}
+
+export default function EditLesson() {
+  const [slides, setSlides] = useState<Slide[]>([]);
+  const [selectedSlideIndex, setSelectedSlideIndex] = useState<number | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [previewSlideIndex, setPreviewSlideIndex] = useState(0);
+  const [testAnswer, setTestAnswer] = useState<{ [slideId: string]: string | number }>({});
+  const [testError, setTestError] = useState<{ [slideId: string]: string }>({});
+  const [codeRunOutput, setCodeRunOutput] = useState<{ [blockId: string]: string }>({});
+  const [codeRunLoading, setCodeRunLoading] = useState<{ [blockId: string]: boolean }>({});
+
+  const selectedSlide = selectedSlideIndex !== null ? slides[selectedSlideIndex] : null;
+  const lessonSlides = slides.filter((s) => s.type === "lesson");
+  const testSlides = slides.filter((s) => s.type === "test");
+
+  const addSlide = useCallback(
+    (type: SlideType) => {
+      const newSlide: Slide = {
+        id: genId(),
+        title: type === "lesson" ? "Новый слайд" : "Новый тест",
+        type,
+        order: slides.length,
+        blocks: [],
+      };
+
+      setSlides((prev) => [...prev, newSlide]);
+      setSelectedSlideIndex(slides.length);
+    },
+    [slides.length]
+  );
+
+  const updateSlide = useCallback((index: number, patch: Partial<Slide>) => {
+    setSlides((prev) => {
+      const next = [...prev];
+
+      next[index] = { ...next[index], ...patch };
+
+      return next;
+    });
+  }, []);
+
+  const addBlock = useCallback(
+    (slideIndex: number, kind: SlideBlock["type"]) => {
+      const slide = slides[slideIndex];
+
+      if (!slide) return;
+
+      const order = slide.blocks.length;
+      let block: SlideBlock;
+
+      switch (kind) {
+        case "text":
+          block = createTextBlock(order);
+          break;
+
+        case "codeExample":
+          block = createCodeExampleBlock(order);
+          break;
+
+        case "source":
+          block = createSourceBlock(order);
+          break;
+
+        case "table":
+          block = createTableBlock(order);
+          break;
+
+        case "image":
+          block = createImageBlock(order);
+          break;
+
+        case "codeTask":
+          block = createCodeTaskBlock(order);
+          break;
+
+        case "theoryQuestion":
+          block = createTheoryQuestionBlock(order);
+          break;
+
+        default:
+          return;
+      }
+
+      setSlides((prev) => {
+        const next = [...prev];
+
+        next[slideIndex] = { ...next[slideIndex], blocks: [...next[slideIndex].blocks, block] };
+
+        return next;
+      });
+    },
+    [slides]
+  );
+
+  const updateBlock = useCallback(
+    (slideIndex: number, blockId: string, patch: Partial<SlideBlock>) => {
+      setSlides((prev) => {
+        const next = [...prev];
+        const slide = next[slideIndex];
+
+        if (!slide) return prev;
+
+        next[slideIndex] = {
+          ...slide,
+          blocks: slide.blocks.map((b) =>
+            b.id === blockId ? { ...b, ...patch } : b
+          ) as SlideBlock[],
+        };
+
+        return next;
+      });
+    },
+    []
+  );
+
+  const deleteBlock = useCallback((slideIndex: number, blockId: string) => {
+    setSlides((prev) => {
+      const next = [...prev];
+      const slide = next[slideIndex];
+
+      if (!slide) return prev;
+
+      const blocks = slide.blocks.filter((b) => b.id !== blockId);
+
+      blocks.forEach((b, i) => ((b as SlideBlock).order = i));
+      next[slideIndex] = { ...slide, blocks };
+
+      return next;
+    });
+  }, []);
+
+  const moveBlock = useCallback((slideIndex: number, blockId: string, direction: "up" | "down") => {
+    setSlides((prev) => {
+      const next = [...prev];
+      const slide = next[slideIndex];
+
+      if (!slide) return prev;
+
+      const sorted = sortBlocks(slide.blocks);
+      const i = sorted.findIndex((b) => b.id === blockId);
+
+      if (i < 0) return prev;
+
+      const j = direction === "up" ? i - 1 : i + 1;
+
+      if (j < 0 || j >= sorted.length) return prev;
+
+      [sorted[i].order, sorted[j].order] = [sorted[j].order, sorted[i].order];
+      next[slideIndex] = { ...slide, blocks: sortBlocks(sorted) };
+
+      return next;
+    });
+  }, []);
+
+  const runCode = useCallback(async (blockId: string, language: CodeLanguage, code: string) => {
+    setCodeRunLoading((prev) => ({ ...prev, [blockId]: true }));
+    setCodeRunOutput((prev) => ({ ...prev, [blockId]: "" }));
+    try {
+      const res = await CodeService.executeCode({ language, code });
+      const text = res.error ? `Ошибка: ${res.error}` : res.output || "";
+
+      setCodeRunOutput((prev) => ({ ...prev, [blockId]: text }));
+    } finally {
+      setCodeRunLoading((prev) => ({ ...prev, [blockId]: false }));
+    }
+  }, []);
+
+  const saveLesson = useCallback(() => {
+    const data = JSON.stringify({ slides });
+
+    console.log("Lesson content (for API):", data);
+    // TODO: LessonService.updateLesson(id, { content: data });
+  }, [slides]);
+
+  if (previewMode) {
+    const allOrdered = [...lessonSlides, ...testSlides].sort((a, b) => a.order - b.order);
+    const current = allOrdered[previewSlideIndex];
+
+    if (!current) {
+      return (
+        <section className={styles.lesson}>
+          <div className={styles.lesson__container}>
+            <h1 className={styles.lesson__title}>Превью урока</h1>
+            <p>Нет слайдов.</p>
+            <Button
+              color="#9F0FA7"
+              width="200px"
+              textColor="#fff"
+              text="Выйти из превью"
+              onClick={() => setPreviewMode(false)}
+            />
+          </div>
+        </section>
+      );
+    }
+
+    const isTest = current.type === "test";
+    const goNext = () => {
+      if (previewSlideIndex >= allOrdered.length - 1) setPreviewMode(false);
+      else setPreviewSlideIndex((i) => i + 1);
+    };
+
+    return (
+      <section className={styles.lesson}>
+        <div className={styles.lesson__container}>
+          <div className={styles.previewTop}>
+            <h1 className={styles.lesson__title}>Превью: {current.title}</h1>
+            <Button
+              color="#9F0FA7"
+              width="200px"
+              textColor="#fff"
+              text="Выйти из превью"
+              onClick={() => setPreviewMode(false)}
+            />
+          </div>
+          <div className={styles.preview__wrapper}>
+            <div className={styles.preview__content}>
+              <h3 className={styles.preview__subtitle}>{current.title}</h3>
+              {sortBlocks(current.blocks).map((block) => (
+                <PreviewBlock
+                  key={block.id}
+                  block={block}
+                  slideId={current.id}
+                  runCode={runCode}
+                  codeRunOutput={codeRunOutput[block.id]}
+                  codeRunLoading={codeRunLoading[block.id]}
+                  testAnswer={testAnswer[current.id]}
+                  setTestAnswer={(v) => setTestAnswer((prev) => ({ ...prev, [current.id]: v }))}
+                  testError={testError[current.id]}
+                  setTestError={(v) => setTestError((prev) => ({ ...prev, [current.id]: v }))}
+                  onCorrect={goNext}
+                />
+              ))}
+              {!isTest && (
+                <Button
+                  color="#9F0FA7"
+                  width="200px"
+                  textColor="#fff"
+                  text="Далее"
+                  onClick={goNext}
+                />
+              )}
+            </div>
+          </div>
+          <div className={styles.previewNav}>
+            <span>
+              {previewSlideIndex + 1} / {allOrdered.length}
+            </span>
+            <Button
+              color="#9F0FA7"
+              width="120px"
+              textColor="#fff"
+              text="Назад"
+              onClick={() => setPreviewSlideIndex((i) => Math.max(0, i - 1))}
+            />
+            <Button color="#9F0FA7" width="120px" textColor="#fff" text="Вперёд" onClick={goNext} />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className={styles.lesson}>
       <div className={styles.lesson__container}>
         <h1 className={styles.lesson__title}>Редактирование урока</h1>
 
-        <Button
-          width="413px"
-          color="#9F0FA7"
-          textColor="#fff"
-          text="Создать слайд"
-          onClick={() => {}}
-        />
-        <form className={styles.form}>
-          <div className={styles.form__content}>
-            <div className={styles.form__panel}>
-              <div className={styles.form__subpreview}>
-                <label className={styles.form__label}>Название слайда</label>
-                <p className={styles.form__error}>error</p>
-              </div>
-              <input
-                className={styles.form__input}
-                placeholder="Введите название"
-                type="email"
-                //   disabled={isLoading}
-                // {...register("email")}
-              />
-            </div>
+        <div className={styles.slideActions}>
+          <Button
+            color="#9F0FA7"
+            width="180px"
+            textColor="#fff"
+            text="Слайд (урок)"
+            onClick={() => addSlide("lesson")}
+          />
+          <Button
+            color="#6a0f6e"
+            width="180px"
+            textColor="#fff"
+            text="Слайд (тест)"
+            onClick={() => addSlide("test")}
+          />
+        </div>
 
-            <div className={styles.form__panel}>
-              <div className={styles.form__subpreview}>
-                <label className={styles.form__label}>Тип слайда</label>
-                <p className={styles.form__error}>error</p>
-              </div>
-              <select>
-                <option>Урок</option>
-                <option>Задача</option>
-              </select>
-              {/*  <input
-                className={styles.form__input}
-                placeholder="Введите название"
-                type="email"
-              //   disabled={isLoading}
-              // {...register("email")}
-              /> */}
-            </div>
-
-            <div className={styles.form__panel}>
-              <div className={styles.form__subpreview}>
-                <label className={styles.form__label}>Добавить текст</label>
-                <p className={styles.form__error}>error</p>
-              </div>
-
-              <div className={styles.form__wrapper}>
-                <input
-                  className={styles.form__input}
-                  placeholder="Введите название"
-                  type="email"
-                  //   disabled={isLoading}
-                  // {...register("email")}
-                />
-
-                <Button color="#9F0FA7" width="50px" textColor="#fff" text="+" onClick={() => {}} />
-              </div>
-            </div>
-
-            <div className={styles.form__panel}>
-              <div className={styles.form__subpreview}>
-                <label className={styles.form__label}>Добавить кодовый приме</label>
-                <p className={styles.form__error}>error</p>
-              </div>
-
-              <div className={styles.form__wrapper}>
-                <input
-                  className={styles.form__input}
-                  placeholder="Введите код"
-                  type="email"
-                  //   disabled={isLoading}
-                  // {...register("email")}
-                />
-
-                <select>
-                  <option>JavaScript</option>
-                  <option>C#</option>
-                  <option>Python</option>
-                  <option>Java</option>
-                  <option>Go</option>
-                </select>
-
-                <select>
-                  <option>Запуск</option>
-                  <option>Демо</option>
-                </select>
-
-                <Button color="#9F0FA7" width="50px" textColor="#fff" text="+" onClick={() => {}} />
-              </div>
-            </div>
-
-            <div className={styles.form__panel}>
-              <div className={styles.form__subpreview}>
-                <label className={styles.form__label}>Добавить таблицу</label>
-                <p className={styles.form__error}>error</p>
-              </div>
-
-              <div className={styles.form__wrapper}>
-                <input
-                  className={styles.form__input}
-                  placeholder="Введите код"
-                  type="email"
-                  //   disabled={isLoading}
-                  // {...register("email")}
-                />
-
-                <select>
-                  <option>1</option>
-                  <option>2</option>
-                  <option>3</option>
-                  <option>4</option>
-                  <option>5</option>
-                  <option>6</option>
-                  <option>7</option>
-                  <option>8</option>
-                  <option>9</option>
-                </select>
-
-                <select>
-                  <option>1</option>
-                  <option>2</option>
-                  <option>3</option>
-                  <option>4</option>
-                  <option>5</option>
-                  <option>6</option>
-                  <option>7</option>
-                  <option>8</option>
-                  <option>9</option>
-                </select>
-
-                <Button color="#9F0FA7" width="50px" textColor="#fff" text="+" onClick={() => {}} />
-              </div>
-            </div>
-
-            <div className={styles.form__panel}>
-              <div className={styles.form__subpreview}>
-                <label className={styles.form__label}>Добавить источник</label>
-                <p className={styles.form__error}>error</p>
-              </div>
-
-              <div className={styles.form__wrapper}>
-                <input
-                  className={styles.form__input}
-                  placeholder="Введите ссылку на источник"
-                  type="email"
-                  //   disabled={isLoading}
-                  // {...register("email")}
-                />
-
-                <Button color="#9F0FA7" width="50px" textColor="#fff" text="+" onClick={() => {}} />
-              </div>
-            </div>
-
-            <div className={styles.form__panel}>
-              <div className={styles.form__subpreview}>
-                <label className={styles.form__label}>Добавить изображение</label>
-                <p className={styles.form__error}>error</p>
-              </div>
-
-              <div className={styles.form__wrapper}>
-                <input
-                  className={styles.form__input}
-                  placeholder="Выберите изображение"
-                  type="email"
-                  //   disabled={isLoading}
-                  // {...register("email")}
-                />
-
-                <Button color="#9F0FA7" width="50px" textColor="#fff" text="+" onClick={() => {}} />
-              </div>
-            </div>
+        {slides.length > 0 && (
+          <div className={styles.slideTabs}>
+            {slides.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                className={selectedSlideIndex === i ? styles.slideTabActive : styles.slideTab}
+                onClick={() => setSelectedSlideIndex(i)}
+              >
+                {s.type === "test" ? "Тест" : "Урок"} {i + 1}: {s.title || "—"}
+              </button>
+            ))}
           </div>
-        </form>
+        )}
+
+        {selectedSlide !== null && selectedSlideIndex !== null && (
+          <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+            <div className={styles.form__content}>
+              <div className={styles.form__panel}>
+                <label className={styles.form__label}>Название слайда</label>
+                <input
+                  className={styles.form__input}
+                  value={selectedSlide.title}
+                  onChange={(e) => updateSlide(selectedSlideIndex, { title: e.target.value })}
+                  placeholder="Введите название"
+                />
+              </div>
+              <div className={styles.form__panel}>
+                <label className={styles.form__label}>Тип слайда</label>
+                <select
+                  value={selectedSlide.type}
+                  onChange={(e) =>
+                    updateSlide(selectedSlideIndex, { type: e.target.value as SlideType })
+                  }
+                >
+                  <option value="lesson">Урок</option>
+                  <option value="test">Тест</option>
+                </select>
+              </div>
+
+              {selectedSlide.type === "lesson" && (
+                <div className={styles.blockAddRow}>
+                  <span className={styles.form__label}>Добавить блок:</span>
+                  <Button
+                    color="#9F0FA7"
+                    width="auto"
+                    textColor="#fff"
+                    text="Текст"
+                    onClick={() => addBlock(selectedSlideIndex, "text")}
+                  />
+                  <Button
+                    color="#9F0FA7"
+                    width="auto"
+                    textColor="#fff"
+                    text="Код (пример)"
+                    onClick={() => addBlock(selectedSlideIndex, "codeExample")}
+                  />
+                  <Button
+                    color="#9F0FA7"
+                    width="auto"
+                    textColor="#fff"
+                    text="Источник"
+                    onClick={() => addBlock(selectedSlideIndex, "source")}
+                  />
+                  <Button
+                    color="#9F0FA7"
+                    width="auto"
+                    textColor="#fff"
+                    text="Таблица"
+                    onClick={() => addBlock(selectedSlideIndex, "table")}
+                  />
+                  <Button
+                    color="#9F0FA7"
+                    width="auto"
+                    textColor="#fff"
+                    text="Изображение"
+                    onClick={() => addBlock(selectedSlideIndex, "image")}
+                  />
+                </div>
+              )}
+              {selectedSlide.type === "test" && (
+                <div className={styles.blockAddRow}>
+                  <span className={styles.form__label}>Добавить блок:</span>
+                  <Button
+                    color="#9F0FA7"
+                    width="auto"
+                    textColor="#fff"
+                    text="Текст"
+                    onClick={() => addBlock(selectedSlideIndex, "text")}
+                  />
+                  <Button
+                    color="#9F0FA7"
+                    width="auto"
+                    textColor="#fff"
+                    text="Задача с кодом"
+                    onClick={() => addBlock(selectedSlideIndex, "codeTask")}
+                  />
+                  <Button
+                    color="#9F0FA7"
+                    width="auto"
+                    textColor="#fff"
+                    text="Теор. вопрос"
+                    onClick={() => addBlock(selectedSlideIndex, "theoryQuestion")}
+                  />
+                </div>
+              )}
+
+              <div className={styles.blocksList}>
+                <label className={styles.form__label}>Блоки (порядок можно менять)</label>
+                {sortBlocks(selectedSlide.blocks).map((block, idx) => (
+                  <div key={block.id} className={styles.blockCard}>
+                    <div className={styles.blockCard__toolbar}>
+                      <span className={styles.blockCard__type}>{block.type}</span>
+                      <button
+                        type="button"
+                        onClick={() => moveBlock(selectedSlideIndex, block.id, "up")}
+                        disabled={idx === 0}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveBlock(selectedSlideIndex, block.id, "down")}
+                        disabled={idx === selectedSlide.blocks.length - 1}
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.blockCard__del}
+                        onClick={() => deleteBlock(selectedSlideIndex, block.id)}
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                    <BlockEditor
+                      block={block}
+                      slideIndex={selectedSlideIndex}
+                      updateBlock={updateBlock}
+                      runCode={runCode}
+                      codeRunOutput={codeRunOutput[block.id]}
+                      codeRunLoading={codeRunLoading[block.id]}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </form>
+        )}
 
         <div className={styles.preview}>
           <h2 className={styles.preview__title}>Превью урока</h2>
-
           <div className={styles.preview__wrapper}>
             <div className={styles.preview__content}>
-              <h3 className={styles.preview__subtitle}>Переменные var let const</h3>
+              {slides.length === 0 ? (
+                <p>Добавьте слайды</p>
+              ) : (
+                sortBlocks(selectedSlide?.blocks ?? []).map((b) => (
+                  <PreviewBlockStatic key={b.id} block={b} />
+                ))
+              )}
             </div>
           </div>
         </div>
+
+        <Button
+          color="#9F0FA7"
+          width="413px"
+          textColor="#fff"
+          text="Открыть превью"
+          onClick={() => setPreviewMode(true)}
+        />
         <Button
           color="#9F0FA7"
           width="413px"
           textColor="#fff"
           text="Сохранить изменения"
-          onClick={() => {}}
-        />
-
-        <Button
-          color="#F5F4F4"
-          width="413px"
-          textColor="#000"
-          text="Комментарии пользователей"
-          onClick={() => {}}
-        />
-
-        <Button
-          color="#F5F4F4"
-          width="413px"
-          textColor="#000"
-          text="Обсуждения"
-          onClick={() => {}}
+          onClick={saveLesson}
         />
       </div>
     </section>
   );
-};
+}
 
-export default EditLesson;
+function BlockEditor({
+  block,
+  slideIndex,
+  updateBlock,
+  runCode,
+  codeRunOutput,
+  codeRunLoading,
+}: {
+  block: SlideBlock;
+  slideIndex: number;
+  updateBlock: (slideIndex: number, blockId: string, patch: Partial<SlideBlock>) => void;
+  runCode: (blockId: string, lang: CodeLanguage, code: string) => void;
+  codeRunOutput: string | undefined;
+  codeRunLoading: boolean | undefined;
+}) {
+  if (block.type === "text") {
+    return (
+      <textarea
+        className={styles.form__textarea}
+        value={block.content}
+        onChange={(e) => updateBlock(slideIndex, block.id, { content: e.target.value })}
+        placeholder="Текст"
+      />
+    );
+  }
 
-/*
- <div className={styles.form__inputs}>
-          <div className={styles.form__panel}>
-            <div className={styles.form__subpreview}>
-              <label className={styles.form__label}>Почта</label>
-              {errors.email && <p className={styles.form__error}>{errors.email.message}</p>}
+  if (block.type === "codeExample") {
+    return (
+      <div className={styles.blockEditor}>
+        <select
+          value={block.language}
+          onChange={(e) =>
+            updateBlock(slideIndex, block.id, { language: e.target.value as CodeLanguage })
+          }
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.value} value={l.value}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={block.runnable ? "run" : "demo"}
+          onChange={(e) =>
+            updateBlock(slideIndex, block.id, { runnable: e.target.value === "run" })
+          }
+        >
+          <option value="demo">Демо (не запускаемый)</option>
+          <option value="run">Запускаемый</option>
+        </select>
+        <textarea
+          className={styles.form__textarea}
+          value={block.code}
+          onChange={(e) => updateBlock(slideIndex, block.id, { code: e.target.value })}
+          placeholder="Код"
+          rows={6}
+          readOnly={block.runnable}
+        />
+        {block.runnable && (
+          <>
+            <Button
+              color="#9F0FA7"
+              width="120px"
+              textColor="#fff"
+              text={codeRunLoading ? "..." : "Запустить"}
+              onClick={() => runCode(block.id, block.language, block.code)}
+              disabled={!!codeRunLoading}
+            />
+            {codeRunOutput != null && <pre className={styles.codeOutput}>{codeRunOutput}</pre>}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (block.type === "source") {
+    return (
+      <div className={styles.blockEditor}>
+        <input
+          className={styles.form__input}
+          value={block.url}
+          onChange={(e) => updateBlock(slideIndex, block.id, { url: e.target.value })}
+          placeholder="Ссылка на источник"
+        />
+        <input
+          className={styles.form__input}
+          value={block.note ?? ""}
+          onChange={(e) => updateBlock(slideIndex, block.id, { note: e.target.value || undefined })}
+          placeholder="Примечание (описание источника)"
+        />
+      </div>
+    );
+  }
+
+  if (block.type === "table") {
+    const setCell = (r: number, c: number, v: string) => {
+      const cells = block.cells.map((row, ri) =>
+        row.map((cell, ci) => (ri === r && ci === c ? v : cell))
+      );
+
+      updateBlock(slideIndex, block.id, { cells });
+    };
+    const setSize = (rows: number, cols: number) => {
+      const cells: string[][] = [];
+
+      for (let r = 0; r < rows; r++) {
+        cells[r] = [];
+
+        for (let c = 0; c < cols; c++) cells[r][c] = block.cells[r]?.[c] ?? "";
+      }
+
+      updateBlock(slideIndex, block.id, { rows, cols, cells });
+    };
+
+    return (
+      <div className={styles.blockEditor}>
+        <div className={styles.form__wrapper}>
+          <span>Строк:</span>
+          <select value={block.rows} onChange={(e) => setSize(Number(e.target.value), block.cols)}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+          <span>Столбцов:</span>
+          <select value={block.cols} onChange={(e) => setSize(block.rows, Number(e.target.value))}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+        <table className={styles.table}>
+          <tbody>
+            {block.cells.map((row, r) => (
+              <tr key={r}>
+                {row.map((cell, c) => (
+                  <td key={c}>
+                    <input
+                      value={cell}
+                      onChange={(e) => setCell(r, c, e.target.value)}
+                      className={styles.tableInput}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (block.type === "image") {
+    return (
+      <input
+        className={styles.form__input}
+        value={block.url}
+        onChange={(e) => updateBlock(slideIndex, block.id, { url: e.target.value })}
+        placeholder="URL изображения"
+      />
+    );
+  }
+
+  if (block.type === "codeTask") {
+    const addTestCase = () => {
+      const testCases = [...(block.testCases ?? []), { input: "", expectedOutput: "" }];
+
+      updateBlock(slideIndex, block.id, { testCases });
+    };
+    const updateTestCase = (i: number, field: "input" | "expectedOutput", value: string) => {
+      const testCases = [...(block.testCases ?? [])];
+
+      if (!testCases[i]) testCases[i] = { input: "", expectedOutput: "" };
+
+      testCases[i][field] = value;
+      updateBlock(slideIndex, block.id, { testCases });
+    };
+    const addConstraint = () => {
+      const constraints = [
+        ...(block.constraints ?? []),
+        { type: "maxTimeMs" as CodeConstraintType, value: 1000 },
+      ];
+
+      updateBlock(slideIndex, block.id, { constraints });
+    };
+    const updateConstraint = (i: number, type: CodeConstraintType, value: number | string[]) => {
+      const constraints = [...(block.constraints ?? [])];
+
+      if (!constraints[i]) constraints[i] = { type: "maxTimeMs", value: 1000 };
+
+      constraints[i] = { type, value };
+      updateBlock(slideIndex, block.id, { constraints });
+    };
+
+    return (
+      <div className={styles.blockEditor}>
+        <input
+          className={styles.form__input}
+          value={block.description ?? ""}
+          onChange={(e) => updateBlock(slideIndex, block.id, { description: e.target.value })}
+          placeholder="Описание задачи"
+        />
+        <div className={styles.form__wrapper}>
+          <span>Тип:</span>
+          <select
+            value={block.runnable ? "run" : "output"}
+            onChange={(e) =>
+              updateBlock(slideIndex, block.id, { runnable: e.target.value === "run" })
+            }
+          >
+            <option value="run">С запуском (стартовый код + тест-кейсы)</option>
+            <option value="output">Без запуска (задача на вывод)</option>
+          </select>
+        </div>
+        {block.runnable ? (
+          <>
+            <label>Стартовый код</label>
+            <textarea
+              className={styles.form__textarea}
+              value={block.startCode ?? ""}
+              onChange={(e) => updateBlock(slideIndex, block.id, { startCode: e.target.value })}
+              placeholder="Стартовый код"
+              rows={4}
+            />
+            <div>
+              <Button
+                color="#9F0FA7"
+                width="auto"
+                textColor="#fff"
+                text="+ Тест-кейс"
+                onClick={addTestCase}
+              />
+              {(block.testCases ?? []).map((tc, i) => (
+                <div key={i} className={styles.testCase}>
+                  <input
+                    value={tc.input}
+                    onChange={(e) => updateTestCase(i, "input", e.target.value)}
+                    placeholder="Вход"
+                  />
+                  <input
+                    value={tc.expectedOutput}
+                    onChange={(e) => updateTestCase(i, "expectedOutput", e.target.value)}
+                    placeholder="Ожидаемый вывод"
+                  />
+                </div>
+              ))}
             </div>
+            <div>
+              <Button
+                color="#9F0FA7"
+                width="auto"
+                textColor="#fff"
+                text="+ Ограничение"
+                onClick={addConstraint}
+              />
+              {(block.constraints ?? []).map((c, i) => (
+                <div key={i} className={styles.form__wrapper}>
+                  <select
+                    value={c.type}
+                    onChange={(e) =>
+                      updateConstraint(i, e.target.value as CodeConstraintType, c.value)
+                    }
+                  >
+                    <option value="maxTimeMs">Время &lt; N мс</option>
+                    <option value="maxLines">Меньше N строк</option>
+                    <option value="forbiddenTokens">Запрещённые слова</option>
+                  </select>
+                  {c.type === "maxTimeMs" && (
+                    <input
+                      type="number"
+                      value={typeof c.value === "number" ? c.value : 1000}
+                      onChange={(e) => updateConstraint(i, "maxTimeMs", Number(e.target.value))}
+                    />
+                  )}
+                  {c.type === "maxLines" && (
+                    <input
+                      type="number"
+                      value={typeof c.value === "number" ? c.value : 30}
+                      onChange={(e) => updateConstraint(i, "maxLines", Number(e.target.value))}
+                    />
+                  )}
+                  {c.type === "forbiddenTokens" && (
+                    <input
+                      value={(c.value as string[]).join(",")}
+                      onChange={(e) =>
+                        updateConstraint(
+                          i,
+                          "forbiddenTokens",
+                          e.target.value.split(",").map((s) => s.trim())
+                        )
+                      }
+                      placeholder="через запятую"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <label>Ожидаемый вывод (задача на вывод)</label>
             <input
               className={styles.form__input}
-              placeholder="Введите почту"
-              type="email"
-              disabled={isLoading}
-              {...register("email")}
+              value={block.expectedOutput ?? ""}
+              onChange={(e) =>
+                updateBlock(slideIndex, block.id, { expectedOutput: e.target.value })
+              }
+              placeholder="Ожидаемый вывод"
             />
+            <label>Код для ввода (в превью пользователь вводит код)</label>
+            <textarea
+              className={styles.form__textarea}
+              placeholder="В превью: поле ввода кода"
+              rows={2}
+              readOnly
+            />
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (block.type === "theoryQuestion") {
+    const addOption = () => updateBlock(slideIndex, block.id, { options: [...block.options, ""] });
+    const setOption = (i: number, v: string) => {
+      const options = [...block.options];
+
+      options[i] = v;
+      updateBlock(slideIndex, block.id, { options });
+    };
+
+    return (
+      <div className={styles.blockEditor}>
+        <input
+          className={styles.form__input}
+          value={block.text ?? ""}
+          onChange={(e) => updateBlock(slideIndex, block.id, { text: e.target.value })}
+          placeholder="Текст вопроса"
+        />
+        <textarea
+          className={styles.form__textarea}
+          value={block.code ?? ""}
+          onChange={(e) => updateBlock(slideIndex, block.id, { code: e.target.value })}
+          placeholder="Код (опционально)"
+          rows={3}
+        />
+        <input
+          className={styles.form__input}
+          value={block.imageUrl ?? ""}
+          onChange={(e) => updateBlock(slideIndex, block.id, { imageUrl: e.target.value })}
+          placeholder="URL изображения"
+        />
+        <label>Варианты ответа (правильный выберите ниже)</label>
+        {block.options.map((opt, i) => (
+          <div key={i} className={styles.form__wrapper}>
+            <input
+              value={opt}
+              onChange={(e) => setOption(i, e.target.value)}
+              placeholder={`Вариант ${i + 1}`}
+              className={styles.form__input}
+            />
+            <label>
+              <input
+                type="radio"
+                name={`correct_${block.id}`}
+                checked={block.correctIndex === i}
+                onChange={() => updateBlock(slideIndex, block.id, { correctIndex: i })}
+              />
+              Верно
+            </label>
           </div>
-
-
-
-
-
-
-
-          //@use '@styles/' as *;
-@use "../../styles/index.scss" as *;
-
-.form {
-  background-color: $color-darkLight;
-
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  &__content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 9px 10px 4px 0 rgba(0, 0, 0, 0.25);
-    background-color: $color-white;
-    max-width: $container-xs;
-    width: 100%;
-    flex-direction: column;
-    padding: px($spacing-md);
-    row-gap: px($spacing-md);
-    border-radius: px($radius-large);
-  }
-  &__preview {
-    display: flex;
-    column-gap: px($spacing-lg);
-    align-items: center;
-    justify-content: center;
-    flex-direction: row-reverse;
+        ))}
+        <Button
+          color="#9F0FA7"
+          width="auto"
+          textColor="#fff"
+          text="+ Вариант"
+          onClick={addOption}
+        />
+      </div>
+    );
   }
 
-  &__inputs {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 413px;
-    row-gap: px($spacing-lg);
-  }
-
-  &__panel {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__subpreview {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    flex-direction: row;
-  }
-
-  &__input { 
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: px($spacing-xs);
-    background-color: $color-grayLight ;
-    border-radius: $radius-small;
-  }
-  &__label {
-
-  }
-  &__error {
-    margin-left: 20px;
-    text-align: right;
-    color: $color-red
-  }
+  return null;
 }
-          */
+
+function PreviewBlockStatic({ block }: { block: SlideBlock }) {
+  if (block.type === "text") return <p>{block.content || "(пусто)"}</p>;
+
+  if (block.type === "codeExample")
+    return <pre className={styles.previewCode}>{block.code || "(пусто)"}</pre>;
+
+  if (block.type === "source")
+    return (
+      <p>
+        <a href={block.url} target="_blank" rel="noopener noreferrer">
+          {block.url || "Источник"}
+        </a>
+        {block.note && ` — ${block.note}`}
+      </p>
+    );
+
+  if (block.type === "table") {
+    return (
+      <table className={styles.table}>
+        <tbody>
+          {block.cells.map((row, r) => (
+            <tr key={r}>
+              {row.map((cell, c) => (
+                <td key={c}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
+
+  if (block.type === "image")
+    return block.url ? (
+      <img src={block.url} alt="" className={styles.previewImg} />
+    ) : (
+      <p>(изображение)</p>
+    );
+
+  if (block.type === "codeTask") return <p>Задача: {block.description || "—"}</p>;
+
+  if (block.type === "theoryQuestion") return <p>Вопрос: {block.text || "—"}</p>;
+
+  return null;
+}
+
+function PreviewBlock({
+  block,
+  slideId,
+  runCode,
+  codeRunOutput,
+  codeRunLoading,
+  testAnswer,
+  setTestAnswer,
+  testError,
+  setTestError,
+  onCorrect,
+}: {
+  block: SlideBlock;
+  slideId: string;
+  runCode: (id: string, lang: CodeLanguage, code: string) => void;
+  codeRunOutput: string | undefined;
+  codeRunLoading: boolean | undefined;
+  testAnswer: string | number | undefined;
+  setTestAnswer: (v: string | number) => void;
+  testError: string | undefined;
+  setTestError: (v: string) => void;
+  onCorrect: () => void;
+}) {
+  if (block.type === "text") return <p>{block.content || ""}</p>;
+
+  if (block.type === "codeExample") {
+    return (
+      <div>
+        <pre className={styles.previewCode}>{block.code || ""}</pre>
+        {block.runnable && (
+          <>
+            <Button
+              color="#9F0FA7"
+              width="120px"
+              textColor="#fff"
+              text={codeRunLoading ? "..." : "Запустить"}
+              onClick={() => runCode(block.id, block.language, block.code)}
+              disabled={!!codeRunLoading}
+            />
+            {codeRunOutput != null && <pre className={styles.codeOutput}>{codeRunOutput}</pre>}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (block.type === "source")
+    return (
+      <p>
+        <a href={block.url} target="_blank" rel="noopener noreferrer">
+          {block.url}
+        </a>
+        {block.note && ` — ${block.note}`}
+      </p>
+    );
+
+  if (block.type === "table") {
+    return (
+      <table className={styles.table}>
+        <tbody>
+          {block.cells.map((row, r) => (
+            <tr key={r}>
+              {row.map((cell, c) => (
+                <td key={c}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
+
+  if (block.type === "image")
+    return block.url ? <img src={block.url} alt="" className={styles.previewImg} /> : null;
+
+  if (block.type === "codeTask") {
+    const userCode =
+      typeof testAnswer === "string" ? testAnswer : block.runnable ? (block.startCode ?? "") : "";
+    const setUserCode = (code: string) => {
+      setTestAnswer(code);
+      setTestError("");
+    };
+    const check = async () => {
+      setTestError("");
+
+      if (block.runnable) {
+        if (block.testCases?.length) {
+          for (const tc of block.testCases) {
+            const codeToRun = `const input = ${JSON.stringify(tc.input)};\n${userCode}`;
+            const res = await CodeService.executeCode({ language: "javascript", code: codeToRun });
+            const out = (res.output || "").trim();
+
+            if (out !== (tc.expectedOutput || "").trim()) {
+              setTestError(`Неверно. Ожидалось: ${tc.expectedOutput}, получено: ${out}`);
+
+              return;
+            }
+          }
+        }
+
+        onCorrect();
+      } else if (!block.runnable) {
+        const res = await CodeService.executeCode({ language: "javascript", code: userCode });
+        const out = (res.output || "").trim();
+
+        if (out === (block.expectedOutput || "").trim()) onCorrect();
+        else setTestError(`Неверно. Ожидалось: ${block.expectedOutput}, получено: ${out}`);
+      }
+    };
+
+    return (
+      <div>
+        <p>{block.description}</p>
+        <textarea
+          value={userCode}
+          onChange={(e) => setUserCode(e.target.value)}
+          placeholder="Введите код"
+          className={styles.form__textarea}
+          rows={6}
+        />
+        <Button color="#9F0FA7" width="120px" textColor="#fff" text="Проверить" onClick={check} />
+        {testError && <p className={styles.form__error}>{testError}</p>}
+      </div>
+    );
+  }
+
+  if (block.type === "theoryQuestion") {
+    const selected = typeof testAnswer === "number" ? testAnswer : -1;
+    const submit = () => {
+      if (selected === block.correctIndex) onCorrect();
+    };
+
+    return (
+      <div>
+        <p>{block.text}</p>
+        {block.code && <pre className={styles.previewCode}>{block.code}</pre>}
+        {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
+        <div>
+          {block.options.map((opt, i) => (
+            <label key={i}>
+              <input
+                type="radio"
+                name="theory"
+                checked={selected === i}
+                onChange={() => setTestAnswer(i)}
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+        <Button
+          color="#9F0FA7"
+          width="120px"
+          textColor="#fff"
+          text="Ответить"
+          onClick={submit}
+          disabled={selected < 0}
+        />
+      </div>
+    );
+  }
+
+  return null;
+}
