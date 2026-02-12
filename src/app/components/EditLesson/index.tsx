@@ -74,6 +74,147 @@ const createImageBlock = (order: number): ImageBlock => ({
   url: "",
 });
 
+// Функция для удаления main метода из кода, который видит пользователь
+const stripMainMethod = (code: string, language: CodeLanguage): string => {
+  if (language === "java") {
+    // Удаляем весь main метод
+    return code
+      .replace(/public\s+static\s+void\s+main\s*\(String\[\]\s*args\)\s*\{[\s\S]*?\}\s*\n?/g, "")
+      .replace(/\n\s*\n\s*\n/g, "\n\n") // Удаляем лишние пустые строки
+      .trim();
+  }
+  if (language === "csharp") {
+    // Для C# удаляем Main метод
+    return code
+      .replace(/public\s+static\s+void\s+Main\s*\(string\[\]\s*args\)\s*\{[\s\S]*?\}\s*\n?/g, "")
+      .trim();
+  }
+  return code;
+};
+
+// Функция для добавления main метода в Java код (для выполнения)
+const addJavaMainMethod = (code: string, funcName: string | null, input: string = "5"): string => {
+  if (!funcName) return code;
+
+  // Проверяем, есть ли main метод
+  if (code.includes("public static void main")) {
+    // Заменяем существующий main метод
+    return code.replace(
+      /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
+      `public static void main(String[] args) {
+        try {
+            System.out.println(${funcName}(${input}));
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }`
+    );
+  } else {
+    // Добавляем main метод перед последней закрывающей скобкой класса
+    const codeWithoutLastBrace = code.trim().replace(/\}\s*$/, "");
+    return `${codeWithoutLastBrace}
+
+    public static void main(String[] args) {
+        try {
+            System.out.println(${funcName}(${input}));
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+}`;
+  }
+};
+
+// Функция для создания тестового набора Java для множественных тест-кейсов
+const buildJavaTestSuite = (
+  userCode: string,
+  testCases: { input: string; expectedOutput: string }[],
+  funcName: string | null
+): string => {
+  if (!funcName) return userCode;
+
+  // Генерируем код для каждого тест-кейса
+  const testCasesCode = testCases
+    .map((tc, index) => {
+      let input = tc.input;
+
+      // Парсим входные данные
+      let parsedInput;
+      try {
+        parsedInput = JSON.parse(input);
+      } catch {
+        parsedInput = input;
+      }
+
+      // Форматируем входные параметры
+      let argsStr: string;
+      if (Array.isArray(parsedInput)) {
+        argsStr = parsedInput
+          .map((arg) => {
+            if (typeof arg === "string") return `"${arg}"`;
+            if (typeof arg === "boolean") return arg;
+            if (typeof arg === "object") return JSON.stringify(arg);
+            return arg;
+          })
+          .join(", ");
+      } else {
+        argsStr = typeof parsedInput === "string" ? `"${parsedInput}"` : String(parsedInput);
+      }
+
+      return `
+        // Тест ${index + 1}
+        try {
+            Object result = ${funcName}(${argsStr});
+            System.out.println("===TEST_START_" + ${index + 1} + "===");
+            if (result == null) {
+                System.out.print("null");
+            } else if (result instanceof String) {
+                System.out.print("\\"");
+                System.out.print(result);
+                System.out.print("\\"");
+            } else if (result.getClass().isArray()) {
+                if (result instanceof int[]) {
+                    System.out.print(java.util.Arrays.toString((int[])result));
+                } else if (result instanceof Integer[]) {
+                    System.out.print(java.util.Arrays.toString((Integer[])result));
+                } else if (result instanceof String[]) {
+                    System.out.print(java.util.Arrays.toString((String[])result));
+                } else {
+                    System.out.print(java.util.Arrays.toString((Object[])result));
+                }
+            } else {
+                System.out.print(result);
+            }
+            System.out.println("===TEST_END_" + ${index + 1} + "===");
+        } catch (Exception e) {
+            System.out.println("===TEST_START_" + ${index + 1} + "===");
+            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("===TEST_END_" + ${index + 1} + "===");
+        }`;
+    })
+    .join("\n");
+
+  // Проверяем, есть ли main метод
+  if (userCode.includes("public static void main")) {
+    // Заменяем существующий main метод
+    return userCode.replace(
+      /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
+      `public static void main(String[] args) {
+${testCasesCode}
+    }`
+    );
+  } else {
+    // Добавляем main метод
+    const codeWithoutLastBrace = userCode.trim().replace(/\}\s*$/, "");
+    return `${codeWithoutLastBrace}
+
+    public static void main(String[] args) {
+${testCasesCode}
+    }
+}`;
+  }
+};
+
 const getDefaultStarterCode = (language: CodeLanguage): string => {
   switch (language) {
     case "csharp":
@@ -93,17 +234,16 @@ public class Program
         // Ваш код здесь
         return n + 1;
     }
-
-    public static void main(String[] args) {
-        // Пример вызова функции
-        int result = yourFunction(5);
-        System.out.println(result);
-    }
 }`;
     case "python":
       return "def your_function(n):\n    # Ваш код здесь\n    return 0";
     case "golang":
-      return "package main\n\nfunc yourFunction(n int) int {\n    // Ваш код здесь\n    return 0\n}";
+      return `package main
+
+func yourFunction(n int) int {
+    // Ваш код здесь
+    return 0
+}`;
     default:
       return "function yourFunction(n) {\n    // Ваш код здесь\n    return 0;\n}";
   }
@@ -800,14 +940,13 @@ function BlockEditor({
               Стартовый код
               {(block.language === "csharp" || block.language === "java") && (
                 <span style={{ fontSize: "0.9em", color: "#666", marginLeft: "10px" }}>
-                  (Для {block.language === "csharp" ? "C#" : "Java"} используйте класс{" "}
-                  {block.language === "csharp" ? "Program" : "Solution"} со статическим методом
-                  Main)
+                  (Для {block.language === "csharp" ? "C#" : "Java"} код автоматически оборачивается
+                  в main метод при выполнении)
                 </span>
               )}
             </label>
             <CodeEditor
-              value={block.startCode ?? ""}
+              value={stripMainMethod(block.startCode ?? "", block.language ?? "javascript")}
               onChange={(v) => updateBlock(slideIndex, block.id, { startCode: v })}
               language={block.language ?? "javascript"}
               height={220}
@@ -1028,6 +1167,7 @@ function PreviewBlockStatic({ block }: { block: SlideBlock }) {
 
   return null;
 }
+
 const extractFunctionName = (code: string, lang: CodeLanguage): string | null => {
   if (!code) return null;
 
@@ -1048,12 +1188,10 @@ const extractFunctionName = (code: string, lang: CodeLanguage): string | null =>
         return goMatch ? goMatch[1] : null;
 
       case "csharp":
-        // Ищем метод в классе Program
         const csMatch = code.match(/public\s+static\s+[\w<>\[\]]+\s+(\w+)\s*\([^)]*\)/);
         return csMatch ? csMatch[1] : null;
 
       case "java":
-        // Ищем статический метод в классе Kata
         const javaMatch = code.match(/public\s+static\s+[\w<>\[\]]+\s+(\w+)\s*\([^)]*\)/);
         return javaMatch ? javaMatch[1] : null;
 
@@ -1082,8 +1220,6 @@ const buildTestCode = (
   }
 
   const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
-  const isStringInput = input.trim().startsWith('"') && input.trim().endsWith('"');
-  const isNumberInput = !isNaN(Number(input)) && input.trim() !== "";
 
   switch (lang) {
     case "javascript":
@@ -1111,34 +1247,10 @@ const buildTestCode = (
       } else {
         return `${userCode}\n\npublic class Runner {\n    public static void Main() {\n        Console.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${input})));\n    }\n}`;
       }
-    case "java":
-      // Проверяем, есть ли main метод
-      if (userCode.includes("public static void main")) {
-        // Заменяем существующий main метод
-        return userCode.replace(
-          /public static void main\(String\[\] args\)\s*\{[\s\S]*?\}/,
-          `public static void main(String[] args) {
-        try {
-            System.out.println(${funcName}(${input}));
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-        }
-    }`
-        );
-      } else {
-        // Добавляем main метод перед последней закрывающей скобкой класса
-        const codeWithoutLastBrace = userCode.trim().replace(/\}\s*$/, "");
-        return `${codeWithoutLastBrace}
 
-    public static void main(String[] args) {
-        try {
-            System.out.println(${funcName}(${input}));
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-        }
-    }
-}`;
-      }
+    case "java":
+      return addJavaMainMethod(userCode, funcName, input);
+
     case "golang":
       if (isArrayInput) {
         const arrayValues = parsedInput.map((v: any) => v).join(", ");
@@ -1151,7 +1263,7 @@ const buildTestCode = (
       return userCode;
   }
 };
-// Функция для сравнения выводов
+
 const compareOutputs = (actual: any, expected: any): boolean => {
   if (actual == null && expected == null) return true;
   if (actual == null || expected == null) return false;
@@ -1186,13 +1298,14 @@ function PreviewCodeTask({
   const [consoleOutput, setConsoleOutput] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
-  // Важно: используем текущий язык блока для стартового кода
-  const userCode =
-    typeof testAnswer === "string"
+  // Получаем полный код с main методом для выполнения
+  const fullCodeForExecution =
+    typeof testAnswer === "string" && testAnswer !== ""
       ? testAnswer
-      : block.runnable
-        ? (block.startCode ?? getDefaultStarterCode(block.language ?? "javascript"))
-        : "";
+      : (block.startCode ?? getDefaultStarterCode(block.language ?? "javascript"));
+
+  // Для отображения в редакторе - без main метода
+  const displayCode = stripMainMethod(fullCodeForExecution, block.language ?? "javascript");
 
   const setUserCode = (code: string) => {
     setTestAnswer(code);
@@ -1200,12 +1313,40 @@ function PreviewCodeTask({
     setConsoleOutput(null);
   };
 
+  const runUserCode = async () => {
+    setConsoleOutput(null);
+    setIsRunning(true);
+    try {
+      const funcName = extractFunctionName(fullCodeForExecution, block.language ?? "javascript");
+
+      let codeToRun = fullCodeForExecution;
+
+      // Добавляем main метод для Java если его нет
+      if (block.language === "java") {
+        codeToRun = addJavaMainMethod(fullCodeForExecution, funcName, "5");
+      }
+
+      const res = await CodeService.executeCode({
+        language: block.language ?? "javascript",
+        code: codeToRun,
+      });
+
+      setConsoleOutput(
+        res.output || (res.error ? `Ошибка: ${res.error}` : "Код выполнен успешно (без вывода)")
+      );
+    } catch (e) {
+      setConsoleOutput(`Ошибка выполнения: ${e}`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   const check = async () => {
     setTestError("");
 
     if (block.runnable) {
       if (block.testCases?.length) {
-        const funcName = extractFunctionName(userCode, block.language ?? "javascript");
+        const funcName = extractFunctionName(fullCodeForExecution, block.language ?? "javascript");
 
         if (!funcName) {
           setTestError(
@@ -1214,23 +1355,12 @@ function PreviewCodeTask({
           return;
         }
 
-        const results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
-
-        for (const tc of block.testCases) {
-          if (!tc.input || !tc.expectedOutput) {
-            setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
-            return;
-          }
-
-          const codeToRun = buildTestCode(
-            userCode,
-            tc.input,
-            block.language ?? "javascript",
-            funcName
-          );
+        // Для Java используем специальную обработку с одним запуском
+        if (block.language === "java") {
+          const codeToRun = buildJavaTestSuite(fullCodeForExecution, block.testCases, funcName);
 
           const res = await CodeService.executeCode({
-            language: block.language ?? "javascript",
+            language: "java",
             code: codeToRun,
           });
 
@@ -1239,53 +1369,148 @@ function PreviewCodeTask({
             return;
           }
 
-          const actualOutput = (res.output || "").trim();
-          let expectedOutput = (tc.expectedOutput || "").trim();
+          // Парсим результаты из вывода
+          const output = res.output || "";
+          const results = [];
 
-          let actualParsed: any;
-          let expectedParsed: any;
+          for (let i = 0; i < block.testCases.length; i++) {
+            const testNum = i + 1;
+            const pattern = new RegExp(
+              `===TEST_START_${testNum}===(.*?)===TEST_END_${testNum}===`,
+              "s"
+            );
+            const match = output.match(pattern);
 
-          try {
-            actualParsed = JSON.parse(actualOutput);
-          } catch {
-            actualParsed = actualOutput;
+            let actual = match ? match[1].trim() : "NO_OUTPUT";
+            const expected = block.testCases[i].expectedOutput.trim();
+
+            // Очищаем вывод от кавычек для сравнения
+            if (actual.startsWith('"') && actual.endsWith('"')) {
+              actual = actual.slice(1, -1);
+            }
+
+            // Парсим для сравнения
+            let actualParsed: any;
+            let expectedParsed: any;
+
+            try {
+              actualParsed = JSON.parse(actual);
+            } catch {
+              actualParsed = actual;
+            }
+
+            try {
+              expectedParsed = JSON.parse(expected);
+            } catch {
+              expectedParsed = expected;
+            }
+
+            const passed = compareOutputs(actualParsed, expectedParsed);
+
+            results.push({
+              input: block.testCases[i].input,
+              expected,
+              actual,
+              passed,
+            });
           }
 
-          try {
-            expectedParsed = JSON.parse(expectedOutput);
-          } catch {
-            expectedParsed = expectedOutput;
+          const allPassed = results.every((r) => r.passed);
+
+          if (allPassed) {
+            onCorrect();
+            setTestError("");
+          } else {
+            const failedTests = results
+              .map((r, i) => {
+                if (!r.passed) {
+                  return `Тест ${i + 1}: Вход: ${r.input}, Ожидалось: ${r.expected}, Получено: ${r.actual}`;
+                }
+                return null;
+              })
+              .filter(Boolean)
+              .join("\n");
+
+            setTestError(
+              `Провалено ${results.filter((r) => !r.passed).length} из ${results.length} тестов:\n${failedTests}`
+            );
           }
-
-          const passed = compareOutputs(actualParsed, expectedParsed);
-
-          results.push({
-            input: tc.input,
-            expected: expectedOutput,
-            actual: actualOutput,
-            passed,
-          });
-        }
-
-        const allPassed = results.every((r) => r.passed);
-
-        if (allPassed) {
-          onCorrect();
-          setTestError("");
         } else {
-          const failedTests = results
-            .map((r, i) => {
-              if (!r.passed) {
-                return `Тест ${i + 1}: Вход: ${r.input}, Ожидалось: ${r.expected}, Получено: ${r.actual}`;
-              }
-              return null;
-            })
-            .filter(Boolean)
-            .join("\n");
+          // Для остальных языков - по одному тесту за запуск
+          const results: { input: string; expected: string; actual: string; passed: boolean }[] =
+            [];
 
-          setTestError(
-            `Провалено ${results.filter((r) => !r.passed).length} из ${results.length} тестов:\n${failedTests}`
-          );
+          for (const tc of block.testCases) {
+            if (!tc.input || !tc.expectedOutput) {
+              setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
+              return;
+            }
+
+            const codeToRun = buildTestCode(
+              fullCodeForExecution,
+              tc.input,
+              block.language ?? "javascript",
+              funcName
+            );
+
+            const res = await CodeService.executeCode({
+              language: block.language ?? "javascript",
+              code: codeToRun,
+            });
+
+            if (res.error) {
+              setTestError(`Ошибка выполнения: ${res.error}`);
+              return;
+            }
+
+            const actualOutput = (res.output || "").trim();
+            let expectedOutput = (tc.expectedOutput || "").trim();
+
+            let actualParsed: any;
+            let expectedParsed: any;
+
+            try {
+              actualParsed = JSON.parse(actualOutput);
+            } catch {
+              actualParsed = actualOutput;
+            }
+
+            try {
+              expectedParsed = JSON.parse(expectedOutput);
+            } catch {
+              expectedParsed = expectedOutput;
+            }
+
+            const passed = compareOutputs(actualParsed, expectedParsed);
+
+            results.push({
+              input: tc.input,
+              expected: expectedOutput,
+              actual: actualOutput,
+              passed,
+            });
+          }
+
+          const allPassed = results.every((r) => r.passed);
+
+          if (allPassed) {
+            onCorrect();
+            setTestError("");
+          } else {
+            const failedTests = results
+              .map((r, i) => {
+                if (!r.passed) {
+                  return `Тест ${i + 1}: Вход: ${r.input}, Ожидалось: ${r.expected}, Получено: ${r.actual}`;
+                }
+                return null;
+              })
+              .filter(Boolean)
+              .join("\n");
+
+            setTestError(
+              `Провалено ${results.filter((r) => !r.passed).length} из ${results.length} тестов:\n${failedTests}`
+            );
+          }
         }
       } else {
         setTestError("Нет тест-кейсов для проверки");
@@ -1293,7 +1518,7 @@ function PreviewCodeTask({
     } else if (!block.runnable) {
       const res = await CodeService.executeCode({
         language: block.language ?? "javascript",
-        code: userCode,
+        code: fullCodeForExecution,
       });
       const out = (res.output || "").trim();
 
@@ -1306,29 +1531,11 @@ function PreviewCodeTask({
     }
   };
 
-  const runUserCode = async () => {
-    setConsoleOutput(null);
-    setIsRunning(true);
-    try {
-      const res = await CodeService.executeCode({
-        language: block.language ?? "javascript",
-        code: userCode,
-      });
-      setConsoleOutput(
-        res.output || (res.error ? `Ошибка: ${res.error}` : "Код выполнен успешно (без вывода)")
-      );
-    } catch (e) {
-      setConsoleOutput(`Ошибка выполнения: ${e}`);
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
   return (
     <div className={styles.codeTask}>
       <p className={styles.taskDescription}>{block.description}</p>
       <CodeEditor
-        value={userCode}
+        value={displayCode}
         onChange={setUserCode}
         language={block.language ?? "javascript"}
         height={250}
