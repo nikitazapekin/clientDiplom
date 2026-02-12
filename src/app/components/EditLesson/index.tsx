@@ -77,14 +77,12 @@ const createImageBlock = (order: number): ImageBlock => ({
 // Функция для удаления main метода из кода, который видит пользователь
 const stripMainMethod = (code: string, language: CodeLanguage): string => {
   if (language === "java") {
-    // Удаляем весь main метод
     return code
       .replace(/public\s+static\s+void\s+main\s*\(String\[\]\s*args\)\s*\{[\s\S]*?\}\s*\n?/g, "")
-      .replace(/\n\s*\n\s*\n/g, "\n\n") // Удаляем лишние пустые строки
+      .replace(/\n\s*\n\s*\n/g, "\n\n")
       .trim();
   }
   if (language === "csharp") {
-    // Для C# удаляем Main метод
     return code
       .replace(/public\s+static\s+void\s+Main\s*\(string\[\]\s*args\)\s*\{[\s\S]*?\}\s*\n?/g, "")
       .trim();
@@ -96,9 +94,7 @@ const stripMainMethod = (code: string, language: CodeLanguage): string => {
 const addJavaMainMethod = (code: string, funcName: string | null, input: string = "5"): string => {
   if (!funcName) return code;
 
-  // Проверяем, есть ли main метод
   if (code.includes("public static void main")) {
-    // Заменяем существующий main метод
     return code.replace(
       /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
       `public static void main(String[] args) {
@@ -110,7 +106,6 @@ const addJavaMainMethod = (code: string, funcName: string | null, input: string 
     }`
     );
   } else {
-    // Добавляем main метод перед последней закрывающей скобкой класса
     const codeWithoutLastBrace = code.trim().replace(/\}\s*$/, "");
     return `${codeWithoutLastBrace}
 
@@ -133,12 +128,10 @@ const buildJavaTestSuite = (
 ): string => {
   if (!funcName) return userCode;
 
-  // Генерируем код для каждого тест-кейса
   const testCasesCode = testCases
     .map((tc, index) => {
       let input = tc.input;
 
-      // Парсим входные данные
       let parsedInput;
       try {
         parsedInput = JSON.parse(input);
@@ -146,7 +139,6 @@ const buildJavaTestSuite = (
         parsedInput = input;
       }
 
-      // Форматируем входные параметры
       let argsStr: string;
       if (Array.isArray(parsedInput)) {
         argsStr = parsedInput
@@ -194,9 +186,7 @@ const buildJavaTestSuite = (
     })
     .join("\n");
 
-  // Проверяем, есть ли main метод
   if (userCode.includes("public static void main")) {
-    // Заменяем существующий main метод
     return userCode.replace(
       /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
       `public static void main(String[] args) {
@@ -204,7 +194,6 @@ ${testCasesCode}
     }`
     );
   } else {
-    // Добавляем main метод
     const codeWithoutLastBrace = userCode.trim().replace(/\}\s*$/, "");
     return `${codeWithoutLastBrace}
 
@@ -879,6 +868,11 @@ function BlockEditor({
       testCases[i][field] = value;
       updateBlock(slideIndex, block.id, { testCases });
     };
+    const deleteTestCase = (i: number) => {
+      const testCases = [...(block.testCases ?? [])];
+      testCases.splice(i, 1);
+      updateBlock(slideIndex, block.id, { testCases });
+    };
     const addConstraint = () => {
       const constraints = [
         ...(block.constraints ?? []),
@@ -886,10 +880,19 @@ function BlockEditor({
       ];
       updateBlock(slideIndex, block.id, { constraints });
     };
-    const updateConstraint = (i: number, type: CodeConstraintType, value: number | string[]) => {
+    const updateConstraint = (
+      i: number,
+      type: CodeConstraintType,
+      value: number | string[] | boolean
+    ) => {
       const constraints = [...(block.constraints ?? [])];
       if (!constraints[i]) constraints[i] = { type: "maxTimeMs", value: 1000 };
       constraints[i] = { type, value };
+      updateBlock(slideIndex, block.id, { constraints });
+    };
+    const deleteConstraint = (i: number) => {
+      const constraints = [...(block.constraints ?? [])];
+      constraints.splice(i, 1);
       updateBlock(slideIndex, block.id, { constraints });
     };
 
@@ -952,16 +955,26 @@ function BlockEditor({
               height={220}
               className={styles.codeEditorWrap}
             />
-            <div>
-              <Button
-                color="#9F0FA7"
-                width="auto"
-                textColor="#fff"
-                text="+ Тест-кейс"
-                onClick={addTestCase}
-              />
+
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h4>Тест-кейсы</h4>
+                <Button
+                  color="#9F0FA7"
+                  width="auto"
+                  textColor="#fff"
+                  text="+ Добавить тест-кейс"
+                  onClick={addTestCase}
+                />
+              </div>
               {(block.testCases ?? []).map((tc, i) => (
                 <div key={i} className={styles.testCase}>
+                  <div className={styles.testCaseHeader}>
+                    <span className={styles.testCaseTitle}>Тест #{i + 1}</span>
+                    <button className={styles.deleteButton} onClick={() => deleteTestCase(i)}>
+                      ✕
+                    </button>
+                  </div>
                   <input
                     value={tc.input}
                     onChange={(e) => updateTestCase(i, "input", e.target.value)}
@@ -975,53 +988,163 @@ function BlockEditor({
                 </div>
               ))}
             </div>
-            <div>
-              <Button
-                color="#9F0FA7"
-                width="auto"
-                textColor="#fff"
-                text="+ Ограничение"
-                onClick={addConstraint}
-              />
+
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h4>Ограничения</h4>
+                <Button
+                  color="#FFA500"
+                  width="auto"
+                  textColor="#fff"
+                  text="+ Добавить ограничение"
+                  onClick={addConstraint}
+                />
+              </div>
               {(block.constraints ?? []).map((c, i) => (
-                <div key={i} className={styles.form__wrapper}>
-                  <select
-                    value={c.type}
-                    onChange={(e) =>
-                      updateConstraint(i, e.target.value as CodeConstraintType, c.value)
-                    }
-                  >
-                    <option value="maxTimeMs">Время &lt; N мс</option>
-                    <option value="maxLines">Меньше N строк</option>
-                    <option value="forbiddenTokens">Запрещённые слова</option>
-                  </select>
-                  {c.type === "maxTimeMs" && (
-                    <input
-                      type="number"
-                      value={typeof c.value === "number" ? c.value : 1000}
-                      onChange={(e) => updateConstraint(i, "maxTimeMs", Number(e.target.value))}
-                    />
-                  )}
-                  {c.type === "maxLines" && (
-                    <input
-                      type="number"
-                      value={typeof c.value === "number" ? c.value : 30}
-                      onChange={(e) => updateConstraint(i, "maxLines", Number(e.target.value))}
-                    />
-                  )}
-                  {c.type === "forbiddenTokens" && (
-                    <input
-                      value={(c.value as string[]).join(",")}
-                      onChange={(e) =>
-                        updateConstraint(
-                          i,
-                          "forbiddenTokens",
-                          e.target.value.split(",").map((s) => s.trim())
-                        )
-                      }
-                      placeholder="через запятую"
-                    />
-                  )}
+                <div key={i} className={styles.constraint}>
+                  <div className={styles.constraintHeader}>
+                    <span className={styles.constraintTitle}>
+                      {c.type === "maxTimeMs" && "⏱ Ограничение по времени"}
+                      {c.type === "maxLines" && "📏 Ограничение по строкам"}
+                      {c.type === "forbiddenTokens" && "🚫 Запрещённые слова"}
+                      {c.type === "noComments" && "💬 Без комментариев"}
+                      {c.type === "noConsoleLog" && "📢 Без console.log"}
+                      {c.type === "maxComplexity" && "🔄 Цикломатическая сложность"}
+                      {c.type === "memoryLimit" && "💾 Ограничение по памяти"}
+                      {c.type === "requiredKeywords" && "🔑 Обязательные ключевые слова"}
+                    </span>
+                    <button className={styles.deleteButton} onClick={() => deleteConstraint(i)}>
+                      ✕
+                    </button>
+                  </div>
+                  <div className={styles.constraintContent}>
+                    <select
+                      value={c.type}
+                      onChange={(e) => {
+                        const newType = e.target.value as CodeConstraintType;
+                        let defaultValue: any = 1000;
+                        if (newType === "maxLines") defaultValue = 30;
+                        if (newType === "forbiddenTokens") defaultValue = [];
+                        if (newType === "noComments") defaultValue = true;
+                        if (newType === "noConsoleLog") defaultValue = true;
+                        if (newType === "maxComplexity") defaultValue = 5;
+                        if (newType === "memoryLimit") defaultValue = 256;
+                        if (newType === "requiredKeywords") defaultValue = [];
+                        updateConstraint(i, newType, defaultValue);
+                      }}
+                    >
+                      <option value="maxTimeMs">⏱ Время выполнения (мс)</option>
+                      <option value="maxLines">📏 Максимум строк кода</option>
+                      <option value="forbiddenTokens">🚫 Запрещённые слова</option>
+                      <option value="noComments">💬 Без комментариев</option>
+                      <option value="noConsoleLog">📢 Без console.log</option>
+                      <option value="maxComplexity">🔄 Макс. цикломатическая сложность</option>
+                      <option value="memoryLimit">💾 Ограничение по памяти (МБ)</option>
+                      <option value="requiredKeywords">🔑 Обязательные ключевые слова</option>
+                    </select>
+
+                    {c.type === "maxTimeMs" && (
+                      <input
+                        type="number"
+                        value={typeof c.value === "number" ? c.value : 1000}
+                        onChange={(e) => updateConstraint(i, "maxTimeMs", Number(e.target.value))}
+                        min="1"
+                        max="10000"
+                      />
+                    )}
+
+                    {c.type === "maxLines" && (
+                      <input
+                        type="number"
+                        value={typeof c.value === "number" ? c.value : 30}
+                        onChange={(e) => updateConstraint(i, "maxLines", Number(e.target.value))}
+                        min="1"
+                        max="500"
+                      />
+                    )}
+
+                    {c.type === "forbiddenTokens" && (
+                      <input
+                        value={Array.isArray(c.value) ? (c.value as string[]).join(", ") : ""}
+                        onChange={(e) =>
+                          updateConstraint(
+                            i,
+                            "forbiddenTokens",
+                            e.target.value
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean)
+                          )
+                        }
+                        placeholder="for, while, sort, reverse"
+                      />
+                    )}
+
+                    {c.type === "noComments" && (
+                      <div className={styles.checkboxWrapper}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={c.value === true}
+                            onChange={(e) => updateConstraint(i, "noComments", e.target.checked)}
+                          />
+                          Запретить комментарии
+                        </label>
+                      </div>
+                    )}
+
+                    {c.type === "noConsoleLog" && (
+                      <div className={styles.checkboxWrapper}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={c.value === true}
+                            onChange={(e) => updateConstraint(i, "noConsoleLog", e.target.checked)}
+                          />
+                          Запретить console.log
+                        </label>
+                      </div>
+                    )}
+
+                    {c.type === "maxComplexity" && (
+                      <input
+                        type="number"
+                        value={typeof c.value === "number" ? c.value : 5}
+                        onChange={(e) =>
+                          updateConstraint(i, "maxComplexity", Number(e.target.value))
+                        }
+                        min="1"
+                        max="20"
+                      />
+                    )}
+
+                    {c.type === "memoryLimit" && (
+                      <input
+                        type="number"
+                        value={typeof c.value === "number" ? c.value : 256}
+                        onChange={(e) => updateConstraint(i, "memoryLimit", Number(e.target.value))}
+                        min="16"
+                        max="1024"
+                      />
+                    )}
+
+                    {c.type === "requiredKeywords" && (
+                      <input
+                        value={Array.isArray(c.value) ? (c.value as string[]).join(", ") : ""}
+                        onChange={(e) =>
+                          updateConstraint(
+                            i,
+                            "requiredKeywords",
+                            e.target.value
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean)
+                          )
+                        }
+                        placeholder="function, return, const"
+                      />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1057,6 +1180,17 @@ function BlockEditor({
       options[i] = v;
       updateBlock(slideIndex, block.id, { options });
     };
+    const deleteOption = (i: number) => {
+      const options = [...block.options];
+      options.splice(i, 1);
+      if (block.correctIndex === i) {
+        updateBlock(slideIndex, block.id, { options, correctIndex: 0 });
+      } else if (block.correctIndex > i) {
+        updateBlock(slideIndex, block.id, { options, correctIndex: block.correctIndex - 1 });
+      } else {
+        updateBlock(slideIndex, block.id, { options });
+      }
+    };
 
     return (
       <div className={styles.blockEditor}>
@@ -1079,33 +1213,46 @@ function BlockEditor({
           onChange={(e) => updateBlock(slideIndex, block.id, { imageUrl: e.target.value })}
           placeholder="URL изображения"
         />
-        <label>Варианты ответа (правильный выберите ниже)</label>
-        {block.options.map((opt, i) => (
-          <div key={i} className={styles.form__wrapper}>
-            <input
-              value={opt}
-              onChange={(e) => setOption(i, e.target.value)}
-              placeholder={`Вариант ${i + 1}`}
-              className={styles.form__input}
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h4>Варианты ответа</h4>
+            <Button
+              color="#9F0FA7"
+              width="auto"
+              textColor="#fff"
+              text="+ Добавить вариант"
+              onClick={addOption}
             />
-            <label>
-              <input
-                type="radio"
-                name={`correct_${block.id}`}
-                checked={block.correctIndex === i}
-                onChange={() => updateBlock(slideIndex, block.id, { correctIndex: i })}
-              />
-              Верно
-            </label>
           </div>
-        ))}
-        <Button
-          color="#9F0FA7"
-          width="auto"
-          textColor="#fff"
-          text="+ Вариант"
-          onClick={addOption}
-        />
+          {block.options.map((opt, i) => (
+            <div key={i} className={styles.option}>
+              <div className={styles.optionHeader}>
+                <span className={styles.optionTitle}>Вариант {i + 1}</span>
+                <button className={styles.deleteButton} onClick={() => deleteOption(i)}>
+                  ✕
+                </button>
+              </div>
+              <div className={styles.optionContent}>
+                <input
+                  value={opt}
+                  onChange={(e) => setOption(i, e.target.value)}
+                  placeholder={`Вариант ${i + 1}`}
+                  className={styles.form__input}
+                />
+                <label className={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    name={`correct_${block.id}`}
+                    checked={block.correctIndex === i}
+                    onChange={() => updateBlock(slideIndex, block.id, { correctIndex: i })}
+                  />
+                  Правильный ответ
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -1280,6 +1427,15 @@ const compareOutputs = (actual: any, expected: any): boolean => {
   return String(actual).trim() === String(expected).trim();
 };
 
+interface ConstraintResult {
+  type: CodeConstraintType;
+  name: string;
+  passed: boolean;
+  expected: string;
+  actual: string;
+  value?: number | string[] | boolean;
+}
+
 function PreviewCodeTask({
   block,
   testAnswer,
@@ -1297,20 +1453,24 @@ function PreviewCodeTask({
 }) {
   const [consoleOutput, setConsoleOutput] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [testResults, setTestResults] = useState<any[] | null>(null);
+  const [constraintResults, setConstraintResults] = useState<ConstraintResult[] | null>(null);
+  const [executionTime, setExecutionTime] = useState<number | null>(null);
 
-  // Получаем полный код с main методом для выполнения
   const fullCodeForExecution =
     typeof testAnswer === "string" && testAnswer !== ""
       ? testAnswer
       : (block.startCode ?? getDefaultStarterCode(block.language ?? "javascript"));
 
-  // Для отображения в редакторе - без main метода
   const displayCode = stripMainMethod(fullCodeForExecution, block.language ?? "javascript");
 
   const setUserCode = (code: string) => {
     setTestAnswer(code);
     setTestError("");
     setConsoleOutput(null);
+    setTestResults(null);
+    setConstraintResults(null);
+    setExecutionTime(null);
   };
 
   const runUserCode = async () => {
@@ -1321,7 +1481,6 @@ function PreviewCodeTask({
 
       let codeToRun = fullCodeForExecution;
 
-      // Добавляем main метод для Java если его нет
       if (block.language === "java") {
         codeToRun = addJavaMainMethod(fullCodeForExecution, funcName, "5");
       }
@@ -1341,8 +1500,240 @@ function PreviewCodeTask({
     }
   };
 
+  const countCodeLines = (code: string): number => {
+    return code
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(
+        (line) =>
+          line.length > 0 &&
+          !line.startsWith("//") &&
+          !line.startsWith("/*") &&
+          !line.startsWith("*") &&
+          !line.startsWith("#")
+      ).length;
+  };
+
+  const hasComments = (code: string): boolean => {
+    const singleLineComments =
+      code.split("\n").filter((line) => line.trim().startsWith("//") || line.trim().startsWith("#"))
+        .length > 0;
+
+    const multiLineComments = code.includes("/*") && code.includes("*/");
+    const pythonMultiLine = code.includes('"""') && code.split('"""').length > 2;
+
+    return singleLineComments || multiLineComments || pythonMultiLine;
+  };
+
+  const hasConsoleLog = (code: string): boolean => {
+    return (
+      code.includes("console.log") ||
+      code.includes("console.error") ||
+      code.includes("console.warn") ||
+      code.includes("console.info") ||
+      code.includes("print(") ||
+      code.includes("System.out.println") ||
+      code.includes("Console.WriteLine")
+    );
+  };
+
+  const calculateComplexity = (code: string): number => {
+    let complexity = 1;
+
+    const complexityKeywords = [
+      "if ",
+      "else if",
+      "else",
+      "for ",
+      "while ",
+      "do ",
+      "case ",
+      "catch ",
+      "||",
+      "&&",
+      "? :",
+      "??",
+      "switch",
+      "?",
+    ];
+
+    complexityKeywords.forEach((keyword) => {
+      const regex = new RegExp(keyword, "g");
+      const matches = code.match(regex);
+      if (matches) {
+        complexity += matches.length;
+      }
+    });
+
+    return complexity;
+  };
+
+  const hasRequiredKeywords = (code: string, keywords: string[]): boolean => {
+    return keywords.every(
+      (keyword) => keyword.trim() && code.toLowerCase().includes(keyword.toLowerCase().trim())
+    );
+  };
+
+  const checkConstraints = async (
+    code: string,
+    constraints: CodeTaskBlock["constraints"]
+  ): Promise<ConstraintResult[]> => {
+    const results: ConstraintResult[] = [];
+
+    for (const constraint of constraints || []) {
+      switch (constraint.type) {
+        case "maxLines": {
+          const maxLines = constraint.value as number;
+          const actualLines = countCodeLines(code);
+          results.push({
+            type: "maxLines",
+            name: "📏 Максимум строк кода",
+            passed: actualLines <= maxLines,
+            expected: `≤ ${maxLines} строк`,
+            actual: `${actualLines} строк`,
+            value: maxLines,
+          });
+          break;
+        }
+
+        case "forbiddenTokens": {
+          const forbidden = constraint.value as string[];
+          const passed = !forbidden.some(
+            (token) => token.trim() && code.toLowerCase().includes(token.toLowerCase().trim())
+          );
+          results.push({
+            type: "forbiddenTokens",
+            name: "🚫 Запрещённые слова",
+            passed,
+            expected: forbidden.filter((t) => t.trim()).join(", ") || "нет",
+            actual: passed ? "не используются" : "используются",
+            value: forbidden,
+          });
+          break;
+        }
+
+        case "noComments": {
+          const passed = !hasComments(code);
+          results.push({
+            type: "noComments",
+            name: "💬 Без комментариев",
+            passed,
+            expected: "без комментариев",
+            actual: passed ? "нет комментариев" : "есть комментарии",
+            value: constraint.value,
+          });
+          break;
+        }
+
+        case "noConsoleLog": {
+          const passed = !hasConsoleLog(code);
+          results.push({
+            type: "noConsoleLog",
+            name: "📢 Без отладочного вывода",
+            passed,
+            expected: "без console.log/print",
+            actual: passed ? "нет" : "используется",
+            value: constraint.value,
+          });
+          break;
+        }
+
+        case "maxComplexity": {
+          const maxComplexity = constraint.value as number;
+          const actualComplexity = calculateComplexity(code);
+          results.push({
+            type: "maxComplexity",
+            name: "🔄 Цикломатическая сложность",
+            passed: actualComplexity <= maxComplexity,
+            expected: `≤ ${maxComplexity}`,
+            actual: `${actualComplexity}`,
+            value: maxComplexity,
+          });
+          break;
+        }
+
+        case "memoryLimit": {
+          const memoryLimit = constraint.value as number;
+          const codeSize = new Blob([code]).size / 1024;
+          const estimatedMemory = Math.round(codeSize * 2);
+
+          results.push({
+            type: "memoryLimit",
+            name: "💾 Использование памяти",
+            passed: estimatedMemory <= memoryLimit,
+            expected: `≤ ${memoryLimit} МБ`,
+            actual: `~${estimatedMemory} МБ`,
+            value: memoryLimit,
+          });
+          break;
+        }
+
+        case "requiredKeywords": {
+          const keywords = constraint.value as string[];
+          const passed = hasRequiredKeywords(code, keywords);
+          results.push({
+            type: "requiredKeywords",
+            name: "🔑 Обязательные ключевые слова",
+            passed,
+            expected: keywords.filter((k) => k.trim()).join(", ") || "нет",
+            actual: passed ? "все присутствуют" : "отсутствуют",
+            value: keywords,
+          });
+          break;
+        }
+
+        case "maxTimeMs": {
+          const maxTime = constraint.value as number;
+
+          try {
+            const funcName = extractFunctionName(code, block.language ?? "javascript");
+            let codeToRun = code;
+
+            if (block.language === "java" && funcName) {
+              codeToRun = addJavaMainMethod(code, funcName, "5");
+            }
+
+            const startTime = performance.now();
+            await CodeService.executeCode({
+              language: block.language ?? "javascript",
+              code: codeToRun,
+            });
+            const endTime = performance.now();
+            const actualTime = Math.round(endTime - startTime);
+
+            setExecutionTime(actualTime);
+
+            results.push({
+              type: "maxTimeMs",
+              name: "⏱ Время выполнения",
+              passed: actualTime <= maxTime,
+              expected: `≤ ${maxTime} мс`,
+              actual: `${actualTime} мс`,
+              value: maxTime,
+            });
+          } catch {
+            results.push({
+              type: "maxTimeMs",
+              name: "⏱ Время выполнения",
+              passed: false,
+              expected: `≤ ${maxTime} мс`,
+              actual: "Ошибка выполнения",
+              value: maxTime,
+            });
+          }
+          break;
+        }
+      }
+    }
+
+    return results;
+  };
+
   const check = async () => {
     setTestError("");
+    setTestResults(null);
+    setConstraintResults(null);
+    setExecutionTime(null);
 
     if (block.runnable) {
       if (block.testCases?.length) {
@@ -1355,7 +1746,8 @@ function PreviewCodeTask({
           return;
         }
 
-        // Для Java используем специальную обработку с одним запуском
+        let results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
+
         if (block.language === "java") {
           const codeToRun = buildJavaTestSuite(fullCodeForExecution, block.testCases, funcName);
 
@@ -1369,9 +1761,8 @@ function PreviewCodeTask({
             return;
           }
 
-          // Парсим результаты из вывода
           const output = res.output || "";
-          const results = [];
+          results = [];
 
           for (let i = 0; i < block.testCases.length; i++) {
             const testNum = i + 1;
@@ -1384,12 +1775,10 @@ function PreviewCodeTask({
             let actual = match ? match[1].trim() : "NO_OUTPUT";
             const expected = block.testCases[i].expectedOutput.trim();
 
-            // Очищаем вывод от кавычек для сравнения
             if (actual.startsWith('"') && actual.endsWith('"')) {
               actual = actual.slice(1, -1);
             }
 
-            // Парсим для сравнения
             let actualParsed: any;
             let expectedParsed: any;
 
@@ -1414,32 +1803,7 @@ function PreviewCodeTask({
               passed,
             });
           }
-
-          const allPassed = results.every((r) => r.passed);
-
-          if (allPassed) {
-            onCorrect();
-            setTestError("");
-          } else {
-            const failedTests = results
-              .map((r, i) => {
-                if (!r.passed) {
-                  return `Тест ${i + 1}: Вход: ${r.input}, Ожидалось: ${r.expected}, Получено: ${r.actual}`;
-                }
-                return null;
-              })
-              .filter(Boolean)
-              .join("\n");
-
-            setTestError(
-              `Провалено ${results.filter((r) => !r.passed).length} из ${results.length} тестов:\n${failedTests}`
-            );
-          }
         } else {
-          // Для остальных языков - по одному тесту за запуск
-          const results: { input: string; expected: string; actual: string; passed: boolean }[] =
-            [];
-
           for (const tc of block.testCases) {
             if (!tc.input || !tc.expectedOutput) {
               setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
@@ -1490,27 +1854,47 @@ function PreviewCodeTask({
               passed,
             });
           }
+        }
 
-          const allPassed = results.every((r) => r.passed);
+        setTestResults(results);
 
-          if (allPassed) {
-            onCorrect();
-            setTestError("");
-          } else {
-            const failedTests = results
-              .map((r, i) => {
-                if (!r.passed) {
-                  return `Тест ${i + 1}: Вход: ${r.input}, Ожидалось: ${r.expected}, Получено: ${r.actual}`;
-                }
-                return null;
-              })
-              .filter(Boolean)
-              .join("\n");
+        if (block.constraints?.length) {
+          const constraintResults = await checkConstraints(fullCodeForExecution, block.constraints);
+          setConstraintResults(constraintResults);
+        }
 
-            setTestError(
-              `Провалено ${results.filter((r) => !r.passed).length} из ${results.length} тестов:\n${failedTests}`
+        const allTestsPassed = results.every((r) => r.passed);
+        const allConstraintsPassed = constraintResults?.every((c) => c.passed) ?? true;
+
+        if (allTestsPassed && allConstraintsPassed) {
+          onCorrect();
+          setTestError("");
+        } else {
+          const failedTests = results
+            .filter((r) => !r.passed)
+            .map(
+              (r, i) =>
+                `Тест ${i + 1}: ${r.input} → ожидалось: ${r.expected}, получено: ${r.actual}`
             );
+
+          const failedConstraints =
+            constraintResults
+              ?.filter((c) => !c.passed)
+              .map((c) => `${c.name}: ожидалось ${c.expected}, получено ${c.actual}`) || [];
+
+          const errorMessages = [];
+
+          if (failedTests.length > 0) {
+            errorMessages.push(`❌ Провалено тестов: ${failedTests.length} из ${results.length}`);
+            errorMessages.push(...failedTests);
           }
+
+          if (failedConstraints.length > 0) {
+            errorMessages.push(`\n❌ Не пройдены ограничения:`);
+            errorMessages.push(...failedConstraints);
+          }
+
+          setTestError(errorMessages.join("\n"));
         }
       } else {
         setTestError("Нет тест-кейсов для проверки");
@@ -1534,6 +1918,7 @@ function PreviewCodeTask({
   return (
     <div className={styles.codeTask}>
       <p className={styles.taskDescription}>{block.description}</p>
+
       <CodeEditor
         value={displayCode}
         onChange={setUserCode}
@@ -1541,6 +1926,7 @@ function PreviewCodeTask({
         height={250}
         className={styles.codeEditorWrap}
       />
+
       <div className={styles.runButtons}>
         <Button
           color="#4CAF50"
@@ -1559,12 +1945,74 @@ function PreviewCodeTask({
           disabled={isRunning}
         />
       </div>
+
+      {testResults && (
+        <div className={styles.testResults}>
+          <div className={styles.resultsHeader}>
+            <h4>📊 Результаты тестирования</h4>
+            <span className={styles.testSummary}>
+              Пройдено: {testResults.filter((r) => r.passed).length} / {testResults.length}
+            </span>
+          </div>
+          <div className={styles.testCasesList}>
+            {testResults.map((result, index) => (
+              <div
+                key={index}
+                className={`${styles.testCaseResult} ${result.passed ? styles.passed : styles.failed}`}
+              >
+                <div className={styles.testCaseResultHeader}>
+                  <span className={styles.testNumber}>Тест #{index + 1}</span>
+                  <span className={styles.testStatus}>
+                    {result.passed ? "✅ Пройден" : "❌ Провален"}
+                  </span>
+                </div>
+                <div className={styles.testCaseDetails}>
+                  <div>Вход: {result.input}</div>
+                  <div>Ожидалось: {result.expected}</div>
+                  <div>Получено: {result.actual}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {constraintResults && constraintResults.length > 0 && (
+        <div className={styles.constraintResults}>
+          <div className={styles.resultsHeader}>
+            <h4>🎯 Проверка ограничений</h4>
+            <span className={styles.constraintSummary}>
+              Выполнено: {constraintResults.filter((c) => c.passed).length} /{" "}
+              {constraintResults.length}
+            </span>
+          </div>
+          <div className={styles.constraintsList}>
+            {constraintResults.map((constraint, index) => (
+              <div
+                key={index}
+                className={`${styles.constraintResult} ${constraint.passed ? styles.passed : styles.failed}`}
+              >
+                <div className={styles.constraintResultHeader}>
+                  <span className={styles.constraintName}>{constraint.name}</span>
+                  <span className={styles.constraintStatus}>{constraint.passed ? "✅" : "❌"}</span>
+                </div>
+                <div className={styles.constraintDetails}>
+                  <div>Ожидалось: {constraint.expected}</div>
+                  <div>Получено: {constraint.actual}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {consoleOutput !== null && (
         <div className={styles.consoleOutput}>
           <div className={styles.consoleHeader}>Консоль</div>
           <pre className={styles.consoleBody}>{consoleOutput}</pre>
         </div>
       )}
+
       {testError && (
         <div className={styles.testError}>
           <pre>{testError}</pre>
@@ -1591,8 +2039,8 @@ function PreviewTheoryQuestion({
   };
 
   return (
-    <div>
-      <p>{block.text}</p>
+    <div className={styles.theoryQuestion}>
+      <p className={styles.questionText}>{block.text}</p>
       {block.code && (
         <CodeEditor
           value={block.code}
@@ -1604,7 +2052,7 @@ function PreviewTheoryQuestion({
         />
       )}
       {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
-      <div>
+      <div className={styles.optionsList}>
         {block.options.map((opt, i) => (
           <label key={i} className={styles.radioOption}>
             <input
@@ -1613,7 +2061,7 @@ function PreviewTheoryQuestion({
               checked={selected === i}
               onChange={() => setTestAnswer(i)}
             />
-            {opt}
+            <span className={styles.optionText}>{opt}</span>
           </label>
         ))}
       </div>

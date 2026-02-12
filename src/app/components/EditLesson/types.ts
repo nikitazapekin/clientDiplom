@@ -41,10 +41,19 @@ export interface ImageBlock extends BaseBlock {
 export type LessonBlock = TextBlock | CodeExampleBlock | SourceBlock | TableBlock | ImageBlock;
 
 // --- Test blocks ---
-export type CodeConstraintType = "maxTimeMs" | "maxLines" | "forbiddenTokens";
+export type CodeConstraintType =
+  | "maxTimeMs"
+  | "maxLines"
+  | "forbiddenTokens"
+  | "noComments"
+  | "noConsoleLog"
+  | "maxComplexity"
+  | "memoryLimit"
+  | "requiredKeywords";
+
 export interface CodeConstraint {
   type: CodeConstraintType;
-  value: number | string[];
+  value: number | string[] | boolean;
 }
 
 export interface CodeTaskBlock extends BaseBlock {
