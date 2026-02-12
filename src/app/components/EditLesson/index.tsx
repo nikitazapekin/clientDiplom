@@ -84,21 +84,22 @@ public class Program
     public static int YourFunction(int n)
     {
         // Ваш код здесь
-        return 0;
+        return n + 1;
     }
 }`;
     case "java":
-      return `public class Kata {
+      return `public class Main {
     public static int yourFunction(int n) {
         // Ваш код здесь
-        return 0;
+        return n + 1;
     }
-    
+
     public static void main(String[] args) {
-        // Этот метод нужен для запуска, но не используется в тестах
+        // Пример вызова функции
+        int result = yourFunction(5);
+        System.out.println(result);
     }
 }`;
-
     case "python":
       return "def your_function(n):\n    # Ваш код здесь\n    return 0";
     case "golang":
@@ -1106,79 +1107,38 @@ const buildTestCode = (
     case "csharp":
       if (isArrayInput) {
         const arrayValues = parsedInput.map((v: any) => v).join(", ");
-        return `${userCode}\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(new int[] { ${arrayValues} })));`;
+        return `${userCode}\n\npublic class Runner {\n    public static void Main() {\n        Console.WriteLine(JsonSerializer.Serialize(Program.${funcName}(new int[] { ${arrayValues} })));\n    }\n}`;
       } else {
-        return `${userCode}\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${input})));`;
+        return `${userCode}\n\npublic class Runner {\n    public static void Main() {\n        Console.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${input})));\n    }\n}`;
       }
-
     case "java":
-      // Формируем аргументы для вызова функции
-      let argsForCall = "";
-
-      if (isArrayInput) {
-        // Для массива
-        const arrayValues = parsedInput.map((v: any) => v).join(", ");
-        argsForCall = `new int[]{${arrayValues}}`;
-      } else if (isStringInput) {
-        // Для строки
-        argsForCall = input;
-      } else if (isNumberInput) {
-        // Для числа
-        argsForCall = input;
-      } else if (input.includes(",")) {
-        // Для нескольких аргументов
-        argsForCall = input;
-      } else {
-        // Для одного аргумента
-        argsForCall = input;
-      }
-
-      // Заменяем или добавляем main метод для тестирования
+      // Проверяем, есть ли main метод
       if (userCode.includes("public static void main")) {
-        // Если есть main метод, заменяем его содержимое
+        // Заменяем существующий main метод
         return userCode.replace(
-          /public static void main\(String\[\] args\)[\s\S]*?}/,
+          /public static void main\(String\[\] args\)\s*\{[\s\S]*?\}/,
           `public static void main(String[] args) {
-        // Тестовый вызов функции
-        Object result = ${funcName}(${argsForCall});
-        
-        // Выводим результат в консоль в формате JSON
-        if (result instanceof int[]) {
-            int[] arr = (int[]) result;
-            System.out.print("[");
-            for (int i = 0; i < arr.length; i++) {
-                System.out.print(arr[i]);
-                if (i < arr.length - 1) System.out.print(", ");
-            }
-            System.out.println("]");
-        } else {
-            System.out.println(result);
+        try {
+            System.out.println(${funcName}(${input}));
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
         }
     }`
         );
       } else {
-        // Если нет main метода, добавляем его
-        return `${userCode}
+        // Добавляем main метод перед последней закрывающей скобкой класса
+        const codeWithoutLastBrace = userCode.trim().replace(/\}\s*$/, "");
+        return `${codeWithoutLastBrace}
 
-public static void main(String[] args) {
-    // Тестовый вызов функции
-    Object result = ${funcName}(${argsForCall});
-    
-    // Выводим результат в консоль в формате JSON
-    if (result instanceof int[]) {
-        int[] arr = (int[]) result;
-        System.out.print("[");
-        for (int i = 0; i < arr.length; i++) {
-            System.out.print(arr[i]);
-            if (i < arr.length - 1) System.out.print(", ");
+    public static void main(String[] args) {
+        try {
+            System.out.println(${funcName}(${input}));
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
         }
-        System.out.println("]");
-    } else {
-        System.out.println(result);
     }
 }`;
       }
-
     case "golang":
       if (isArrayInput) {
         const arrayValues = parsedInput.map((v: any) => v).join(", ");
@@ -1191,7 +1151,6 @@ public static void main(String[] args) {
       return userCode;
   }
 };
-
 // Функция для сравнения выводов
 const compareOutputs = (actual: any, expected: any): boolean => {
   if (actual == null && expected == null) return true;
