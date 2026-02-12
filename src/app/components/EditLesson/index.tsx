@@ -1092,24 +1092,66 @@ const buildTestCode = (
     parsedInput = input;
   }
 
-  // Convert input to array if it's not already
-  const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
-
   if (lang === "javascript") {
-    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-    return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${argsStr})));`;
+    // Проверяем, является ли входные данные массивом (ожидается как единый аргумент)
+    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+
+    if (isArrayInput) {
+      // Передаем массив как один аргумент
+      return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${input})));`;
+    } else {
+      // Для остальных случаев - старый подход с разворачиванием
+      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
+      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+      return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${argsStr})));`;
+    }
   } else if (lang === "python") {
-    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-    return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${argsStr})))`;
+    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+
+    if (isArrayInput) {
+      return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${input})))`;
+    } else {
+      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
+      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+      return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${argsStr})))`;
+    }
   } else if (lang === "csharp") {
-    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-    return `${userCode}\nusing System;\nusing System.Text.Json;\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${argsStr})));`;
+    // Для C# нужно обрабатывать массивы особым образом
+    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+
+    if (isArrayInput) {
+      // Преобразуем JSON массив в C# массив
+      const arrayValues = parsedInput.map((v: any) => JSON.stringify(v)).join(", ");
+      return `${userCode}\nusing System;\nusing System.Text.Json;\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(new int[] { ${arrayValues} })));`;
+    } else {
+      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
+      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+      return `${userCode}\nusing System;\nusing System.Text.Json;\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${argsStr})));`;
+    }
   } else if (lang === "java") {
-    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-    return `${userCode}\nimport com.google.gson.Gson;\npublic class Main { public static void main(String[] args) { System.out.println(new Gson().toJson(Solution.${funcName}(${argsStr}))); }}`;
+    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+
+    if (isArrayInput) {
+      // Преобразуем JSON массив в Java массив
+      const arrayValues = parsedInput.map((v: any) => v).join(", ");
+      return `${userCode}\nimport com.google.gson.Gson;\npublic class Main { public static void main(String[] args) { System.out.println(new Gson().toJson(Solution.${funcName}(new int[]{${arrayValues}}))); }}`;
+    } else {
+      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
+      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+      return `${userCode}\nimport com.google.gson.Gson;\npublic class Main { public static void main(String[] args) { System.out.println(new Gson().toJson(Solution.${funcName}(${argsStr}))); }}`;
+    }
   } else if (lang === "golang") {
-    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-    return `${userCode}\nimport "encoding/json"\nimport "fmt"\nfunc main() { result := ${funcName}(${argsStr}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
+    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+
+    if (isArrayInput) {
+      // Преобразуем JSON массив в Go срез
+      const arrayValues = parsedInput.map((v: any) => v).join(", ");
+      return `${userCode}\nimport "encoding/json"\nimport "fmt"\nfunc main() { result := ${funcName}([]int{${arrayValues}}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
+    } else {
+      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
+      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+      return `${userCode}\nimport "encoding/json"\nimport "fmt"\nfunc main() { result := ${funcName}(${argsStr}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
+    }
   }
 
   return userCode;
@@ -1166,6 +1208,7 @@ function PreviewCodeTask({
             block.language ?? "javascript",
             funcName
           );
+
           const res = await CodeService.executeCode({
             language: block.language ?? "javascript",
             code: codeToRun,
@@ -1179,18 +1222,26 @@ function PreviewCodeTask({
           const actualOutput = (res.output || "").trim();
           let expectedOutput = (tc.expectedOutput || "").trim();
 
-          // Try to parse and normalize JSON for comparison
+          // Нормализуем JSON для сравнения
           let actualParsed: any;
           let expectedParsed: any;
+
           try {
+            // Пытаемся распарсить оба вывода
             actualParsed = JSON.parse(actualOutput);
+          } catch {
+            // Если не JSON, оставляем как строку
+            actualParsed = actualOutput;
+          }
+
+          try {
             expectedParsed = JSON.parse(expectedOutput);
           } catch {
-            actualParsed = actualOutput;
             expectedParsed = expectedOutput;
           }
 
-          const passed = JSON.stringify(actualParsed) === JSON.stringify(expectedParsed);
+          // Специальная обработка для массивов
+          const passed = compareOutputs(actualParsed, expectedParsed);
 
           results.push({
             input: tc.input,
@@ -1204,6 +1255,7 @@ function PreviewCodeTask({
 
         if (allPassed) {
           onCorrect();
+          setTestError("");
         } else {
           const failedTests = results
             .map((r, i) => {
@@ -1229,9 +1281,38 @@ function PreviewCodeTask({
       });
       const out = (res.output || "").trim();
 
-      if (out === (block.expectedOutput || "").trim()) onCorrect();
-      else setTestError(`Неверно. Ожидалось: ${block.expectedOutput}, получено: ${out}`);
+      if (out === (block.expectedOutput || "").trim()) {
+        onCorrect();
+        setTestError("");
+      } else {
+        setTestError(`Неверно. Ожидалось: ${block.expectedOutput}, получено: ${out}`);
+      }
     }
+  };
+
+  // Функция для сравнения выводов
+  const compareOutputs = (actual: any, expected: any): boolean => {
+    // Если оба null или undefined
+    if (actual == null && expected == null) return true;
+
+    // Если один null, а другой нет
+    if (actual == null || expected == null) return false;
+
+    // Если оба массивы - сравниваем поэлементно
+    if (Array.isArray(actual) && Array.isArray(expected)) {
+      if (actual.length !== expected.length) return false;
+      return actual.every(
+        (item, index) => JSON.stringify(item) === JSON.stringify(expected[index])
+      );
+    }
+
+    // Если оба объекты
+    if (typeof actual === "object" && typeof expected === "object") {
+      return JSON.stringify(actual) === JSON.stringify(expected);
+    }
+
+    // Простое сравнение
+    return actual == expected;
   };
 
   const runUserCode = async () => {
@@ -1292,7 +1373,6 @@ function PreviewCodeTask({
     </div>
   );
 }
-
 function PreviewTheoryQuestion({
   block,
   testAnswer,
