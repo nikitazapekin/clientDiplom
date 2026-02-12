@@ -86,29 +86,25 @@ public class Program
         // Ваш код здесь
         return 0;
     }
-
-    public static void Main(string[] args)
-    {
-        // Этот метод используется для запуска
-    }
 }`;
     case "java":
-      return `public class Solution {
+      return `public class Kata {
     public static int yourFunction(int n) {
         // Ваш код здесь
         return 0;
     }
-
+    
     public static void main(String[] args) {
-        // Этот метод используется для запуска
+        // Этот метод нужен для запуска, но не используется в тестах
     }
 }`;
+
     case "python":
-      return "def your_function(n):\n    # Ваш код здесь\n    pass";
+      return "def your_function(n):\n    # Ваш код здесь\n    return 0";
     case "golang":
       return "package main\n\nfunc yourFunction(n int) int {\n    // Ваш код здесь\n    return 0\n}";
     default:
-      return "function yourFunction(n) {\n    // Ваш код здесь\n}";
+      return "function yourFunction(n) {\n    // Ваш код здесь\n    return 0;\n}";
   }
 };
 
@@ -120,6 +116,7 @@ const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
   language: "javascript",
   startCode: getDefaultStarterCode("javascript"),
   testCases: [],
+  constraints: [],
 });
 
 const createTheoryQuestionBlock = (order: number): TheoryQuestionBlock => ({
@@ -167,9 +164,7 @@ export default function EditLesson() {
   const updateSlide = useCallback((index: number, patch: Partial<Slide>) => {
     setSlides((prev) => {
       const next = [...prev];
-
       next[index] = { ...next[index], ...patch };
-
       return next;
     });
   }, []);
@@ -177,7 +172,6 @@ export default function EditLesson() {
   const addBlock = useCallback(
     (slideIndex: number, kind: SlideBlock["type"]) => {
       const slide = slides[slideIndex];
-
       if (!slide) return;
 
       const order = slide.blocks.length;
@@ -187,40 +181,31 @@ export default function EditLesson() {
         case "text":
           block = createTextBlock(order);
           break;
-
         case "codeExample":
           block = createCodeExampleBlock(order);
           break;
-
         case "source":
           block = createSourceBlock(order);
           break;
-
         case "table":
           block = createTableBlock(order);
           break;
-
         case "image":
           block = createImageBlock(order);
           break;
-
         case "codeTask":
           block = createCodeTaskBlock(order);
           break;
-
         case "theoryQuestion":
           block = createTheoryQuestionBlock(order);
           break;
-
         default:
           return;
       }
 
       setSlides((prev) => {
         const next = [...prev];
-
         next[slideIndex] = { ...next[slideIndex], blocks: [...next[slideIndex].blocks, block] };
-
         return next;
       });
     },
@@ -232,7 +217,6 @@ export default function EditLesson() {
       setSlides((prev) => {
         const next = [...prev];
         const slide = next[slideIndex];
-
         if (!slide) return prev;
 
         next[slideIndex] = {
@@ -241,7 +225,6 @@ export default function EditLesson() {
             b.id === blockId ? { ...b, ...patch } : b
           ) as SlideBlock[],
         };
-
         return next;
       });
     },
@@ -252,14 +235,11 @@ export default function EditLesson() {
     setSlides((prev) => {
       const next = [...prev];
       const slide = next[slideIndex];
-
       if (!slide) return prev;
 
       const blocks = slide.blocks.filter((b) => b.id !== blockId);
-
       blocks.forEach((b, i) => ((b as SlideBlock).order = i));
       next[slideIndex] = { ...slide, blocks };
-
       return next;
     });
   }, []);
@@ -268,21 +248,17 @@ export default function EditLesson() {
     setSlides((prev) => {
       const next = [...prev];
       const slide = next[slideIndex];
-
       if (!slide) return prev;
 
       const sorted = sortBlocks(slide.blocks);
       const i = sorted.findIndex((b) => b.id === blockId);
-
       if (i < 0) return prev;
 
       const j = direction === "up" ? i - 1 : i + 1;
-
       if (j < 0 || j >= sorted.length) return prev;
 
       [sorted[i].order, sorted[j].order] = [sorted[j].order, sorted[i].order];
       next[slideIndex] = { ...slide, blocks: sortBlocks(sorted) };
-
       return next;
     });
   }, []);
@@ -293,7 +269,6 @@ export default function EditLesson() {
     try {
       const res = await CodeService.executeCode({ language, code });
       const text = res.error ? `Ошибка: ${res.error}` : res.output || "";
-
       setCodeRunOutput((prev) => ({ ...prev, [blockId]: text }));
     } finally {
       setCodeRunLoading((prev) => ({ ...prev, [blockId]: false }));
@@ -302,9 +277,7 @@ export default function EditLesson() {
 
   const saveLesson = useCallback(() => {
     const data = JSON.stringify({ slides });
-
     console.log("Lesson content (for API):", data);
-    // TODO: LessonService.updateLesson(id, { content: data });
   }, [slides]);
 
   if (previewMode) {
@@ -691,18 +664,14 @@ function BlockEditor({
       const cells = block.cells.map((row, ri) =>
         row.map((cell, ci) => (ri === r && ci === c ? v : cell))
       );
-
       updateBlock(slideIndex, block.id, { cells });
     };
     const setSize = (rows: number, cols: number) => {
       const cells: string[][] = [];
-
       for (let r = 0; r < rows; r++) {
         cells[r] = [];
-
         for (let c = 0; c < cols; c++) cells[r][c] = block.cells[r]?.[c] ?? "";
       }
-
       updateBlock(slideIndex, block.id, { rows, cols, cells });
     };
 
@@ -761,14 +730,11 @@ function BlockEditor({
   if (block.type === "codeTask") {
     const addTestCase = () => {
       const testCases = [...(block.testCases ?? []), { input: "", expectedOutput: "" }];
-
       updateBlock(slideIndex, block.id, { testCases });
     };
     const updateTestCase = (i: number, field: "input" | "expectedOutput", value: string) => {
       const testCases = [...(block.testCases ?? [])];
-
       if (!testCases[i]) testCases[i] = { input: "", expectedOutput: "" };
-
       testCases[i][field] = value;
       updateBlock(slideIndex, block.id, { testCases });
     };
@@ -777,14 +743,11 @@ function BlockEditor({
         ...(block.constraints ?? []),
         { type: "maxTimeMs" as CodeConstraintType, value: 1000 },
       ];
-
       updateBlock(slideIndex, block.id, { constraints });
     };
     const updateConstraint = (i: number, type: CodeConstraintType, value: number | string[]) => {
       const constraints = [...(block.constraints ?? [])];
-
       if (!constraints[i]) constraints[i] = { type: "maxTimeMs", value: 1000 };
-
       constraints[i] = { type, value };
       updateBlock(slideIndex, block.id, { constraints });
     };
@@ -951,7 +914,6 @@ function BlockEditor({
     const addOption = () => updateBlock(slideIndex, block.id, { options: [...block.options, ""] });
     const setOption = (i: number, v: string) => {
       const options = [...block.options];
-
       options[i] = v;
       updateBlock(slideIndex, block.id, { options });
     };
@@ -1065,16 +1027,42 @@ function PreviewBlockStatic({ block }: { block: SlideBlock }) {
 
   return null;
 }
-
 const extractFunctionName = (code: string, lang: CodeLanguage): string | null => {
-  if (lang === "javascript" || lang === "python" || lang === "golang") {
-    const match = code.match(/function\s+(\w+)|def\s+(\w+)|func\s+(\w+)/);
-    return match ? match[1] || match[2] || match[3] : null;
-  } else if (lang === "csharp" || lang === "java") {
-    const match = code.match(/(?:public|private|protected|static|\s)+[\w<>\[\]]+\s+(\w+)\s*\(/);
-    return match ? match[1] : null;
+  if (!code) return null;
+
+  try {
+    switch (lang) {
+      case "javascript":
+        const jsMatch = code.match(
+          /function\s+(\w+)|const\s+(\w+)\s*=\s*\([^)]*\)\s*=>|let\s+(\w+)\s*=\s*\([^)]*\)\s*=>|var\s+(\w+)\s*=\s*\([^)]*\)\s*=>/
+        );
+        return jsMatch ? jsMatch[1] || jsMatch[2] || jsMatch[3] || jsMatch[4] : null;
+
+      case "python":
+        const pyMatch = code.match(/def\s+(\w+)\s*\(/);
+        return pyMatch ? pyMatch[1] : null;
+
+      case "golang":
+        const goMatch = code.match(/func\s+(\w+)\s*\(/);
+        return goMatch ? goMatch[1] : null;
+
+      case "csharp":
+        // Ищем метод в классе Program
+        const csMatch = code.match(/public\s+static\s+[\w<>\[\]]+\s+(\w+)\s*\([^)]*\)/);
+        return csMatch ? csMatch[1] : null;
+
+      case "java":
+        // Ищем статический метод в классе Kata
+        const javaMatch = code.match(/public\s+static\s+[\w<>\[\]]+\s+(\w+)\s*\([^)]*\)/);
+        return javaMatch ? javaMatch[1] : null;
+
+      default:
+        return null;
+    }
+  } catch (e) {
+    console.error("Error extracting function name:", e);
+    return null;
   }
-  return null;
 };
 
 const buildTestCode = (
@@ -1092,69 +1080,133 @@ const buildTestCode = (
     parsedInput = input;
   }
 
-  if (lang === "javascript") {
-    // Проверяем, является ли входные данные массивом (ожидается как единый аргумент)
-    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+  const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+  const isStringInput = input.trim().startsWith('"') && input.trim().endsWith('"');
+  const isNumberInput = !isNaN(Number(input)) && input.trim() !== "";
 
-    if (isArrayInput) {
-      // Передаем массив как один аргумент
-      return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${input})));`;
-    } else {
-      // Для остальных случаев - старый подход с разворачиванием
-      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
-      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-      return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${argsStr})));`;
-    }
-  } else if (lang === "python") {
-    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+  switch (lang) {
+    case "javascript":
+      if (isArrayInput) {
+        return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${input})));`;
+      } else {
+        const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
+        const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+        return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${argsStr})));`;
+      }
 
-    if (isArrayInput) {
-      return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${input})))`;
-    } else {
-      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
-      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-      return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${argsStr})))`;
-    }
-  } else if (lang === "csharp") {
-    // Для C# нужно обрабатывать массивы особым образом
-    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+    case "python":
+      if (isArrayInput) {
+        return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${input})))`;
+      } else {
+        const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
+        const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+        return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${argsStr})))`;
+      }
 
-    if (isArrayInput) {
-      // Преобразуем JSON массив в C# массив
-      const arrayValues = parsedInput.map((v: any) => JSON.stringify(v)).join(", ");
-      return `${userCode}\nusing System;\nusing System.Text.Json;\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(new int[] { ${arrayValues} })));`;
-    } else {
-      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
-      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-      return `${userCode}\nusing System;\nusing System.Text.Json;\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${argsStr})));`;
-    }
-  } else if (lang === "java") {
-    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+    case "csharp":
+      if (isArrayInput) {
+        const arrayValues = parsedInput.map((v: any) => v).join(", ");
+        return `${userCode}\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(new int[] { ${arrayValues} })));`;
+      } else {
+        return `${userCode}\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${input})));`;
+      }
 
-    if (isArrayInput) {
-      // Преобразуем JSON массив в Java массив
-      const arrayValues = parsedInput.map((v: any) => v).join(", ");
-      return `${userCode}\nimport com.google.gson.Gson;\npublic class Main { public static void main(String[] args) { System.out.println(new Gson().toJson(Solution.${funcName}(new int[]{${arrayValues}}))); }}`;
-    } else {
-      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
-      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-      return `${userCode}\nimport com.google.gson.Gson;\npublic class Main { public static void main(String[] args) { System.out.println(new Gson().toJson(Solution.${funcName}(${argsStr}))); }}`;
-    }
-  } else if (lang === "golang") {
-    const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+    case "java":
+      // Формируем аргументы для вызова функции
+      let argsForCall = "";
 
-    if (isArrayInput) {
-      // Преобразуем JSON массив в Go срез
-      const arrayValues = parsedInput.map((v: any) => v).join(", ");
-      return `${userCode}\nimport "encoding/json"\nimport "fmt"\nfunc main() { result := ${funcName}([]int{${arrayValues}}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
+      if (isArrayInput) {
+        // Для массива
+        const arrayValues = parsedInput.map((v: any) => v).join(", ");
+        argsForCall = `new int[]{${arrayValues}}`;
+      } else if (isStringInput) {
+        // Для строки
+        argsForCall = input;
+      } else if (isNumberInput) {
+        // Для числа
+        argsForCall = input;
+      } else if (input.includes(",")) {
+        // Для нескольких аргументов
+        argsForCall = input;
+      } else {
+        // Для одного аргумента
+        argsForCall = input;
+      }
+
+      // Заменяем или добавляем main метод для тестирования
+      if (userCode.includes("public static void main")) {
+        // Если есть main метод, заменяем его содержимое
+        return userCode.replace(
+          /public static void main\(String\[\] args\)[\s\S]*?}/,
+          `public static void main(String[] args) {
+        // Тестовый вызов функции
+        Object result = ${funcName}(${argsForCall});
+        
+        // Выводим результат в консоль в формате JSON
+        if (result instanceof int[]) {
+            int[] arr = (int[]) result;
+            System.out.print("[");
+            for (int i = 0; i < arr.length; i++) {
+                System.out.print(arr[i]);
+                if (i < arr.length - 1) System.out.print(", ");
+            }
+            System.out.println("]");
+        } else {
+            System.out.println(result);
+        }
+    }`
+        );
+      } else {
+        // Если нет main метода, добавляем его
+        return `${userCode}
+
+public static void main(String[] args) {
+    // Тестовый вызов функции
+    Object result = ${funcName}(${argsForCall});
+    
+    // Выводим результат в консоль в формате JSON
+    if (result instanceof int[]) {
+        int[] arr = (int[]) result;
+        System.out.print("[");
+        for (int i = 0; i < arr.length; i++) {
+            System.out.print(arr[i]);
+            if (i < arr.length - 1) System.out.print(", ");
+        }
+        System.out.println("]");
     } else {
-      const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
-      const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-      return `${userCode}\nimport "encoding/json"\nimport "fmt"\nfunc main() { result := ${funcName}(${argsStr}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
+        System.out.println(result);
     }
+}`;
+      }
+
+    case "golang":
+      if (isArrayInput) {
+        const arrayValues = parsedInput.map((v: any) => v).join(", ");
+        return `${userCode}\n\nfunc main() { result := ${funcName}([]int{${arrayValues}}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
+      } else {
+        return `${userCode}\n\nfunc main() { result := ${funcName}(${input}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
+      }
+
+    default:
+      return userCode;
+  }
+};
+
+// Функция для сравнения выводов
+const compareOutputs = (actual: any, expected: any): boolean => {
+  if (actual == null && expected == null) return true;
+  if (actual == null || expected == null) return false;
+
+  if (Array.isArray(actual) && Array.isArray(expected)) {
+    if (actual.length !== expected.length) return false;
+    return actual.every((item, index) => JSON.stringify(item) === JSON.stringify(expected[index]));
   }
 
-  return userCode;
+  if (typeof actual === "object" && typeof expected === "object") {
+    return JSON.stringify(actual) === JSON.stringify(expected);
+  }
+
+  return String(actual).trim() === String(expected).trim();
 };
 
 function PreviewCodeTask({
@@ -1175,8 +1227,13 @@ function PreviewCodeTask({
   const [consoleOutput, setConsoleOutput] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
+  // Важно: используем текущий язык блока для стартового кода
   const userCode =
-    typeof testAnswer === "string" ? testAnswer : block.runnable ? (block.startCode ?? "") : "";
+    typeof testAnswer === "string"
+      ? testAnswer
+      : block.runnable
+        ? (block.startCode ?? getDefaultStarterCode(block.language ?? "javascript"))
+        : "";
 
   const setUserCode = (code: string) => {
     setTestAnswer(code);
@@ -1189,19 +1246,23 @@ function PreviewCodeTask({
 
     if (block.runnable) {
       if (block.testCases?.length) {
-        const funcName = extractFunctionName(
-          block.startCode ?? userCode,
-          block.language ?? "javascript"
-        );
+        const funcName = extractFunctionName(userCode, block.language ?? "javascript");
 
         if (!funcName) {
-          setTestError("Не удалось найти имя функции в стартовом коде");
+          setTestError(
+            `Не удалось найти имя функции в коде для языка ${block.language}. Убедитесь, что функция определена правильно.`
+          );
           return;
         }
 
         const results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
 
         for (const tc of block.testCases) {
+          if (!tc.input || !tc.expectedOutput) {
+            setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
+            return;
+          }
+
           const codeToRun = buildTestCode(
             userCode,
             tc.input,
@@ -1222,15 +1283,12 @@ function PreviewCodeTask({
           const actualOutput = (res.output || "").trim();
           let expectedOutput = (tc.expectedOutput || "").trim();
 
-          // Нормализуем JSON для сравнения
           let actualParsed: any;
           let expectedParsed: any;
 
           try {
-            // Пытаемся распарсить оба вывода
             actualParsed = JSON.parse(actualOutput);
           } catch {
-            // Если не JSON, оставляем как строку
             actualParsed = actualOutput;
           }
 
@@ -1240,7 +1298,6 @@ function PreviewCodeTask({
             expectedParsed = expectedOutput;
           }
 
-          // Специальная обработка для массивов
           const passed = compareOutputs(actualParsed, expectedParsed);
 
           results.push({
@@ -1290,31 +1347,6 @@ function PreviewCodeTask({
     }
   };
 
-  // Функция для сравнения выводов
-  const compareOutputs = (actual: any, expected: any): boolean => {
-    // Если оба null или undefined
-    if (actual == null && expected == null) return true;
-
-    // Если один null, а другой нет
-    if (actual == null || expected == null) return false;
-
-    // Если оба массивы - сравниваем поэлементно
-    if (Array.isArray(actual) && Array.isArray(expected)) {
-      if (actual.length !== expected.length) return false;
-      return actual.every(
-        (item, index) => JSON.stringify(item) === JSON.stringify(expected[index])
-      );
-    }
-
-    // Если оба объекты
-    if (typeof actual === "object" && typeof expected === "object") {
-      return JSON.stringify(actual) === JSON.stringify(expected);
-    }
-
-    // Простое сравнение
-    return actual == expected;
-  };
-
   const runUserCode = async () => {
     setConsoleOutput(null);
     setIsRunning(true);
@@ -1323,22 +1355,24 @@ function PreviewCodeTask({
         language: block.language ?? "javascript",
         code: userCode,
       });
-      setConsoleOutput(res.output || (res.error ? `Error: ${res.error}` : "No output"));
+      setConsoleOutput(
+        res.output || (res.error ? `Ошибка: ${res.error}` : "Код выполнен успешно (без вывода)")
+      );
     } catch (e) {
-      setConsoleOutput(`Execution failed: ${e}`);
+      setConsoleOutput(`Ошибка выполнения: ${e}`);
     } finally {
       setIsRunning(false);
     }
   };
 
   return (
-    <div>
-      <p>{block.description}</p>
+    <div className={styles.codeTask}>
+      <p className={styles.taskDescription}>{block.description}</p>
       <CodeEditor
         value={userCode}
         onChange={setUserCode}
         language={block.language ?? "javascript"}
-        height={200}
+        height={250}
         className={styles.codeEditorWrap}
       />
       <div className={styles.runButtons}>
@@ -1366,13 +1400,14 @@ function PreviewCodeTask({
         </div>
       )}
       {testError && (
-        <p className={styles.form__error} style={{ whiteSpace: "pre-wrap" }}>
-          {testError}
-        </p>
+        <div className={styles.testError}>
+          <pre>{testError}</pre>
+        </div>
       )}
     </div>
   );
 }
+
 function PreviewTheoryQuestion({
   block,
   testAnswer,
@@ -1405,7 +1440,7 @@ function PreviewTheoryQuestion({
       {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
       <div>
         {block.options.map((opt, i) => (
-          <label key={i}>
+          <label key={i} className={styles.radioOption}>
             <input
               type="radio"
               name={`theory_${block.id}`}

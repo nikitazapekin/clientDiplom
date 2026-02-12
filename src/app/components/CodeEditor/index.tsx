@@ -59,6 +59,7 @@ export default function CodeEditor({
       )}
       <MonacoEditor
         height={height}
+        width={600}
         language={monacoLang}
         value={value}
         onChange={(v) => onChange(v ?? "")}
