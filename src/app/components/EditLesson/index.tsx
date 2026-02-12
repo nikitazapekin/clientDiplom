@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import Button from "../Button";
 import CodeEditor from "../CodeEditor";
@@ -23,7 +23,9 @@ import type {
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";
 /* eslint-disable */
-const genId = () => `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+// Используем более надежный генератор ID
+const genId = () =>
+  `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${performance.now()}`;
 
 const LANGUAGES: { value: CodeLanguage; label: string }[] = [
   { value: "javascript", label: "JavaScript" },
@@ -261,6 +263,56 @@ function sortBlocks(blocks: SlideBlock[]): SlideBlock[] {
   return [...blocks].sort((a, b) => a.order - b.order);
 }
 
+// Компонент-обертка для CodeEditor для предотвращения проблем с Monaco
+function StableCodeEditor({
+  value,
+  onChange,
+  language,
+  height,
+  readOnly,
+  onRun,
+  runLoading,
+  key,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  language: CodeLanguage;
+  height: number;
+  readOnly?: boolean;
+  onRun?: () => void;
+  runLoading?: boolean;
+  key?: string;
+}) {
+  const editorRef = useRef<any>(null);
+
+  // Уникальный ID для каждого экземпляра редактора
+  const editorId = useRef(`editor_${genId()}`).current;
+
+  // Используем useEffect для очистки при размонтировании
+  useEffect(() => {
+    return () => {
+      // Очищаем ссылку при размонтировании
+      if (editorRef.current) {
+        editorRef.current = null;
+      }
+    };
+  }, []);
+
+  return (
+    <div className={styles.codeEditorWrapper} key={key || editorId}>
+      <CodeEditor
+        value={value}
+        onChange={onChange}
+        language={language}
+        height={height}
+        readOnly={readOnly}
+        onRun={onRun}
+        runLoading={runLoading}
+      />
+    </div>
+  );
+}
+
 export default function EditLesson() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [selectedSlideIndex, setSelectedSlideIndex] = useState<number | null>(null);
@@ -270,6 +322,9 @@ export default function EditLesson() {
   const [testError, setTestError] = useState<{ [slideId: string]: string }>({});
   const [codeRunOutput, setCodeRunOutput] = useState<{ [blockId: string]: string }>({});
   const [codeRunLoading, setCodeRunLoading] = useState<{ [blockId: string]: boolean }>({});
+
+  // Добавляем ref для отслеживания перемещения блоков
+  const isMovingBlock = useRef(false);
 
   const selectedSlide = selectedSlideIndex !== null ? slides[selectedSlideIndex] : null;
   const lessonSlides = slides.filter((s) => s.type === "lesson");
@@ -299,10 +354,11 @@ export default function EditLesson() {
     });
   }, []);
 
-  const addBlock = useCallback(
-    (slideIndex: number, kind: SlideBlock["type"]) => {
-      const slide = slides[slideIndex];
-      if (!slide) return;
+  const addBlock = useCallback((slideIndex: number, kind: SlideBlock["type"]) => {
+    setSlides((prev) => {
+      const next = [...prev];
+      const slide = next[slideIndex];
+      if (!slide) return prev;
 
       const order = slide.blocks.length;
       let block: SlideBlock;
@@ -330,17 +386,16 @@ export default function EditLesson() {
           block = createTheoryQuestionBlock(order);
           break;
         default:
-          return;
+          return prev;
       }
 
-      setSlides((prev) => {
-        const next = [...prev];
-        next[slideIndex] = { ...next[slideIndex], blocks: [...next[slideIndex].blocks, block] };
-        return next;
-      });
-    },
-    [slides]
-  );
+      next[slideIndex] = {
+        ...next[slideIndex],
+        blocks: [...next[slideIndex].blocks, block],
+      };
+      return next;
+    });
+  }, []);
 
   const updateBlock = useCallback(
     (slideIndex: number, blockId: string, patch: Partial<SlideBlock>) => {
@@ -368,29 +423,56 @@ export default function EditLesson() {
       if (!slide) return prev;
 
       const blocks = slide.blocks.filter((b) => b.id !== blockId);
-      blocks.forEach((b, i) => ((b as SlideBlock).order = i));
-      next[slideIndex] = { ...slide, blocks };
+      // Пересчитываем order для всех блоков
+      const reorderedBlocks = blocks.map((b, idx) => ({ ...b, order: idx })) as SlideBlock[];
+
+      next[slideIndex] = { ...slide, blocks: reorderedBlocks };
       return next;
     });
   }, []);
 
+  // ИСПРАВЛЕННАЯ ФУНКЦИЯ moveBlock - теперь не вызывает ошибку с Monaco
   const moveBlock = useCallback((slideIndex: number, blockId: string, direction: "up" | "down") => {
+    // Устанавливаем флаг, что происходит перемещение
+    isMovingBlock.current = true;
+
     setSlides((prev) => {
       const next = [...prev];
       const slide = next[slideIndex];
       if (!slide) return prev;
 
+      // Сортируем блоки по order
       const sorted = sortBlocks(slide.blocks);
-      const i = sorted.findIndex((b) => b.id === blockId);
-      if (i < 0) return prev;
+      const currentIndex = sorted.findIndex((b) => b.id === blockId);
 
-      const j = direction === "up" ? i - 1 : i + 1;
-      if (j < 0 || j >= sorted.length) return prev;
+      if (currentIndex === -1) return prev;
 
-      [sorted[i].order, sorted[j].order] = [sorted[j].order, sorted[i].order];
-      next[slideIndex] = { ...slide, blocks: sortBlocks(sorted) };
+      const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+      if (newIndex < 0 || newIndex >= sorted.length) return prev;
+
+      // Создаем новый массив блоков с обновленными order
+      const newBlocks = sorted.map((block, index) => {
+        if (index === currentIndex) {
+          return { ...block, order: newIndex };
+        }
+        if (index === newIndex) {
+          return { ...block, order: currentIndex };
+        }
+        return { ...block };
+      });
+
+      // Сортируем по новому order
+      const finalBlocks = sortBlocks(newBlocks);
+
+      next[slideIndex] = { ...slide, blocks: finalBlocks };
       return next;
     });
+
+    // Сбрасываем флаг после обновления состояния
+    setTimeout(() => {
+      isMovingBlock.current = false;
+    }, 0);
   }, []);
 
   const runCode = useCallback(async (blockId: string, language: CodeLanguage, code: string) => {
@@ -400,6 +482,8 @@ export default function EditLesson() {
       const res = await CodeService.executeCode({ language, code });
       const text = res.error ? `Ошибка: ${res.error}` : res.output || "";
       setCodeRunOutput((prev) => ({ ...prev, [blockId]: text }));
+    } catch (error) {
+      setCodeRunOutput((prev) => ({ ...prev, [blockId]: `Ошибка: ${error}` }));
     } finally {
       setCodeRunLoading((prev) => ({ ...prev, [blockId]: false }));
     }
@@ -656,6 +740,7 @@ export default function EditLesson() {
                       </button>
                     </div>
                     <BlockEditor
+                      key={`${block.id}_${block.order}`} // Важно: добавляем order в key
                       block={block}
                       slideIndex={selectedSlideIndex}
                       updateBlock={updateBlock}
@@ -676,29 +761,33 @@ export default function EditLesson() {
             <div className={styles.preview__content}>
               {slides.length === 0 ? (
                 <p>Добавьте слайды</p>
-              ) : (
-                sortBlocks(selectedSlide?.blocks ?? []).map((b) => (
+              ) : selectedSlide ? (
+                sortBlocks(selectedSlide.blocks ?? []).map((b) => (
                   <PreviewBlockStatic key={b.id} block={b} />
                 ))
+              ) : (
+                <p>Выберите слайд для предпросмотра</p>
               )}
             </div>
           </div>
         </div>
 
-        <Button
-          color="#9F0FA7"
-          width="413px"
-          textColor="#fff"
-          text="Открыть превью"
-          onClick={() => setPreviewMode(true)}
-        />
-        <Button
-          color="#9F0FA7"
-          width="413px"
-          textColor="#fff"
-          text="Сохранить изменения"
-          onClick={saveLesson}
-        />
+        <div className={styles.actions}>
+          <Button
+            color="#9F0FA7"
+            width="200px"
+            textColor="#fff"
+            text="Открыть превью"
+            onClick={() => setPreviewMode(true)}
+          />
+          <Button
+            color="#9F0FA7"
+            width="200px"
+            textColor="#fff"
+            text="Сохранить изменения"
+            onClick={saveLesson}
+          />
+        </div>
       </div>
     </section>
   );
@@ -754,12 +843,12 @@ function BlockEditor({
           <option value="demo">Демо (не запускаемый)</option>
           <option value="run">Запускаемый</option>
         </select>
-        <CodeEditor
+        <StableCodeEditor
+          key={`${block.id}_code`}
           value={block.code}
           onChange={(v) => updateBlock(slideIndex, block.id, { code: v })}
           language={block.language}
           height={220}
-          className={styles.codeEditorWrap}
           onRun={block.runnable ? () => runCode(block.id, block.language, block.code) : undefined}
           runLoading={block.runnable && !!codeRunLoading}
         />
@@ -948,12 +1037,12 @@ function BlockEditor({
                 </span>
               )}
             </label>
-            <CodeEditor
+            <StableCodeEditor
+              key={`${block.id}_startcode`}
               value={stripMainMethod(block.startCode ?? "", block.language ?? "javascript")}
               onChange={(v) => updateBlock(slideIndex, block.id, { startCode: v })}
               language={block.language ?? "javascript"}
               height={220}
-              className={styles.codeEditorWrap}
             />
 
             <div className={styles.section}>
@@ -1200,12 +1289,12 @@ function BlockEditor({
           onChange={(e) => updateBlock(slideIndex, block.id, { text: e.target.value })}
           placeholder="Текст вопроса"
         />
-        <CodeEditor
+        <StableCodeEditor
+          key={`${block.id}_code`}
           value={block.code ?? ""}
           onChange={(v) => updateBlock(slideIndex, block.id, { code: v })}
           language="javascript"
           height={120}
-          className={styles.codeEditorWrap}
         />
         <input
           className={styles.form__input}
@@ -1265,13 +1354,13 @@ function PreviewBlockStatic({ block }: { block: SlideBlock }) {
 
   if (block.type === "codeExample")
     return (
-      <CodeEditor
+      <StableCodeEditor
+        key={`${block.id}_preview`}
         value={block.code || ""}
         onChange={() => {}}
         language={block.language}
         readOnly
         height={200}
-        className={styles.codeEditorWrap}
       />
     );
 
@@ -1858,13 +1947,14 @@ function PreviewCodeTask({
 
         setTestResults(results);
 
+        let constraintCheckResults: ConstraintResult[] = [];
         if (block.constraints?.length) {
-          const constraintResults = await checkConstraints(fullCodeForExecution, block.constraints);
-          setConstraintResults(constraintResults);
+          constraintCheckResults = await checkConstraints(fullCodeForExecution, block.constraints);
+          setConstraintResults(constraintCheckResults);
         }
 
         const allTestsPassed = results.every((r) => r.passed);
-        const allConstraintsPassed = constraintResults?.every((c) => c.passed) ?? true;
+        const allConstraintsPassed = constraintCheckResults.every((c) => c.passed);
 
         if (allTestsPassed && allConstraintsPassed) {
           onCorrect();
@@ -1877,10 +1967,9 @@ function PreviewCodeTask({
                 `Тест ${i + 1}: ${r.input} → ожидалось: ${r.expected}, получено: ${r.actual}`
             );
 
-          const failedConstraints =
-            constraintResults
-              ?.filter((c) => !c.passed)
-              .map((c) => `${c.name}: ожидалось ${c.expected}, получено ${c.actual}`) || [];
+          const failedConstraints = constraintCheckResults
+            .filter((c) => !c.passed)
+            .map((c) => `${c.name}: ожидалось ${c.expected}, получено ${c.actual}`);
 
           const errorMessages = [];
 
@@ -1919,12 +2008,12 @@ function PreviewCodeTask({
     <div className={styles.codeTask}>
       <p className={styles.taskDescription}>{block.description}</p>
 
-      <CodeEditor
+      <StableCodeEditor
+        key={`${block.id}_task_${testAnswer}`}
         value={displayCode}
         onChange={setUserCode}
         language={block.language ?? "javascript"}
         height={250}
-        className={styles.codeEditorWrap}
       />
 
       <div className={styles.runButtons}>
@@ -2042,13 +2131,13 @@ function PreviewTheoryQuestion({
     <div className={styles.theoryQuestion}>
       <p className={styles.questionText}>{block.text}</p>
       {block.code && (
-        <CodeEditor
+        <StableCodeEditor
+          key={`${block.id}_theory_preview`}
           value={block.code}
           onChange={() => {}}
           language="javascript"
           readOnly
           height={120}
-          className={styles.codeEditorWrap}
         />
       )}
       {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
@@ -2105,13 +2194,13 @@ function PreviewBlock({
   if (block.type === "codeExample") {
     return (
       <div>
-        <CodeEditor
+        <StableCodeEditor
+          key={`${block.id}_preview_example`}
           value={block.code || ""}
           onChange={() => {}}
           language={block.language}
           readOnly
           height={200}
-          className={styles.codeEditorWrap}
           onRun={block.runnable ? () => runCode(block.id, block.language, block.code) : undefined}
           runLoading={block.runnable && !!codeRunLoading}
         />
@@ -2154,6 +2243,7 @@ function PreviewBlock({
   if (block.type === "codeTask") {
     return (
       <PreviewCodeTask
+        key={`${block.id}_preview_task`}
         block={block}
         testAnswer={testAnswer}
         setTestAnswer={setTestAnswer}
@@ -2167,6 +2257,7 @@ function PreviewBlock({
   if (block.type === "theoryQuestion") {
     return (
       <PreviewTheoryQuestion
+        key={`${block.id}_preview_theory`}
         block={block}
         testAnswer={testAnswer}
         setTestAnswer={setTestAnswer}
