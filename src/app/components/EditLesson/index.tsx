@@ -22,7 +22,7 @@ import type {
 
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";
-
+/* eslint-disable */
 const genId = () => `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
 const LANGUAGES: { value: CodeLanguage; label: string }[] = [
@@ -74,13 +74,51 @@ const createImageBlock = (order: number): ImageBlock => ({
   url: "",
 });
 
+const getDefaultStarterCode = (language: CodeLanguage): string => {
+  switch (language) {
+    case "csharp":
+      return `using System;
+
+public class Program
+{
+    public static int YourFunction(int n)
+    {
+        // Ваш код здесь
+        return 0;
+    }
+
+    public static void Main(string[] args)
+    {
+        // Этот метод используется для запуска
+    }
+}`;
+    case "java":
+      return `public class Solution {
+    public static int yourFunction(int n) {
+        // Ваш код здесь
+        return 0;
+    }
+
+    public static void main(String[] args) {
+        // Этот метод используется для запуска
+    }
+}`;
+    case "python":
+      return "def your_function(n):\n    # Ваш код здесь\n    pass";
+    case "golang":
+      return "package main\n\nfunc yourFunction(n int) int {\n    // Ваш код здесь\n    return 0\n}";
+    default:
+      return "function yourFunction(n) {\n    // Ваш код здесь\n}";
+  }
+};
+
 const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
   id: genId(),
   order,
   type: "codeTask",
   runnable: true,
   language: "javascript",
-  startCode: "",
+  startCode: getDefaultStarterCode("javascript"),
   testCases: [],
 });
 
@@ -753,21 +791,25 @@ function BlockEditor({
 
     return (
       <div className={styles.blockEditor}>
-        <label>Описание задачи (включая базовую функцию/класс)</label>
+        <label>Описание задачи</label>
         <textarea
           className={styles.form__textarea}
           value={block.description ?? ""}
           onChange={(e) => updateBlock(slideIndex, block.id, { description: e.target.value })}
-          placeholder="Например: Напишите функцию fibonacci(n) { //... }, которая возвращает n-ое число Фибоначчи"
+          placeholder="Например: Реализуйте функцию, которая возвращает n-ое число Фибоначчи"
           rows={3}
         />
         <div className={styles.form__wrapper}>
           <span>Язык программирования:</span>
           <select
             value={block.language ?? "javascript"}
-            onChange={(e) =>
-              updateBlock(slideIndex, block.id, { language: e.target.value as CodeLanguage })
-            }
+            onChange={(e) => {
+              const newLang = e.target.value as CodeLanguage;
+              updateBlock(slideIndex, block.id, {
+                language: newLang,
+                startCode: getDefaultStarterCode(newLang),
+              });
+            }}
           >
             {LANGUAGES.map((l) => (
               <option key={l.value} value={l.value}>
@@ -790,12 +832,21 @@ function BlockEditor({
         </div>
         {block.runnable ? (
           <>
-            <label>Стартовый код</label>
+            <label>
+              Стартовый код
+              {(block.language === "csharp" || block.language === "java") && (
+                <span style={{ fontSize: "0.9em", color: "#666", marginLeft: "10px" }}>
+                  (Для {block.language === "csharp" ? "C#" : "Java"} используйте класс{" "}
+                  {block.language === "csharp" ? "Program" : "Solution"} со статическим методом
+                  Main)
+                </span>
+              )}
+            </label>
             <CodeEditor
               value={block.startCode ?? ""}
               onChange={(v) => updateBlock(slideIndex, block.id, { startCode: v })}
               language={block.language ?? "javascript"}
-              height={180}
+              height={220}
               className={styles.codeEditorWrap}
             />
             <div>
@@ -811,12 +862,12 @@ function BlockEditor({
                   <input
                     value={tc.input}
                     onChange={(e) => updateTestCase(i, "input", e.target.value)}
-                    placeholder="Аргументы функции (например: 5)"
+                    placeholder="Входные данные (JSON): [2,1,4] или 5"
                   />
                   <input
                     value={tc.expectedOutput}
                     onChange={(e) => updateTestCase(i, "expectedOutput", e.target.value)}
-                    placeholder="Ожидаемый возврат функции (например: 5)"
+                    placeholder="Ожидаемый возврат (JSON): [1,2,4] или 5"
                   />
                 </div>
               ))}
@@ -1015,6 +1066,288 @@ function PreviewBlockStatic({ block }: { block: SlideBlock }) {
   return null;
 }
 
+const extractFunctionName = (code: string, lang: CodeLanguage): string | null => {
+  if (lang === "javascript" || lang === "python" || lang === "golang") {
+    const match = code.match(/function\s+(\w+)|def\s+(\w+)|func\s+(\w+)/);
+    return match ? match[1] || match[2] || match[3] : null;
+  } else if (lang === "csharp" || lang === "java") {
+    const match = code.match(/(?:public|private|protected|static|\s)+[\w<>\[\]]+\s+(\w+)\s*\(/);
+    return match ? match[1] : null;
+  }
+  return null;
+};
+
+const buildTestCode = (
+  userCode: string,
+  input: string,
+  lang: CodeLanguage,
+  funcName: string | null
+): string => {
+  if (!funcName) return userCode;
+
+  let parsedInput: any;
+  try {
+    parsedInput = JSON.parse(input);
+  } catch {
+    parsedInput = input;
+  }
+
+  // Convert input to array if it's not already
+  const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
+
+  if (lang === "javascript") {
+    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+    return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${argsStr})));`;
+  } else if (lang === "python") {
+    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+    return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${argsStr})))`;
+  } else if (lang === "csharp") {
+    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+    return `${userCode}\nusing System;\nusing System.Text.Json;\nConsole.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${argsStr})));`;
+  } else if (lang === "java") {
+    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+    return `${userCode}\nimport com.google.gson.Gson;\npublic class Main { public static void main(String[] args) { System.out.println(new Gson().toJson(Solution.${funcName}(${argsStr}))); }}`;
+  } else if (lang === "golang") {
+    const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
+    return `${userCode}\nimport "encoding/json"\nimport "fmt"\nfunc main() { result := ${funcName}(${argsStr}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
+  }
+
+  return userCode;
+};
+
+function PreviewCodeTask({
+  block,
+  testAnswer,
+  setTestAnswer,
+  testError,
+  setTestError,
+  onCorrect,
+}: {
+  block: CodeTaskBlock;
+  testAnswer: string | number | undefined;
+  setTestAnswer: (v: string | number) => void;
+  testError: string | undefined;
+  setTestError: (v: string) => void;
+  onCorrect: () => void;
+}) {
+  const [consoleOutput, setConsoleOutput] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const userCode =
+    typeof testAnswer === "string" ? testAnswer : block.runnable ? (block.startCode ?? "") : "";
+
+  const setUserCode = (code: string) => {
+    setTestAnswer(code);
+    setTestError("");
+    setConsoleOutput(null);
+  };
+
+  const check = async () => {
+    setTestError("");
+
+    if (block.runnable) {
+      if (block.testCases?.length) {
+        const funcName = extractFunctionName(
+          block.startCode ?? userCode,
+          block.language ?? "javascript"
+        );
+
+        if (!funcName) {
+          setTestError("Не удалось найти имя функции в стартовом коде");
+          return;
+        }
+
+        const results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
+
+        for (const tc of block.testCases) {
+          const codeToRun = buildTestCode(
+            userCode,
+            tc.input,
+            block.language ?? "javascript",
+            funcName
+          );
+          const res = await CodeService.executeCode({
+            language: block.language ?? "javascript",
+            code: codeToRun,
+          });
+
+          if (res.error) {
+            setTestError(`Ошибка выполнения: ${res.error}`);
+            return;
+          }
+
+          const actualOutput = (res.output || "").trim();
+          let expectedOutput = (tc.expectedOutput || "").trim();
+
+          // Try to parse and normalize JSON for comparison
+          let actualParsed: any;
+          let expectedParsed: any;
+          try {
+            actualParsed = JSON.parse(actualOutput);
+            expectedParsed = JSON.parse(expectedOutput);
+          } catch {
+            actualParsed = actualOutput;
+            expectedParsed = expectedOutput;
+          }
+
+          const passed = JSON.stringify(actualParsed) === JSON.stringify(expectedParsed);
+
+          results.push({
+            input: tc.input,
+            expected: expectedOutput,
+            actual: actualOutput,
+            passed,
+          });
+        }
+
+        const allPassed = results.every((r) => r.passed);
+
+        if (allPassed) {
+          onCorrect();
+        } else {
+          const failedTests = results
+            .map((r, i) => {
+              if (!r.passed) {
+                return `Тест ${i + 1}: Вход: ${r.input}, Ожидалось: ${r.expected}, Получено: ${r.actual}`;
+              }
+              return null;
+            })
+            .filter(Boolean)
+            .join("\n");
+
+          setTestError(
+            `Провалено ${results.filter((r) => !r.passed).length} из ${results.length} тестов:\n${failedTests}`
+          );
+        }
+      } else {
+        setTestError("Нет тест-кейсов для проверки");
+      }
+    } else if (!block.runnable) {
+      const res = await CodeService.executeCode({
+        language: block.language ?? "javascript",
+        code: userCode,
+      });
+      const out = (res.output || "").trim();
+
+      if (out === (block.expectedOutput || "").trim()) onCorrect();
+      else setTestError(`Неверно. Ожидалось: ${block.expectedOutput}, получено: ${out}`);
+    }
+  };
+
+  const runUserCode = async () => {
+    setConsoleOutput(null);
+    setIsRunning(true);
+    try {
+      const res = await CodeService.executeCode({
+        language: block.language ?? "javascript",
+        code: userCode,
+      });
+      setConsoleOutput(res.output || (res.error ? `Error: ${res.error}` : "No output"));
+    } catch (e) {
+      setConsoleOutput(`Execution failed: ${e}`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  return (
+    <div>
+      <p>{block.description}</p>
+      <CodeEditor
+        value={userCode}
+        onChange={setUserCode}
+        language={block.language ?? "javascript"}
+        height={200}
+        className={styles.codeEditorWrap}
+      />
+      <div className={styles.runButtons}>
+        <Button
+          color="#4CAF50"
+          width="120px"
+          textColor="#fff"
+          text={isRunning ? "Запуск..." : "Запустить"}
+          onClick={runUserCode}
+          disabled={isRunning}
+        />
+        <Button
+          color="#9F0FA7"
+          width="120px"
+          textColor="#fff"
+          text="Проверить"
+          onClick={check}
+          disabled={isRunning}
+        />
+      </div>
+      {consoleOutput !== null && (
+        <div className={styles.consoleOutput}>
+          <div className={styles.consoleHeader}>Консоль</div>
+          <pre className={styles.consoleBody}>{consoleOutput}</pre>
+        </div>
+      )}
+      {testError && (
+        <p className={styles.form__error} style={{ whiteSpace: "pre-wrap" }}>
+          {testError}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PreviewTheoryQuestion({
+  block,
+  testAnswer,
+  setTestAnswer,
+  onCorrect,
+}: {
+  block: TheoryQuestionBlock;
+  testAnswer: string | number | undefined;
+  setTestAnswer: (v: string | number) => void;
+  onCorrect: () => void;
+}) {
+  const selected = typeof testAnswer === "number" ? testAnswer : -1;
+  const submit = () => {
+    if (selected === block.correctIndex) onCorrect();
+  };
+
+  return (
+    <div>
+      <p>{block.text}</p>
+      {block.code && (
+        <CodeEditor
+          value={block.code}
+          onChange={() => {}}
+          language="javascript"
+          readOnly
+          height={120}
+          className={styles.codeEditorWrap}
+        />
+      )}
+      {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
+      <div>
+        {block.options.map((opt, i) => (
+          <label key={i}>
+            <input
+              type="radio"
+              name={`theory_${block.id}`}
+              checked={selected === i}
+              onChange={() => setTestAnswer(i)}
+            />
+            {opt}
+          </label>
+        ))}
+      </div>
+      <Button
+        color="#9F0FA7"
+        width="120px"
+        textColor="#fff"
+        text="Ответить"
+        onClick={submit}
+        disabled={selected < 0}
+      />
+    </div>
+  );
+}
+
 function PreviewBlock({
   block,
   slideId,
@@ -1090,104 +1423,26 @@ function PreviewBlock({
     return block.url ? <img src={block.url} alt="" className={styles.previewImg} /> : null;
 
   if (block.type === "codeTask") {
-    const userCode =
-      typeof testAnswer === "string" ? testAnswer : block.runnable ? (block.startCode ?? "") : "";
-    const setUserCode = (code: string) => {
-      setTestAnswer(code);
-      setTestError("");
-    };
-    const check = async () => {
-      setTestError("");
-
-      if (block.runnable) {
-        if (block.testCases?.length) {
-          for (const tc of block.testCases) {
-            const codeToRun = `const input = ${JSON.stringify(tc.input)};\n${userCode}`;
-            const res = await CodeService.executeCode({
-              language: block.language ?? "javascript",
-              code: codeToRun,
-            });
-            const out = (res.output || "").trim();
-
-            if (out !== (tc.expectedOutput || "").trim()) {
-              setTestError(`Неверно. Ожидалось: ${tc.expectedOutput}, получено: ${out}`);
-
-              return;
-            }
-          }
-        }
-
-        onCorrect();
-      } else if (!block.runnable) {
-        const res = await CodeService.executeCode({
-          language: block.language ?? "javascript",
-          code: userCode,
-        });
-        const out = (res.output || "").trim();
-
-        if (out === (block.expectedOutput || "").trim()) onCorrect();
-        else setTestError(`Неверно. Ожидалось: ${block.expectedOutput}, получено: ${out}`);
-      }
-    };
-
     return (
-      <div>
-        <p>{block.description}</p>
-        <CodeEditor
-          value={userCode}
-          onChange={setUserCode}
-          language={block.language ?? "javascript"}
-          height={200}
-          className={styles.codeEditorWrap}
-        />
-        <Button color="#9F0FA7" width="120px" textColor="#fff" text="Проверить" onClick={check} />
-        {testError && <p className={styles.form__error}>{testError}</p>}
-      </div>
+      <PreviewCodeTask
+        block={block}
+        testAnswer={testAnswer}
+        setTestAnswer={setTestAnswer}
+        testError={testError}
+        setTestError={setTestError}
+        onCorrect={onCorrect}
+      />
     );
   }
 
   if (block.type === "theoryQuestion") {
-    const selected = typeof testAnswer === "number" ? testAnswer : -1;
-    const submit = () => {
-      if (selected === block.correctIndex) onCorrect();
-    };
-
     return (
-      <div>
-        <p>{block.text}</p>
-        {block.code && (
-          <CodeEditor
-            value={block.code}
-            onChange={() => {}}
-            language="javascript"
-            readOnly
-            height={120}
-            className={styles.codeEditorWrap}
-          />
-        )}
-        {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
-        <div>
-          {block.options.map((opt, i) => (
-            <label key={i}>
-              <input
-                type="radio"
-                name="theory"
-                checked={selected === i}
-                onChange={() => setTestAnswer(i)}
-              />
-              {opt}
-            </label>
-          ))}
-        </div>
-        <Button
-          color="#9F0FA7"
-          width="120px"
-          textColor="#fff"
-          text="Ответить"
-          onClick={submit}
-          disabled={selected < 0}
-        />
-      </div>
+      <PreviewTheoryQuestion
+        block={block}
+        testAnswer={testAnswer}
+        setTestAnswer={setTestAnswer}
+        onCorrect={onCorrect}
+      />
     );
   }
 
