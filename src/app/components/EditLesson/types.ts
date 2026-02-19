@@ -1,46 +1,56 @@
+// app/components/EditLesson/types.ts
 export type SlideType = "lesson" | "test";
 
-export type CodeLanguage = "javascript" | "python" | "csharp" | "golang" | "java";
-
-export interface BaseBlock {
+export interface Slide {
   id: string;
-  order: number;
+  title: string;
+  type: SlideType;
+  order: number; // ВНИМАНИЕ: используется order, не orderIndex
+  blocks: SlideBlock[];
 }
 
-// --- Lesson blocks ---
-export interface TextBlock extends BaseBlock {
+export type CodeLanguage = "javascript" | "python" | "csharp" | "java" | "golang";
+
+export interface TextBlock {
+  id: string;
+  order: number;
   type: "text";
   content: string;
 }
 
-export interface CodeExampleBlock extends BaseBlock {
+export interface CodeExampleBlock {
+  id: string;
+  order: number;
   type: "codeExample";
   code: string;
   language: CodeLanguage;
   runnable: boolean;
 }
 
-export interface SourceBlock extends BaseBlock {
+export interface SourceBlock {
+  id: string;
+  order: number;
   type: "source";
   url: string;
   note?: string;
 }
 
-export interface TableBlock extends BaseBlock {
+export interface TableBlock {
+  id: string;
+  order: number;
   type: "table";
   rows: number;
   cols: number;
   cells: string[][];
 }
 
-export interface ImageBlock extends BaseBlock {
+export interface ImageBlock {
+  id: string;
+  order: number;
   type: "image";
   url: string;
 }
 
-export type LessonBlock = TextBlock | CodeExampleBlock | SourceBlock | TableBlock | ImageBlock;
-
-// --- Test blocks ---
 export type CodeConstraintType =
   | "maxTimeMs"
   | "maxLines"
@@ -56,18 +66,22 @@ export interface CodeConstraint {
   value: number | string[] | boolean;
 }
 
-export interface CodeTaskBlock extends BaseBlock {
+export interface CodeTaskBlock {
+  id: string;
+  order: number;
   type: "codeTask";
   description?: string;
-  language?: CodeLanguage;
-  runnable: boolean;
+  language: CodeLanguage;
   startCode?: string;
-  expectedOutput?: string;
-  testCases?: { input: string; expectedOutput: string }[];
+  testCases?: Array<{ input: string; expectedOutput: string }>;
   constraints?: CodeConstraint[];
+  runnable: boolean;
+  expectedOutput?: string; // для задач на вывод
 }
 
-export interface TheoryQuestionBlock extends BaseBlock {
+export interface TheoryQuestionBlock {
+  id: string;
+  order: number;
   type: "theoryQuestion";
   text?: string;
   code?: string;
@@ -76,18 +90,11 @@ export interface TheoryQuestionBlock extends BaseBlock {
   correctIndex: number;
 }
 
-export type TestBlock = TextBlock | CodeTaskBlock | TheoryQuestionBlock;
-
-export type SlideBlock = LessonBlock | TestBlock;
-
-export interface Slide {
-  id: string;
-  title: string;
-  type: SlideType;
-  order: number;
-  blocks: SlideBlock[];
-}
-
-export interface LessonContentData {
-  slides: Slide[];
-}
+export type SlideBlock =
+  | TextBlock
+  | CodeExampleBlock
+  | SourceBlock
+  | TableBlock
+  | ImageBlock
+  | CodeTaskBlock
+  | TheoryQuestionBlock;

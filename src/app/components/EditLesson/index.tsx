@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 
 import Button from "../Button";
 import CodeEditor from "../CodeEditor";
@@ -22,6 +23,8 @@ import type {
 
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";
+import { LessonDetailsService } from "@/app/http/lessonDetailsService";
+
 /* eslint-disable */
 // Используем более надежный генератор ID
 const genId = () =>
@@ -314,6 +317,9 @@ function StableCodeEditor({
 }
 
 export default function EditLesson() {
+  const params = useParams();
+  const lessonId = params?.id as string;
+
   const [slides, setSlides] = useState<Slide[]>([]);
   const [selectedSlideIndex, setSelectedSlideIndex] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
@@ -322,9 +328,60 @@ export default function EditLesson() {
   const [testError, setTestError] = useState<{ [slideId: string]: string }>({});
   const [codeRunOutput, setCodeRunOutput] = useState<{ [blockId: string]: string }>({});
   const [codeRunLoading, setCodeRunLoading] = useState<{ [blockId: string]: boolean }>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lessonDetailsId, setLessonDetailsId] = useState<string | null>(null);
 
   // Добавляем ref для отслеживания перемещения блоков
   const isMovingBlock = useRef(false);
+
+  // Загрузка данных при монтировании
+  useEffect(() => {
+    if (lessonId) {
+      loadLessonDetails();
+    }
+  }, [lessonId]);
+
+  const loadLessonDetails = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await LessonDetailsService.getLessonDetailsByLessonId(lessonId);
+      setLessonDetailsId(data.id);
+
+      const allSlides: Slide[] = [
+        ...data.slides.map((slide) => ({
+          id: slide.id,
+          title: slide.title,
+          type: slide.type as SlideType,
+          order: slide.orderIndex,
+          blocks: (slide.blocks || []) as unknown as SlideBlock[],
+        })),
+        ...data.tests.map((test) => ({
+          id: test.id,
+          title: test.title,
+          type: "test" as const,
+          order: test.orderIndex,
+          blocks: (test.blocks || []) as unknown as SlideBlock[],
+        })),
+      ].sort((a, b) => a.order - b.order);
+
+      setSlides(allSlides);
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        console.log("Lesson details not found, starting with empty state");
+        setSlides([]);
+        setLessonDetailsId(null);
+        // Не показываем ошибку пользователю, просто начинаем с пустого состояния
+      } else {
+        setError(err.message || "Ошибка загрузки урока");
+        console.error("Error loading lesson details:", err);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const selectedSlide = selectedSlideIndex !== null ? slides[selectedSlideIndex] : null;
   const lessonSlides = slides.filter((s) => s.type === "lesson");
@@ -489,10 +546,71 @@ export default function EditLesson() {
     }
   }, []);
 
-  const saveLesson = useCallback(() => {
-    const data = JSON.stringify({ slides });
-    console.log("Lesson content (for API):", data);
-  }, [slides]);
+  const saveLesson = useCallback(async () => {
+    if (!lessonId) {
+      setError("ID урока не найден");
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      // Разделяем слайды на уроки и тесты и преобразуем order в orderIndex
+      const lessonSlidesData = slides
+        .filter((s) => s.type === "lesson")
+        .map((s) => ({
+          title: s.title,
+          type: "lesson" as const,
+          orderIndex: s.order,
+          blocks: s.blocks.map((block) => ({
+            ...block,
+          })),
+        }));
+
+      const testSlidesData = slides
+        .filter((s) => s.type === "test")
+        .map((s) => ({
+          title: s.title,
+          orderIndex: s.order,
+          blocks: s.blocks.map((block) => ({
+            ...block,
+          })),
+        }));
+
+      if (lessonDetailsId) {
+        // Обновляем существующие lesson-details
+        await LessonDetailsService.updateLessonDetails(lessonDetailsId, {
+          slides: lessonSlidesData,
+          tests: testSlidesData,
+        });
+      } else {
+        // Создаем новые lesson-details
+        const response = await LessonDetailsService.createLessonDetails({
+          lessonId,
+          slides: lessonSlidesData,
+          tests: testSlidesData,
+        });
+        setLessonDetailsId(response.id);
+      }
+
+      alert("Урок успешно сохранен!");
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "Ошибка сохранения урока");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [slides, lessonId, lessonDetailsId]);
+
+  if (isLoading) {
+    return (
+      <section className={styles.lesson}>
+        <div className={styles.lesson__container}>
+          <h1 className={styles.lesson__title}>Загрузка урока...</h1>
+        </div>
+      </section>
+    );
+  }
 
   if (previewMode) {
     const allOrdered = [...lessonSlides, ...testSlides].sort((a, b) => a.order - b.order);
@@ -586,6 +704,13 @@ export default function EditLesson() {
     <section className={styles.lesson}>
       <div className={styles.lesson__container}>
         <h1 className={styles.lesson__title}>Редактирование урока</h1>
+
+        {error && (
+          <div className={styles.error}>
+            {error}
+            <button onClick={() => setError(null)}>✕</button>
+          </div>
+        )}
 
         <div className={styles.slideActions}>
           <Button
@@ -740,7 +865,7 @@ export default function EditLesson() {
                       </button>
                     </div>
                     <BlockEditor
-                      key={`${block.id}_${block.order}`} // Важно: добавляем order в key
+                      key={`${block.id}_${block.order}`}
                       block={block}
                       slideIndex={selectedSlideIndex}
                       updateBlock={updateBlock}
@@ -784,8 +909,9 @@ export default function EditLesson() {
             color="#9F0FA7"
             width="200px"
             textColor="#fff"
-            text="Сохранить изменения"
+            text={isSaving ? "Сохранение..." : "Сохранить изменения"}
             onClick={saveLesson}
+            disabled={isSaving}
           />
         </div>
       </div>
