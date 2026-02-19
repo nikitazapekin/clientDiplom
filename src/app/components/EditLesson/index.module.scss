@@ -319,58 +319,164 @@ height: 100%;
   border: 1px solid $color-gray;
 }
 
+ // Добавьте в конец файла
 
+.previewTopActions {
+  display: flex;
+  gap: px($spacing-sm);
+  align-items: center;
+}
 
+.sourceButton {
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
 
+.modalContent {
+  background: $color-white;
+  border-radius: px($radius-large);
+  padding: px($spacing-lg);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
 
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: px($spacing-md);
+  
+  h3 {
+    margin: 0;
+  }
+}
 
-/*
+.modalClose {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: $color-gray;
+  
+  &:hover {
+    color: $color-red;
+  }
+}
 
- @use "../../styles/index.scss" as *;
-$color-white: #ffffff;
-$color-black: #000000;
- 
-$color-white: #ffffff;
-$color-black: #000000;
+.modalBody {
+  .sourcesList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .sourceItem {
+    padding: px($spacing-sm) 0;
+    border-bottom: 1px solid $color-grayLight;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  
+  .sourceLink {
+    color: $color-purple;
+    text-decoration: none;
+    word-break: break-all;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  
+  .sourceNote {
+    margin: px($spacing-xs) 0 0;
+    font-size: 14px;
+    color: $color-gray;
+  }
+}
 
- 
-$color-white: #ffffff;
-$color-black: #000000;
-$color-green: #379c07;
-$color-orange: #e29f22;
+.slideTabWrapper {
+  display: flex;
+  align-items: center;
+  gap: px($spacing-xs);
+}
 
+.slideTabDelete {
+  background: none;
+  border: none;
+  color: $color-red;
+  cursor: pointer;
+  font-size: 14px;
+  padding: px($spacing-xs);
+  
+  &:hover {
+    opacity: 0.8;
+  }
+}
 
-$color-grayLight:  #f0f0f0;
-$color-gray: #d8d8d8;
-$color-purple: #9f0fa7;
-$color-white: #fff;
-$color-darkLight: #303027;
-$color-dark: #222121;
-$color-red: #d80909;
+.tableWrapper {
+  overflow-x: auto;
+  width: 100%;
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    
+    td {
+      border: 1px solid $color-gray;
+      padding: px($spacing-xs);
+      min-width: 100px;
+      
+      input {
+        width: 100%;
+        border: none;
+        outline: none;
+        background: transparent;
+      }
+    }
+  }
+}
 
-$container-sm: 1280;
-$container-md: 1400;
-$container-xs: 700;
+.tableControls {
+  display: flex;
+  gap: px($spacing-sm);
+  align-items: center;
+  margin-bottom: px($spacing-sm);
+}
 
- 
-$font-xs: 14;
-$font-sx: 20;
-$font-md: 24;
-$font-lg: 32;
+.imageUploadControls {
+  display: flex;
+  gap: px($spacing-sm);
+  align-items: center;
+  width: 100%;
+}
 
-$radius-small: 4;
-$radius-medium: 8;
-$radius-large: 16;
-$radius-xlarge: 24;
-$radius-circle: 9999;
-
-$spacing-xs: 4;
-$spacing-sm: 8;
-$spacing-md: 16;
-$spacing-lg: 24;
-$spacing-xl: 32;
-$spacing-xxl: 48;
-$spacing-bg: 60;
-$spacing-vg: 80;
-*/
+.imagePreview {
+  margin-top: px($spacing-sm);
+  
+  img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: px($radius-small);
+  }
+}

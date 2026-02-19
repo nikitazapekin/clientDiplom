@@ -59,6 +59,7 @@ const createSourceBlock = (order: number): SourceBlock => ({
   order,
   type: "source",
   url: "",
+  note: "",
 });
 
 const createTableBlock = (order: number, rows = 2, cols = 2): TableBlock => ({
@@ -77,6 +78,7 @@ const createImageBlock = (order: number): ImageBlock => ({
   order,
   type: "image",
   url: "",
+  file: null,
 });
 
 // Функция для удаления main метода из кода, который видит пользователь
@@ -316,6 +318,53 @@ function StableCodeEditor({
   );
 }
 
+// Компонент модального окна для источников
+function SourceModal({
+  isOpen,
+  onClose,
+  sources,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  sources: { url: string; note?: string }[];
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h3>Источники</h3>
+          <button className={styles.modalClose} onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className={styles.modalBody}>
+          {sources.length === 0 ? (
+            <p>Нет источников</p>
+          ) : (
+            <ul className={styles.sourcesList}>
+              {sources.map((source, index) => (
+                <li key={index} className={styles.sourceItem}>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.sourceLink}
+                  >
+                    {source.url}
+                  </a>
+                  {source.note && <p className={styles.sourceNote}>{source.note}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EditLesson() {
   const params = useParams();
   const lessonId = params?.id as string;
@@ -323,7 +372,7 @@ export default function EditLesson() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [selectedSlideIndex, setSelectedSlideIndex] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
-  const [previewSlideIndex, setPreviewSlideIndex] = useState(0);
+  const [previewCurrentIndex, setPreviewCurrentIndex] = useState(0);
   const [testAnswer, setTestAnswer] = useState<{ [slideId: string]: string | number }>({});
   const [testError, setTestError] = useState<{ [slideId: string]: string }>({});
   const [codeRunOutput, setCodeRunOutput] = useState<{ [blockId: string]: string }>({});
@@ -332,6 +381,8 @@ export default function EditLesson() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lessonDetailsId, setLessonDetailsId] = useState<string | null>(null);
+  const [sourceModalOpen, setSourceModalOpen] = useState(false);
+  const [currentSources, setCurrentSources] = useState<{ url: string; note?: string }[]>([]);
 
   // Добавляем ref для отслеживания перемещения блоков
   const isMovingBlock = useRef(false);
@@ -373,7 +424,6 @@ export default function EditLesson() {
         console.log("Lesson details not found, starting with empty state");
         setSlides([]);
         setLessonDetailsId(null);
-        // Не показываем ошибку пользователю, просто начинаем с пустого состояния
       } else {
         setError(err.message || "Ошибка загрузки урока");
         console.error("Error loading lesson details:", err);
@@ -384,8 +434,6 @@ export default function EditLesson() {
   };
 
   const selectedSlide = selectedSlideIndex !== null ? slides[selectedSlideIndex] : null;
-  const lessonSlides = slides.filter((s) => s.type === "lesson");
-  const testSlides = slides.filter((s) => s.type === "test");
 
   const addSlide = useCallback(
     (type: SlideType) => {
@@ -410,6 +458,25 @@ export default function EditLesson() {
       return next;
     });
   }, []);
+
+  const deleteSlide = useCallback(
+    (index: number) => {
+      setSlides((prev) => {
+        const next = prev.filter((_, i) => i !== index);
+        // Пересчитываем order для оставшихся слайдов
+        const reordered = next.map((slide, idx) => ({ ...slide, order: idx }));
+
+        if (selectedSlideIndex === index) {
+          setSelectedSlideIndex(null);
+        } else if (selectedSlideIndex !== null && selectedSlideIndex > index) {
+          setSelectedSlideIndex(selectedSlideIndex - 1);
+        }
+
+        return reordered;
+      });
+    },
+    [selectedSlideIndex]
+  );
 
   const addBlock = useCallback((slideIndex: number, kind: SlideBlock["type"]) => {
     setSlides((prev) => {
@@ -488,9 +555,7 @@ export default function EditLesson() {
     });
   }, []);
 
-  // ИСПРАВЛЕННАЯ ФУНКЦИЯ moveBlock - теперь не вызывает ошибку с Monaco
   const moveBlock = useCallback((slideIndex: number, blockId: string, direction: "up" | "down") => {
-    // Устанавливаем флаг, что происходит перемещение
     isMovingBlock.current = true;
 
     setSlides((prev) => {
@@ -498,7 +563,6 @@ export default function EditLesson() {
       const slide = next[slideIndex];
       if (!slide) return prev;
 
-      // Сортируем блоки по order
       const sorted = sortBlocks(slide.blocks);
       const currentIndex = sorted.findIndex((b) => b.id === blockId);
 
@@ -508,7 +572,6 @@ export default function EditLesson() {
 
       if (newIndex < 0 || newIndex >= sorted.length) return prev;
 
-      // Создаем новый массив блоков с обновленными order
       const newBlocks = sorted.map((block, index) => {
         if (index === currentIndex) {
           return { ...block, order: newIndex };
@@ -519,18 +582,30 @@ export default function EditLesson() {
         return { ...block };
       });
 
-      // Сортируем по новому order
       const finalBlocks = sortBlocks(newBlocks);
 
       next[slideIndex] = { ...slide, blocks: finalBlocks };
       return next;
     });
 
-    // Сбрасываем флаг после обновления состояния
     setTimeout(() => {
       isMovingBlock.current = false;
     }, 0);
   }, []);
+
+  const handleImageUpload = useCallback(
+    (slideIndex: number, blockId: string, file: File) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateBlock(slideIndex, blockId, {
+          url: reader.result as string,
+          file: file,
+        });
+      };
+      reader.readAsDataURL(file);
+    },
+    [updateBlock]
+  );
 
   const runCode = useCallback(async (blockId: string, language: CodeLanguage, code: string) => {
     setCodeRunLoading((prev) => ({ ...prev, [blockId]: true }));
@@ -546,6 +621,11 @@ export default function EditLesson() {
     }
   }, []);
 
+  const openSourcesModal = useCallback((sources: { url: string; note?: string }[]) => {
+    setCurrentSources(sources);
+    setSourceModalOpen(true);
+  }, []);
+
   const saveLesson = useCallback(async () => {
     if (!lessonId) {
       setError("ID урока не найден");
@@ -556,16 +636,20 @@ export default function EditLesson() {
     setError(null);
 
     try {
-      // Разделяем слайды на уроки и тесты и преобразуем order в orderIndex
       const lessonSlidesData = slides
         .filter((s) => s.type === "lesson")
         .map((s) => ({
           title: s.title,
           type: "lesson" as const,
           orderIndex: s.order,
-          blocks: s.blocks.map((block) => ({
-            ...block,
-          })),
+          blocks: s.blocks.map((block) => {
+            // Для изображений удаляем file перед отправкой
+            if (block.type === "image") {
+              const { file, ...rest } = block as any;
+              return rest;
+            }
+            return block;
+          }),
         }));
 
       const testSlidesData = slides
@@ -573,19 +657,22 @@ export default function EditLesson() {
         .map((s) => ({
           title: s.title,
           orderIndex: s.order,
-          blocks: s.blocks.map((block) => ({
-            ...block,
-          })),
+          blocks: s.blocks.map((block) => {
+            // Для изображений удаляем file перед отправкой
+            if (block.type === "image") {
+              const { file, ...rest } = block as any;
+              return rest;
+            }
+            return block;
+          }),
         }));
 
       if (lessonDetailsId) {
-        // Обновляем существующие lesson-details
         await LessonDetailsService.updateLessonDetails(lessonDetailsId, {
           slides: lessonSlidesData,
           tests: testSlidesData,
         });
       } else {
-        // Создаем новые lesson-details
         const response = await LessonDetailsService.createLessonDetails({
           lessonId,
           slides: lessonSlidesData,
@@ -613,10 +700,10 @@ export default function EditLesson() {
   }
 
   if (previewMode) {
-    const allOrdered = [...lessonSlides, ...testSlides].sort((a, b) => a.order - b.order);
-    const current = allOrdered[previewSlideIndex];
+    const allSlides = slides.sort((a, b) => a.order - b.order);
+    const currentSlide = allSlides[previewCurrentIndex];
 
-    if (!current) {
+    if (!currentSlide) {
       return (
         <section className={styles.lesson}>
           <div className={styles.lesson__container}>
@@ -634,68 +721,97 @@ export default function EditLesson() {
       );
     }
 
-    const isTest = current.type === "test";
     const goNext = () => {
-      if (previewSlideIndex >= allOrdered.length - 1) setPreviewMode(false);
-      else setPreviewSlideIndex((i) => i + 1);
+      if (previewCurrentIndex < allSlides.length - 1) {
+        setPreviewCurrentIndex((i) => i + 1);
+      } else {
+        setPreviewMode(false);
+      }
     };
+
+    const goPrev = () => {
+      if (previewCurrentIndex > 0) {
+        setPreviewCurrentIndex((i) => i - 1);
+      }
+    };
+
+    // Собираем все источники для текущего слайда
+    const slideSources = currentSlide.blocks
+      .filter((block): block is SourceBlock => block.type === "source")
+      .map((block) => ({ url: block.url, note: block.note }));
 
     return (
       <section className={styles.lesson}>
         <div className={styles.lesson__container}>
           <div className={styles.previewTop}>
-            <h1 className={styles.lesson__title}>Превью: {current.title}</h1>
-            <Button
-              color="#9F0FA7"
-              width="200px"
-              textColor="#fff"
-              text="Выйти из превью"
-              onClick={() => setPreviewMode(false)}
-            />
+            <h1 className={styles.lesson__title}>Превью: {currentSlide.title}</h1>
+            <div className={styles.previewTopActions}>
+              {slideSources.length > 0 && (
+                <Button
+                  color="#9F0FA7"
+                  width="40px"
+                  textColor="#fff"
+                  text="?"
+                  onClick={() => openSourcesModal(slideSources)}
+                />
+              )}
+              <Button
+                color="#9F0FA7"
+                width="200px"
+                textColor="#fff"
+                text="Выйти из превью"
+                onClick={() => setPreviewMode(false)}
+              />
+            </div>
           </div>
           <div className={styles.preview__wrapper}>
             <div className={styles.preview__content}>
-              <h3 className={styles.preview__subtitle}>{current.title}</h3>
-              {sortBlocks(current.blocks).map((block) => (
+              <h3 className={styles.preview__subtitle}>{currentSlide.title}</h3>
+              {sortBlocks(currentSlide.blocks).map((block) => (
                 <PreviewBlock
                   key={block.id}
                   block={block}
-                  slideId={current.id}
+                  slideId={currentSlide.id}
                   runCode={runCode}
                   codeRunOutput={codeRunOutput[block.id]}
                   codeRunLoading={codeRunLoading[block.id]}
-                  testAnswer={testAnswer[current.id]}
-                  setTestAnswer={(v) => setTestAnswer((prev) => ({ ...prev, [current.id]: v }))}
-                  testError={testError[current.id]}
-                  setTestError={(v) => setTestError((prev) => ({ ...prev, [current.id]: v }))}
+                  testAnswer={testAnswer[currentSlide.id]}
+                  setTestAnswer={(v) =>
+                    setTestAnswer((prev) => ({ ...prev, [currentSlide.id]: v }))
+                  }
+                  testError={testError[currentSlide.id]}
+                  setTestError={(v) => setTestError((prev) => ({ ...prev, [currentSlide.id]: v }))}
                   onCorrect={goNext}
                 />
               ))}
-              {!isTest && (
-                <Button
-                  color="#9F0FA7"
-                  width="200px"
-                  textColor="#fff"
-                  text="Далее"
-                  onClick={goNext}
-                />
-              )}
             </div>
           </div>
           <div className={styles.previewNav}>
             <span>
-              {previewSlideIndex + 1} / {allOrdered.length}
+              {previewCurrentIndex + 1} / {allSlides.length}
             </span>
             <Button
               color="#9F0FA7"
               width="120px"
               textColor="#fff"
               text="Назад"
-              onClick={() => setPreviewSlideIndex((i) => Math.max(0, i - 1))}
+              onClick={goPrev}
+              disabled={previewCurrentIndex === 0}
             />
-            <Button color="#9F0FA7" width="120px" textColor="#fff" text="Вперёд" onClick={goNext} />
+            <Button
+              color="#9F0FA7"
+              width="120px"
+              textColor="#fff"
+              text={previewCurrentIndex === allSlides.length - 1 ? "Завершить" : "Вперёд"}
+              onClick={goNext}
+            />
           </div>
         </div>
+        <SourceModal
+          isOpen={sourceModalOpen}
+          onClose={() => setSourceModalOpen(false)}
+          sources={currentSources}
+        />
       </section>
     );
   }
@@ -732,14 +848,23 @@ export default function EditLesson() {
         {slides.length > 0 && (
           <div className={styles.slideTabs}>
             {slides.map((s, i) => (
-              <button
-                key={s.id}
-                type="button"
-                className={selectedSlideIndex === i ? styles.slideTabActive : styles.slideTab}
-                onClick={() => setSelectedSlideIndex(i)}
-              >
-                {s.type === "test" ? "Тест" : "Урок"} {i + 1}: {s.title || "—"}
-              </button>
+              <div key={s.id} className={styles.slideTabWrapper}>
+                <button
+                  type="button"
+                  className={selectedSlideIndex === i ? styles.slideTabActive : styles.slideTab}
+                  onClick={() => setSelectedSlideIndex(i)}
+                >
+                  {s.type === "test" ? "Тест" : "Урок"} {i + 1}: {s.title || "—"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.slideTabDelete}
+                  onClick={() => deleteSlide(i)}
+                  title="Удалить слайд"
+                >
+                  ✕
+                </button>
+              </div>
             ))}
           </div>
         )}
@@ -869,6 +994,7 @@ export default function EditLesson() {
                       block={block}
                       slideIndex={selectedSlideIndex}
                       updateBlock={updateBlock}
+                      onImageUpload={handleImageUpload}
                       runCode={runCode}
                       codeRunOutput={codeRunOutput[block.id]}
                       codeRunLoading={codeRunLoading[block.id]}
@@ -881,7 +1007,7 @@ export default function EditLesson() {
         )}
 
         <div className={styles.preview}>
-          <h2 className={styles.preview__title}>Превью урока</h2>
+          <h2 className={styles.preview__title}>Превью текущего слайда</h2>
           <div className={styles.preview__wrapper}>
             <div className={styles.preview__content}>
               {slides.length === 0 ? (
@@ -903,7 +1029,10 @@ export default function EditLesson() {
             width="200px"
             textColor="#fff"
             text="Открыть превью"
-            onClick={() => setPreviewMode(true)}
+            onClick={() => {
+              setPreviewCurrentIndex(0);
+              setPreviewMode(true);
+            }}
           />
           <Button
             color="#9F0FA7"
@@ -923,6 +1052,7 @@ function BlockEditor({
   block,
   slideIndex,
   updateBlock,
+  onImageUpload,
   runCode,
   codeRunOutput,
   codeRunLoading,
@@ -930,10 +1060,13 @@ function BlockEditor({
   block: SlideBlock;
   slideIndex: number;
   updateBlock: (slideIndex: number, blockId: string, patch: Partial<SlideBlock>) => void;
+  onImageUpload: (slideIndex: number, blockId: string, file: File) => void;
   runCode: (blockId: string, lang: CodeLanguage, code: string) => void;
   codeRunOutput: string | undefined;
   codeRunLoading: boolean | undefined;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   if (block.type === "text") {
     return (
       <textarea
@@ -1022,7 +1155,7 @@ function BlockEditor({
 
     return (
       <div className={styles.blockEditor}>
-        <div className={styles.form__wrapper}>
+        <div className={styles.tableControls}>
           <span>Строк:</span>
           <select value={block.rows} onChange={(e) => setSize(Number(e.target.value), block.cols)}>
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
@@ -1040,35 +1173,67 @@ function BlockEditor({
             ))}
           </select>
         </div>
-        <table className={styles.table}>
-          <tbody>
-            {block.cells.map((row, r) => (
-              <tr key={r}>
-                {row.map((cell, c) => (
-                  <td key={c}>
-                    <input
-                      value={cell}
-                      onChange={(e) => setCell(r, c, e.target.value)}
-                      className={styles.tableInput}
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <tbody>
+              {block.cells.map((row, r) => (
+                <tr key={r}>
+                  {row.map((cell, c) => (
+                    <td key={c}>
+                      <input
+                        value={cell}
+                        onChange={(e) => setCell(r, c, e.target.value)}
+                        className={styles.tableInput}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
 
   if (block.type === "image") {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        onImageUpload(slideIndex, block.id, file);
+      }
+    };
+
     return (
-      <input
-        className={styles.form__input}
-        value={block.url}
-        onChange={(e) => updateBlock(slideIndex, block.id, { url: e.target.value })}
-        placeholder="URL изображения"
-      />
+      <div className={styles.blockEditor}>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          style={{ display: "none" }}
+        />
+        <div className={styles.imageUploadControls}>
+          <input
+            className={styles.form__input}
+            value={block.url}
+            onChange={(e) => updateBlock(slideIndex, block.id, { url: e.target.value })}
+            placeholder="URL изображения"
+          />
+          <Button
+            color="#9F0FA7"
+            width="auto"
+            textColor="#fff"
+            text="Загрузить с устройства"
+            onClick={() => fileInputRef.current?.click()}
+          />
+        </div>
+        {block.url && (
+          <div className={styles.imagePreview}>
+            <img src={block.url} alt="Preview" className={styles.previewImg} />
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -1490,29 +1655,23 @@ function PreviewBlockStatic({ block }: { block: SlideBlock }) {
       />
     );
 
-  if (block.type === "source")
-    return (
-      <p>
-        <a href={block.url} target="_blank" rel="noopener noreferrer">
-          {block.url || "Источник"}
-        </a>
-        {block.note && ` — ${block.note}`}
-      </p>
-    );
+  if (block.type === "source") return null;
 
   if (block.type === "table") {
     return (
-      <table className={styles.table}>
-        <tbody>
-          {block.cells.map((row, r) => (
-            <tr key={r}>
-              {row.map((cell, c) => (
-                <td key={c}>{cell}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
+          <tbody>
+            {block.cells.map((row, r) => (
+              <tr key={r}>
+                {row.map((cell, c) => (
+                  <td key={c}>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
   }
 
@@ -2337,29 +2496,23 @@ function PreviewBlock({
     );
   }
 
-  if (block.type === "source")
-    return (
-      <p>
-        <a href={block.url} target="_blank" rel="noopener noreferrer">
-          {block.url}
-        </a>
-        {block.note && ` — ${block.note}`}
-      </p>
-    );
+  if (block.type === "source") return null;
 
   if (block.type === "table") {
     return (
-      <table className={styles.table}>
-        <tbody>
-          {block.cells.map((row, r) => (
-            <tr key={r}>
-              {row.map((cell, c) => (
-                <td key={c}>{cell}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
+          <tbody>
+            {block.cells.map((row, r) => (
+              <tr key={r}>
+                {row.map((cell, c) => (
+                  <td key={c}>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
   }
 

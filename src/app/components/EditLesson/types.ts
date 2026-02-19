@@ -5,7 +5,7 @@ export interface Slide {
   id: string;
   title: string;
   type: SlideType;
-  order: number; // ВНИМАНИЕ: используется order, не orderIndex
+  order: number;
   blocks: SlideBlock[];
 }
 
@@ -49,6 +49,7 @@ export interface ImageBlock {
   order: number;
   type: "image";
   url: string;
+  file?: File | null; // Добавляем опциональное поле file
 }
 
 export type CodeConstraintType =
@@ -76,7 +77,7 @@ export interface CodeTaskBlock {
   testCases?: Array<{ input: string; expectedOutput: string }>;
   constraints?: CodeConstraint[];
   runnable: boolean;
-  expectedOutput?: string; // для задач на вывод
+  expectedOutput?: string;
 }
 
 export interface TheoryQuestionBlock {
