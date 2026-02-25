@@ -9,7 +9,7 @@ export interface Slide {
   blocks: SlideBlock[];
 }
 
-export type CodeLanguage = "javascript" | "python" | "csharp" | "java" | "golang";
+export type CodeLanguage = "javascript" | "python" | "csharp" | "java" | "golang" | "cpp";
 
 export interface TextBlock {
   id: string;

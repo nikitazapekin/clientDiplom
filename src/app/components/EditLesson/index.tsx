@@ -36,6 +36,7 @@ const LANGUAGES: { value: CodeLanguage; label: string }[] = [
   { value: "csharp", label: "C#" },
   { value: "java", label: "Java" },
   { value: "golang", label: "Go" },
+  { value: "cpp", label: "C++" },
 ];
 
 const createTextBlock = (order: number): TextBlock => ({
