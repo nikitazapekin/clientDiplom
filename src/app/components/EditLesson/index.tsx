@@ -365,7 +365,6 @@ ${testCasesCode}
 }`;
   }
 };
-
 const buildJavaTestSuite = (
   userCode: string,
   testCases: { input: string; expectedOutput: string }[],
@@ -375,42 +374,70 @@ const buildJavaTestSuite = (
 
   const testCasesCode = testCases
     .map((tc, index) => {
+      const testNum = index + 1;
       const args = parseArguments(tc.input);
       const argsStr = formatArgumentsForCode(args);
 
       return `
-        // Тест ${index + 1}
-        try {
-            Object result = ${funcName}(${argsStr});
-            System.out.println("===TEST_START_" + ${index + 1} + "===");
-            if (result == null) {
-                System.out.print("null");
-            } else if (result instanceof String) {
-                System.out.print("\\"");
-                System.out.print(result);
-                System.out.print("\\"");
-            } else if (result.getClass().isArray()) {
-                if (result instanceof int[]) {
-                    System.out.print(java.util.Arrays.toString((int[])result));
-                } else if (result instanceof Integer[]) {
-                    System.out.print(java.util.Arrays.toString((Integer[])result));
-                } else if (result instanceof String[]) {
-                    System.out.print(java.util.Arrays.toString((String[])result));
-                } else {
-                    System.out.print(java.util.Arrays.toString((Object[])result));
+        // Тест ${testNum}
+        {
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            java.io.PrintStream originalOut = System.out;
+            System.setOut(new java.io.PrintStream(baos));
+            
+            try {
+                Object result = ${funcName}(${argsStr});
+                
+                System.setOut(originalOut);
+                
+                String logs = baos.toString();
+                
+                // Выводим логи если есть
+                if (logs != null && !logs.isEmpty()) {
+                    System.out.println("===LOGS_START_" + ${testNum} + "===");
+                    System.out.print(logs);
+                    if (!logs.endsWith("\\n")) {
+                        System.out.println();
+                    }
+                    System.out.println("===LOGS_END_" + ${testNum} + "===");
                 }
-            } else {
-                System.out.print(result);
+                
+                // Выводим результат
+                System.out.println("===RESULT_START_" + ${testNum} + "===");
+                if (result == null) {
+                    System.out.print("null");
+                } else if (result instanceof String) {
+                    System.out.print("\\"");
+                    System.out.print(result);
+                    System.out.print("\\"");
+                } else if (result.getClass().isArray()) {
+                    if (result instanceof int[]) {
+                        System.out.print(java.util.Arrays.toString((int[])result));
+                    } else if (result instanceof Integer[]) {
+                        System.out.print(java.util.Arrays.toString((Integer[])result));
+                    } else if (result instanceof String[]) {
+                        System.out.print(java.util.Arrays.toString((String[])result));
+                    } else {
+                        System.out.print(java.util.Arrays.toString((Object[])result));
+                    }
+                } else {
+                    System.out.print(result);
+                }
+                System.out.println();
+                System.out.println("===RESULT_END_" + ${testNum} + "===");
+                
+            } catch (Exception e) {
+                System.setOut(originalOut);
+                System.out.println("===RESULT_START_" + ${testNum} + "===");
+                System.out.print("ERROR: " + e.getMessage());
+                System.out.println();
+                System.out.println("===RESULT_END_" + ${testNum} + "===");
             }
-            System.out.println("===TEST_END_" + ${index + 1} + "===");
-        } catch (Exception e) {
-            System.out.println("===TEST_START_" + ${index + 1} + "===");
-            System.out.println("ERROR: " + e.getMessage());
-            System.out.println("===TEST_END_" + ${index + 1} + "===");
         }`;
     })
     .join("\n");
 
+  // Если есть main метод, заменяем его
   if (userCode.includes("public static void main")) {
     return userCode.replace(
       /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
@@ -419,6 +446,7 @@ ${testCasesCode}
     }`
     );
   } else {
+    // Добавляем main метод в конец
     const codeWithoutLastBrace = userCode.trim().replace(/\}\s*$/, "");
     return `${codeWithoutLastBrace}
 
@@ -2793,6 +2821,7 @@ function PreviewCodeTask({
 
     return results;
   };
+
   const check = async () => {
     setTestError("");
     setTestResults(null);
@@ -2816,8 +2845,12 @@ function PreviewCodeTask({
         let results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
         let allLogs: string[] = [];
 
+        // Специальная обработка для Java
         if (block.language === "java") {
-          const codeToRun = buildJavaTestSuiteWithLogs(currentCode, block.testCases, funcName);
+          // Собираем все логи из всех тестов
+          const codeToRun = buildJavaTestSuite(currentCode, block.testCases, funcName);
+
+          console.log("Java code to run:", codeToRun); // Для отладки
 
           const res = await CodeService.executeCode({
             language: "java",
@@ -2832,50 +2865,59 @@ function PreviewCodeTask({
           const output = res.output || "";
           const lines = output.split("\n");
 
+          console.log("Java output:", output); // Для отладки
+
+          // Парсим вывод для каждого теста
           for (let i = 0; i < block.testCases.length; i++) {
             const testNum = i + 1;
             let inLogs = false;
             let inResult = false;
             let currentLogs: string[] = [];
             let currentResult: string[] = [];
+            let testLogs: string[] = [];
 
             for (const line of lines) {
-              // Поиск логов для текущего теста
+              // Поиск начала логов для текущего теста
               if (line.includes(`===LOGS_START_${testNum}===`)) {
                 inLogs = true;
                 currentLogs = [];
                 continue;
               }
 
+              // Поиск конца логов
               if (line.includes(`===LOGS_END_${testNum}===`)) {
                 inLogs = false;
                 if (currentLogs.length > 0) {
-                  allLogs.push(`📋 Логи теста #${testNum} (вход: ${block.testCases[i].input}):`);
-                  allLogs.push(currentLogs.join("\n"));
-                  allLogs.push("");
+                  testLogs.push(`📋 Логи теста #${testNum} (вход: ${block.testCases[i].input}):`);
+                  testLogs.push(currentLogs.join("\n"));
+                  testLogs.push("");
                 }
                 continue;
               }
 
-              // Поиск результата для текущего теста
+              // Поиск начала результата
               if (line.includes(`===RESULT_START_${testNum}===`)) {
                 inResult = true;
                 currentResult = [];
                 continue;
               }
 
+              // Поиск конца результата
               if (line.includes(`===RESULT_END_${testNum}===`)) {
                 inResult = false;
                 if (currentResult.length > 0) {
                   const actual = currentResult.join("\n").trim();
                   const expected = block.testCases[i].expectedOutput.trim();
 
+                  // Сравниваем результаты
                   let actualParsed: any;
                   let expectedParsed: any;
 
                   try {
+                    // Пробуем распарсить как JSON
                     actualParsed = JSON.parse(actual);
                   } catch {
+                    // Если не JSON, оставляем как строку
                     actualParsed = actual;
                   }
 
@@ -2903,9 +2945,14 @@ function PreviewCodeTask({
                 currentResult.push(line);
               }
             }
+
+            // Добавляем логи теста в общие логи
+            if (testLogs.length > 0) {
+              allLogs.push(...testLogs);
+            }
           }
         } else {
-          // Для всех остальных языков
+          // Для остальных языков (как было раньше)
           for (const tc of block.testCases) {
             if (!tc.input || !tc.expectedOutput) {
               setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
@@ -2936,17 +2983,13 @@ function PreviewCodeTask({
             let inResult = false;
             let currentLogs: string[] = [];
             let currentResult: string[] = [];
-            let hasLogs = false;
-            let hasResult = false;
 
             for (const line of lines) {
               if (line.includes("===LOGS_START===")) {
                 inLogs = true;
                 currentLogs = [];
-                hasLogs = true;
                 continue;
               }
-
               if (line.includes("===LOGS_END===")) {
                 inLogs = false;
                 if (currentLogs.length > 0) {
@@ -2956,14 +2999,11 @@ function PreviewCodeTask({
                 }
                 continue;
               }
-
               if (line.includes("===RESULT_START===")) {
                 inResult = true;
                 currentResult = [];
-                hasResult = true;
                 continue;
               }
-
               if (line.includes("===RESULT_END===")) {
                 inResult = false;
                 if (currentResult.length > 0) {
@@ -3002,17 +3042,6 @@ function PreviewCodeTask({
                 currentResult.push(line);
               }
             }
-
-            // Если не нашли маркеры, используем весь вывод
-            if (!hasLogs && !hasResult) {
-              const passed = compareOutputs(output.trim(), tc.expectedOutput.trim());
-              results.push({
-                input: tc.input,
-                expected: tc.expectedOutput,
-                actual: output.trim(),
-                passed,
-              });
-            }
           }
         }
 
@@ -3023,6 +3052,7 @@ function PreviewCodeTask({
 
         setTestResults(results);
 
+        // Проверка ограничений
         let constraintCheckResults: ConstraintResult[] = [];
         if (block.constraints?.length) {
           constraintCheckResults = await checkConstraints(currentCode, block.constraints);
@@ -3051,12 +3081,12 @@ function PreviewCodeTask({
             .filter((r) => !r.passed)
             .map(
               (r, i) =>
-                `Тест ${results.findIndex((tr) => tr === r) + 1}: ${r.input} → ожидалось: ${r.expected}, получено: ${r.actual}`
+                `❌ Тест ${results.findIndex((tr) => tr === r) + 1}: вход=${r.input}, ожидалось=${r.expected}, получено=${r.actual}`
             );
 
           const failedConstraints = constraintCheckResults
             .filter((c) => !c.passed)
-            .map((c) => `${c.name}: ожидалось ${c.expected}, получено ${c.actual}`);
+            .map((c) => `❌ ${c.name}: ожидалось ${c.expected}, получено ${c.actual}`);
 
           const errorMessages = [];
 
