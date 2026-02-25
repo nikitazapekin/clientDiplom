@@ -1,40 +1,54 @@
+// index.module.scss
 .container {
   position: relative;
   background: #0D1117;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #161B22;
+  border: 1px solid #30363D;
   min-height: 200px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &.focused {
+    border-color: #FF79C6;
+    box-shadow: 0 0 0 2px rgba(255, 121, 198, 0.2);
+  }
 }
 
 .editorContainer {
   position: relative;
   width: 100%;
   height: 100%;
-  overflow: auto;
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
   font-size: 14px;
   line-height: 20px;
 }
 
 .editorScroll {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow: auto;
   background: #0D1117;
+  pointer-events: none;
+  padding: 8px 0;
 }
 
 .editor {
-  padding: 8px 0;
   min-width: min-content;
   white-space: pre;
+  padding: 0 8px;
 }
 
 .lineContainer {
   display: flex;
-  padding: 0 8px;
   min-height: 20px;
   white-space: nowrap;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
 }
 
 .lineNumber {
@@ -42,11 +56,12 @@
   width: 40px;
   color: #6E7681;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 12px;
   text-align: right;
   padding-right: 8px;
   user-select: none;
   flex-shrink: 0;
+  opacity: 0.7;
 }
 
 .lineContent {
@@ -63,15 +78,25 @@
   display: inline-block;
   width: 2px;
   height: 18px;
-  background: #E6EDF3;
-  opacity: 0.8;
+  background: #FF79C6;
   vertical-align: middle;
   margin-left: 0;
   animation: blink 1s infinite;
+  position: relative;
+  top: 2px;
+}
+
+.cursorInline {
+  position: absolute;
+  width: 2px;
+  height: 18px;
+  background: #FF79C6;
+  animation: blink 1s infinite;
+  top: 2px;
 }
 
 @keyframes blink {
-  0%, 50% { opacity: 0.8; }
+  0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
 }
 
@@ -81,9 +106,8 @@
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0;
   padding: 8px 8px 8px 48px;
-  font-family: inherit;
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
   font-size: 14px;
   line-height: 20px;
   border: none;
@@ -96,6 +120,12 @@
   white-space: pre;
   word-wrap: normal;
   -webkit-text-fill-color: transparent;
+  z-index: 2;
+  
+  &::selection {
+    background: rgba(255, 121, 198, 0.3);
+    -webkit-text-fill-color: transparent;
+  }
 }
 
 .autocompleteContainer {
@@ -107,7 +137,7 @@
   background: #1F2937;
   border-radius: 8px;
   border: 1px solid #374151;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   overflow-y: auto;
 }
@@ -119,11 +149,11 @@
   border: none;
   border-bottom: 1px solid #374151;
   color: #E6EDF3;
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
   font-size: 14px;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.15s;
+  transition: all 0.15s;
 
   &:hover {
     background: #2D3748;
@@ -147,21 +177,23 @@
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: #2ea043;
   color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
+  transition: all 0.2s;
+  border: 1px solid #3fb950;
 
   &:hover:not(:disabled) {
-    background: #238636;
+    background: #3fb950;
+    transform: scale(1.05);
   }
 
   &:disabled {
-    opacity: 0.7;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 }
@@ -173,4 +205,17 @@
   border-style: solid;
   border-width: 6px 0 6px 10px;
   border-color: transparent transparent transparent currentColor;
+}
+
+.runLoading {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

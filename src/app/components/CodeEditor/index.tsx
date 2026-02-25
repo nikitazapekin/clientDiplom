@@ -1,3 +1,4 @@
+// CodeEditor.tsx
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -263,6 +264,7 @@ export default function CodeEditor({
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
   const [cursorPosition, setCursorPosition] = useState({ line: 0, column: 0 });
   const [cursorVisible, setCursorVisible] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Мигание курсора
   useEffect(() => {
@@ -271,6 +273,28 @@ export default function CodeEditor({
     }, 500);
 
     return () => clearInterval(interval);
+  }, []);
+
+  // Фокус на textarea при клике на контейнер
+  useEffect(() => {
+    const handleContainerClick = (e: MouseEvent) => {
+      if (
+        e.target === containerRef.current ||
+        (e.target as HTMLElement).classList.contains(styles.editorScroll) ||
+        (e.target as HTMLElement).classList.contains(styles.editor) ||
+        (e.target as HTMLElement).classList.contains(styles.lineContainer)
+      ) {
+        textareaRef.current?.focus();
+      }
+    };
+
+    const container = containerRef.current;
+
+    container?.addEventListener("click", handleContainerClick);
+
+    return () => {
+      container?.removeEventListener("click", handleContainerClick);
+    };
   }, []);
 
   // Получение текущего слова
@@ -288,7 +312,7 @@ export default function CodeEditor({
   useEffect(() => {
     const word = getCurrentWord(value, selection.start);
 
-    if (word.length >= 2 && !readOnly) {
+    if (word.length >= 2 && !readOnly && isFocused) {
       const suggestions = (KEYWORDS[language] || [])
         .filter(
           (keyword) => keyword.toLowerCase().startsWith(word.toLowerCase()) && keyword !== word
@@ -301,7 +325,7 @@ export default function CodeEditor({
     } else {
       setShowAutocomplete(false);
     }
-  }, [value, selection.start, language, readOnly]);
+  }, [value, selection.start, language, readOnly, isFocused, getCurrentWord]);
 
   // Вставка сниппета
   const insertSnippet = useCallback(
@@ -326,7 +350,7 @@ export default function CodeEditor({
         }
       }, 0);
     },
-    [value, selection, onChange]
+    [value, selection, onChange, getCurrentWord]
   );
 
   // Обновление позиции курсора
@@ -347,6 +371,28 @@ export default function CodeEditor({
       setCursorPosition({ line, column });
     },
     [value]
+  );
+
+  // Обработка ввода
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onChange(e.target.value);
+
+      // Обновляем позицию курсора после изменения
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const start = textareaRef.current.selectionStart;
+          const textBeforeCursor = e.target.value.slice(0, start);
+          const lines = textBeforeCursor.split("\n");
+
+          setCursorPosition({
+            line: lines.length - 1,
+            column: lines[lines.length - 1]?.length || 0,
+          });
+        }
+      }, 0);
+    },
+    [onChange]
   );
 
   // Обработка клавиш
@@ -426,8 +472,43 @@ export default function CodeEditor({
         }, 0);
       }
     },
-    [value, selection, showAutocomplete, autocompleteSuggestions, selectedSuggestion, readOnly]
+    [
+      value,
+      selection,
+      showAutocomplete,
+      autocompleteSuggestions,
+      selectedSuggestion,
+      readOnly,
+      onChange,
+      insertSnippet,
+    ]
   );
+
+  // Обработчики фокуса
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+  }, []);
+
+  const handleBlur = useCallback(() => {
+    setIsFocused(false);
+  }, []);
+
+  // Синхронизация прокрутки
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    const scrollContainer = containerRef.current?.querySelector(`.${styles.editorScroll}`);
+
+    if (!textarea || !scrollContainer) return;
+
+    const handleScroll = () => {
+      scrollContainer.scrollTop = textarea.scrollTop;
+      scrollContainer.scrollLeft = textarea.scrollLeft;
+    };
+
+    textarea.addEventListener("scroll", handleScroll);
+
+    return () => textarea.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Функция для раскрашивания кода
   const renderHighlightedCode = useCallback(() => {
@@ -437,12 +518,10 @@ export default function CodeEditor({
           <span className={styles.lineNumber}>1</span>
           <span className={styles.lineContent}>
             <span style={{ color: COLORS.comment }}>Введите код...</span>
-            {document.activeElement === textareaRef.current &&
+            {isFocused &&
               cursorVisible &&
               cursorPosition.line === 0 &&
-              cursorPosition.column === 0 && (
-                <span className={styles.cursor} style={{ marginLeft: 0 }} />
-              )}
+              cursorPosition.column === 0 && <span className={styles.cursor} />}
           </span>
         </div>
       );
@@ -561,8 +640,7 @@ export default function CodeEditor({
 
       // Если текущая строка - это строка с курсором, добавляем мигающий курсор
       const isCursorLine = lineIndex === cursorPosition.line;
-      const showCursor =
-        isCursorLine && document.activeElement === textareaRef.current && cursorVisible;
+      const showCursor = isCursorLine && isFocused && cursorVisible;
 
       return (
         <div key={`line-${lineIndex}`} className={styles.lineContainer}>
@@ -570,18 +648,26 @@ export default function CodeEditor({
           <span className={styles.lineContent}>
             {tokens}
             {showCursor && cursorPosition.column === line.length && (
-              <span className={styles.cursor} style={{ marginLeft: 0 }} />
+              <span className={styles.cursor} />
+            )}
+            {showCursor && cursorPosition.column < line.length && (
+              <span
+                className={styles.cursorInline}
+                style={{
+                  left: `${cursorPosition.column * 0.6}em`,
+                }}
+              />
             )}
           </span>
         </div>
       );
     });
-  }, [value, language, cursorPosition, cursorVisible]);
+  }, [value, language, cursorPosition, cursorVisible, isFocused]);
 
   return (
     <div
       ref={containerRef}
-      className={`${styles.container} ${className || ""}`}
+      className={`${styles.container} ${className || ""} ${isFocused ? styles.focused : ""}`}
       style={{ height }}
       data-code-editor
     >
@@ -594,7 +680,11 @@ export default function CodeEditor({
           title="Запустить"
           aria-label="Запустить код"
         >
-          <span className={styles.runIcon} />
+          {runLoading ? (
+            <span className={styles.runLoading} />
+          ) : (
+            <span className={styles.runIcon} />
+          )}
         </button>
       )}
 
@@ -603,14 +693,15 @@ export default function CodeEditor({
           <div className={styles.editor}>{renderHighlightedCode()}</div>
         </div>
 
-        {/* Невидимое textarea для ввода */}
         <textarea
           ref={textareaRef}
           className={styles.hiddenTextarea}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={handleChange}
           onSelect={handleSelectionChange}
           onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           disabled={readOnly}
           autoCapitalize="none"
           autoCorrect="off"

@@ -1,3 +1,4 @@
+// EditLesson.tsx (полный исправленный файл)
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,7 +27,6 @@ import { CodeService } from "@/app/http/codeService";
 import { LessonDetailsService } from "@/app/http/lessonDetailsService";
 
 /* eslint-disable */
-// Используем более надежный генератор ID
 const genId = () =>
   `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${performance.now()}`;
 
@@ -82,7 +82,6 @@ const createImageBlock = (order: number): ImageBlock => ({
   file: null,
 });
 
-// Функция для удаления main метода из кода, который видит пользователь
 const stripMainMethod = (code: string, language: CodeLanguage): string => {
   if (language === "java") {
     return code
@@ -98,7 +97,6 @@ const stripMainMethod = (code: string, language: CodeLanguage): string => {
   return code;
 };
 
-// Функция для добавления main метода в Java код (для выполнения)
 const addJavaMainMethod = (code: string, funcName: string | null, input: string = "5"): string => {
   if (!funcName) return code;
 
@@ -128,7 +126,120 @@ const addJavaMainMethod = (code: string, funcName: string | null, input: string 
   }
 };
 
-// Функция для создания тестового набора Java для множественных тест-кейсов
+// Функция для парсинга аргументов из строки с запятыми
+const parseArguments = (input: string): any[] => {
+  if (!input.trim()) return [];
+
+  try {
+    if (input.trim().startsWith("[") && input.trim().endsWith("]")) {
+      return JSON.parse(input);
+    }
+  } catch {
+    // Не JSON, продолжаем
+  }
+
+  const args: any[] = [];
+  let current = "";
+  let inString = false;
+  let stringChar = "";
+  let braceCount = 0;
+  let bracketCount = 0;
+
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+
+    if ((char === '"' || char === "'" || char === "`") && input[i - 1] !== "\\") {
+      if (!inString) {
+        inString = true;
+        stringChar = char;
+        current += char;
+      } else if (char === stringChar) {
+        inString = false;
+        current += char;
+      } else {
+        current += char;
+      }
+    } else if (char === "{" && !inString) {
+      braceCount++;
+      current += char;
+    } else if (char === "}" && !inString) {
+      braceCount--;
+      current += char;
+    } else if (char === "[" && !inString) {
+      bracketCount++;
+      current += char;
+    } else if (char === "]" && !inString) {
+      bracketCount--;
+      current += char;
+    } else if (char === "," && !inString && braceCount === 0 && bracketCount === 0) {
+      const trimmed = current.trim();
+      if (trimmed) {
+        args.push(parseValue(trimmed));
+      }
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  if (current.trim()) {
+    args.push(parseValue(current.trim()));
+  }
+
+  return args;
+};
+
+const parseValue = (value: string): any => {
+  if (value === "") return "";
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    // Не JSON
+  }
+
+  if (/^-?\d+(\.\d+)?$/.test(value)) {
+    return Number(value);
+  }
+
+  if (value === "true") return true;
+  if (value === "false") return false;
+  if (value === "null") return null;
+  if (value === "undefined") return undefined;
+
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'")) ||
+    (value.startsWith("`") && value.endsWith("`"))
+  ) {
+    return value.slice(1, -1);
+  }
+
+  if (value.startsWith("{") && value.endsWith("}")) {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+
+  return value;
+};
+
+const formatArgumentsForCode = (args: any[]): string => {
+  return args
+    .map((arg) => {
+      if (typeof arg === "string") {
+        return `"${arg}"`;
+      }
+      if (typeof arg === "object") {
+        return JSON.stringify(arg);
+      }
+      return String(arg);
+    })
+    .join(", ");
+};
+
 const buildJavaTestSuite = (
   userCode: string,
   testCases: { input: string; expectedOutput: string }[],
@@ -138,28 +249,8 @@ const buildJavaTestSuite = (
 
   const testCasesCode = testCases
     .map((tc, index) => {
-      let input = tc.input;
-
-      let parsedInput;
-      try {
-        parsedInput = JSON.parse(input);
-      } catch {
-        parsedInput = input;
-      }
-
-      let argsStr: string;
-      if (Array.isArray(parsedInput)) {
-        argsStr = parsedInput
-          .map((arg) => {
-            if (typeof arg === "string") return `"${arg}"`;
-            if (typeof arg === "boolean") return arg;
-            if (typeof arg === "object") return JSON.stringify(arg);
-            return arg;
-          })
-          .join(", ");
-      } else {
-        argsStr = typeof parsedInput === "string" ? `"${parsedInput}"` : String(parsedInput);
-      }
+      const args = parseArguments(tc.input);
+      const argsStr = formatArgumentsForCode(args);
 
       return `
         // Тест ${index + 1}
@@ -269,7 +360,7 @@ function sortBlocks(blocks: SlideBlock[]): SlideBlock[] {
   return [...blocks].sort((a, b) => a.order - b.order);
 }
 
-// Компонент-обертка для CodeEditor для предотвращения проблем с Monaco
+// Упрощенный StableCodeEditor без лишних состояний
 function StableCodeEditor({
   value,
   onChange,
@@ -278,7 +369,6 @@ function StableCodeEditor({
   readOnly,
   onRun,
   runLoading,
-  key,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -287,25 +377,12 @@ function StableCodeEditor({
   readOnly?: boolean;
   onRun?: () => void;
   runLoading?: boolean;
-  key?: string;
 }) {
-  const editorRef = useRef<any>(null);
-
-  // Уникальный ID для каждого экземпляра редактора
-  const editorId = useRef(`editor_${genId()}`).current;
-
-  // Используем useEffect для очистки при размонтировании
-  useEffect(() => {
-    return () => {
-      // Очищаем ссылку при размонтировании
-      if (editorRef.current) {
-        editorRef.current = null;
-      }
-    };
-  }, []);
+  // Используем useRef для хранения уникального ID, который не меняется при ререндерах
+  const editorId = useRef(`editor_${Date.now()}_${Math.random().toString(36)}`).current;
 
   return (
-    <div className={styles.codeEditorWrapper} key={key || editorId}>
+    <div className={styles.codeEditorWrapper} data-editor-id={editorId}>
       <CodeEditor
         value={value}
         onChange={onChange}
@@ -319,7 +396,6 @@ function StableCodeEditor({
   );
 }
 
-// Компонент модального окна для источников
 function SourceModal({
   isOpen,
   onClose,
@@ -366,6 +442,119 @@ function SourceModal({
   );
 }
 
+// Компонент модального окна результатов
+function ResultsModal({
+  isOpen,
+  onClose,
+  results,
+  totalTasks,
+  completedTasks,
+  totalTestCases,
+  passedTestCases,
+  constraintsPassed,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  results: {
+    slideId: string;
+    title: string;
+    passed: boolean;
+    testCasesPassed: number;
+    testCasesTotal: number;
+    constraintsPassed: boolean;
+  }[];
+  totalTasks: number;
+  completedTasks: number;
+  totalTestCases: number;
+  passedTestCases: number;
+  constraintsPassed: boolean;
+}) {
+  if (!isOpen) return null;
+
+  const allCompleted =
+    completedTasks === totalTasks && passedTestCases === totalTestCases && constraintsPassed;
+  const moreThanHalf = completedTasks > totalTasks / 2;
+
+  let stars = 0;
+  if (allCompleted) {
+    stars = 3;
+  } else if (moreThanHalf) {
+    stars = 2;
+  } else if (completedTasks > 0) {
+    stars = 1;
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div
+        className={`${styles.modalContent} ${styles.resultsModal}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.modalHeader}>
+          <h3>Результаты урока</h3>
+          <button className={styles.modalClose} onClick={onClose}>
+            ✕
+          </button>
+        </div>
+
+        <div className={styles.modalBody}>
+          <div className={styles.starsContainer}>
+            {[1, 2, 3].map((star) => (
+              <span
+                key={star}
+                className={`${styles.star} ${star <= stars ? styles.starFilled : ""}`}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+
+          <div className={styles.resultsSummary}>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Выполнено заданий:</span>
+              <span className={styles.summaryValue}>
+                {completedTasks}/{totalTasks}
+              </span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Пройдено тестов:</span>
+              <span className={styles.summaryValue}>
+                {passedTestCases}/{totalTestCases}
+              </span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Ограничения:</span>
+              <span className={styles.summaryValue}>{constraintsPassed ? "✅" : "❌"}</span>
+            </div>
+          </div>
+
+          <div className={styles.resultsList}>
+            <h4>Детали по заданиям:</h4>
+            {results.map((result) => (
+              <div
+                key={result.slideId}
+                className={`${styles.resultItem} ${result.passed ? styles.resultPassed : styles.resultFailed}`}
+              >
+                <div className={styles.resultTitle}>{result.title}</div>
+                <div className={styles.resultDetails}>
+                  <span>
+                    Тесты: {result.testCasesPassed}/{result.testCasesTotal}
+                  </span>
+                  <span>Ограничения: {result.constraintsPassed ? "✅" : "❌"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.modalFooter}>
+          <Button color="#9F0FA7" width="200px" textColor="#fff" text="Закрыть" onClick={onClose} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EditLesson() {
   const params = useParams();
   const lessonId = params?.id as string;
@@ -384,11 +573,27 @@ export default function EditLesson() {
   const [lessonDetailsId, setLessonDetailsId] = useState<string | null>(null);
   const [sourceModalOpen, setSourceModalOpen] = useState(false);
   const [currentSources, setCurrentSources] = useState<{ url: string; note?: string }[]>([]);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [testResults, setTestResults] = useState<{ [slideId: string]: any }>({});
 
-  // Добавляем ref для отслеживания перемещения блоков
+  const [lessonResults, setLessonResults] = useState<{
+    results: any[];
+    totalTasks: number;
+    completedTasks: number;
+    totalTestCases: number;
+    passedTestCases: number;
+    constraintsPassed: boolean;
+  }>({
+    results: [],
+    totalTasks: 0,
+    completedTasks: 0,
+    totalTestCases: 0,
+    passedTestCases: 0,
+    constraintsPassed: true,
+  });
+
   const isMovingBlock = useRef(false);
 
-  // Загрузка данных при монтировании
   useEffect(() => {
     if (lessonId) {
       loadLessonDetails();
@@ -464,7 +669,6 @@ export default function EditLesson() {
     (index: number) => {
       setSlides((prev) => {
         const next = prev.filter((_, i) => i !== index);
-        // Пересчитываем order для оставшихся слайдов
         const reordered = next.map((slide, idx) => ({ ...slide, order: idx }));
 
         if (selectedSlideIndex === index) {
@@ -548,7 +752,6 @@ export default function EditLesson() {
       if (!slide) return prev;
 
       const blocks = slide.blocks.filter((b) => b.id !== blockId);
-      // Пересчитываем order для всех блоков
       const reorderedBlocks = blocks.map((b, idx) => ({ ...b, order: idx })) as SlideBlock[];
 
       next[slideIndex] = { ...slide, blocks: reorderedBlocks };
@@ -627,6 +830,79 @@ export default function EditLesson() {
     setSourceModalOpen(true);
   }, []);
 
+  const calculateResults = useCallback(() => {
+    const testSlides = slides.filter((s) => s.type === "test");
+    const results: any[] = [];
+    let totalCompleted = 0;
+    let totalTestCasesCount = 0;
+    let passedTestCasesCount = 0;
+    let allConstraintsPassed = true;
+
+    testSlides.forEach((slide) => {
+      const slideAnswer = testAnswer[slide.id];
+      const slideError = testError[slide.id];
+      const slideTestResult = testResults[slide.id];
+
+      let slidePassed = false;
+      let slideTestCasesPassed = 0;
+      let slideTestCasesTotal = 0;
+      let slideConstraintsPassed = true;
+
+      const codeTasks = slide.blocks.filter((b) => b.type === "codeTask") as CodeTaskBlock[];
+      const theoryQuestions = slide.blocks.filter(
+        (b) => b.type === "theoryQuestion"
+      ) as TheoryQuestionBlock[];
+
+      if (codeTasks.length > 0) {
+        if (slideTestResult) {
+          slideTestCasesPassed = slideTestResult.passedTests || 0;
+          slideTestCasesTotal = slideTestResult.totalTests || 0;
+          slideConstraintsPassed = slideTestResult.constraintsPassed || false;
+          slidePassed = slideTestResult.allPassed || false;
+        }
+      } else if (theoryQuestions.length > 0) {
+        const theoryPassed = theoryQuestions.every((q, index) => {
+          const answer = testAnswer[slide.id];
+          return typeof answer === "number" && answer === q.correctIndex;
+        });
+        slidePassed = theoryPassed;
+        slideTestCasesTotal = theoryQuestions.length;
+        slideTestCasesPassed = theoryPassed ? theoryQuestions.length : 0;
+      }
+
+      if (slidePassed) totalCompleted++;
+
+      results.push({
+        slideId: slide.id,
+        title: slide.title,
+        passed: slidePassed,
+        testCasesPassed: slideTestCasesPassed,
+        testCasesTotal: slideTestCasesTotal,
+        constraintsPassed: slideConstraintsPassed,
+      });
+
+      totalTestCasesCount += slideTestCasesTotal;
+      passedTestCasesCount += slideTestCasesPassed;
+      allConstraintsPassed = allConstraintsPassed && slideConstraintsPassed;
+    });
+
+    setLessonResults({
+      results,
+      totalTasks: testSlides.length,
+      completedTasks: totalCompleted,
+      totalTestCases: totalTestCasesCount,
+      passedTestCases: passedTestCasesCount,
+      constraintsPassed: allConstraintsPassed,
+    });
+
+    setShowResultsModal(true);
+  }, [slides, testAnswer, testError, testResults]);
+
+  const handleLessonComplete = useCallback(() => {
+    calculateResults();
+    setPreviewMode(false);
+  }, [calculateResults]);
+
   const saveLesson = useCallback(async () => {
     if (!lessonId) {
       setError("ID урока не найден");
@@ -644,7 +920,6 @@ export default function EditLesson() {
           type: "lesson" as const,
           orderIndex: s.order,
           blocks: s.blocks.map((block) => {
-            // Для изображений удаляем file перед отправкой
             if (block.type === "image") {
               const { file, ...rest } = block as any;
               return rest;
@@ -659,7 +934,6 @@ export default function EditLesson() {
           title: s.title,
           orderIndex: s.order,
           blocks: s.blocks.map((block) => {
-            // Для изображений удаляем file перед отправкой
             if (block.type === "image") {
               const { file, ...rest } = block as any;
               return rest;
@@ -726,7 +1000,7 @@ export default function EditLesson() {
       if (previewCurrentIndex < allSlides.length - 1) {
         setPreviewCurrentIndex((i) => i + 1);
       } else {
-        setPreviewMode(false);
+        handleLessonComplete();
       }
     };
 
@@ -736,7 +1010,6 @@ export default function EditLesson() {
       }
     };
 
-    // Собираем все источники для текущего слайда
     const slideSources = currentSlide.blocks
       .filter((block): block is SourceBlock => block.type === "source")
       .map((block) => ({ url: block.url, note: block.note }));
@@ -783,6 +1056,9 @@ export default function EditLesson() {
                   testError={testError[currentSlide.id]}
                   setTestError={(v) => setTestError((prev) => ({ ...prev, [currentSlide.id]: v }))}
                   onCorrect={goNext}
+                  onResults={(results) =>
+                    setTestResults((prev) => ({ ...prev, [currentSlide.id]: results }))
+                  }
                 />
               ))}
             </div>
@@ -1045,6 +1321,17 @@ export default function EditLesson() {
           />
         </div>
       </div>
+
+      <ResultsModal
+        isOpen={showResultsModal}
+        onClose={() => setShowResultsModal(false)}
+        results={lessonResults.results}
+        totalTasks={lessonResults.totalTasks}
+        completedTasks={lessonResults.completedTasks}
+        totalTestCases={lessonResults.totalTestCases}
+        passedTestCases={lessonResults.passedTestCases}
+        constraintsPassed={lessonResults.constraintsPassed}
+      />
     </section>
   );
 }
@@ -1111,6 +1398,7 @@ function BlockEditor({
           height={220}
           onRun={block.runnable ? () => runCode(block.id, block.language, block.code) : undefined}
           runLoading={block.runnable && !!codeRunLoading}
+          //    blockId={block.id}
         />
         {block.runnable && codeRunOutput != null && (
           <pre className={styles.codeOutput}>{codeRunOutput}</pre>
@@ -1335,6 +1623,7 @@ function BlockEditor({
               onChange={(v) => updateBlock(slideIndex, block.id, { startCode: v })}
               language={block.language ?? "javascript"}
               height={220}
+              //    blockId={`${block.id}_start`}
             />
 
             <div className={styles.section}>
@@ -1359,12 +1648,12 @@ function BlockEditor({
                   <input
                     value={tc.input}
                     onChange={(e) => updateTestCase(i, "input", e.target.value)}
-                    placeholder="Входные данные (JSON): [2,1,4] или 5"
+                    placeholder="Входные данные: 1, 'test', {hi: 'hi'}"
                   />
                   <input
                     value={tc.expectedOutput}
                     onChange={(e) => updateTestCase(i, "expectedOutput", e.target.value)}
-                    placeholder="Ожидаемый возврат (JSON): [1,2,4] или 5"
+                    placeholder="Ожидаемый возврат"
                   />
                 </div>
               ))}
@@ -1587,6 +1876,7 @@ function BlockEditor({
           onChange={(v) => updateBlock(slideIndex, block.id, { code: v })}
           language="javascript"
           height={120}
+          //   blockId={`${block.id}_theory`}
         />
         <input
           className={styles.form__input}
@@ -1653,6 +1943,7 @@ function PreviewBlockStatic({ block }: { block: SlideBlock }) {
         language={block.language}
         readOnly
         height={200}
+        //   blockId={`${block.id}_static`}
       />
     );
 
@@ -1734,52 +2025,24 @@ const buildTestCode = (
 ): string => {
   if (!funcName) return userCode;
 
-  let parsedInput: any;
-  try {
-    parsedInput = JSON.parse(input);
-  } catch {
-    parsedInput = input;
-  }
-
-  const isArrayInput = input.trim().startsWith("[") && input.trim().endsWith("]");
+  const args = parseArguments(input);
+  const argsStr = formatArgumentsForCode(args);
 
   switch (lang) {
     case "javascript":
-      if (isArrayInput) {
-        return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${input})));`;
-      } else {
-        const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
-        const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-        return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${argsStr})));`;
-      }
+      return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${argsStr})));`;
 
     case "python":
-      if (isArrayInput) {
-        return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${input})))`;
-      } else {
-        const args = Array.isArray(parsedInput) ? parsedInput : [parsedInput];
-        const argsStr = args.map((arg: any) => JSON.stringify(arg)).join(", ");
-        return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${argsStr})))`;
-      }
+      return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${argsStr})))`;
 
     case "csharp":
-      if (isArrayInput) {
-        const arrayValues = parsedInput.map((v: any) => v).join(", ");
-        return `${userCode}\n\npublic class Runner {\n    public static void Main() {\n        Console.WriteLine(JsonSerializer.Serialize(Program.${funcName}(new int[] { ${arrayValues} })));\n    }\n}`;
-      } else {
-        return `${userCode}\n\npublic class Runner {\n    public static void Main() {\n        Console.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${input})));\n    }\n}`;
-      }
+      return `${userCode}\n\npublic class Runner {\n    public static void Main() {\n        Console.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${argsStr})));\n    }\n}`;
 
     case "java":
-      return addJavaMainMethod(userCode, funcName, input);
+      return addJavaMainMethod(userCode, funcName, argsStr);
 
     case "golang":
-      if (isArrayInput) {
-        const arrayValues = parsedInput.map((v: any) => v).join(", ");
-        return `${userCode}\n\nfunc main() { result := ${funcName}([]int{${arrayValues}}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
-      } else {
-        return `${userCode}\n\nfunc main() { result := ${funcName}(${input}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
-      }
+      return `${userCode}\n\nfunc main() { result := ${funcName}(${argsStr}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
 
     default:
       return userCode;
@@ -1810,7 +2073,7 @@ interface ConstraintResult {
   actual: string;
   value?: number | string[] | boolean;
 }
-
+// Полностью исправленный PreviewCodeTask
 function PreviewCodeTask({
   block,
   testAnswer,
@@ -1818,6 +2081,7 @@ function PreviewCodeTask({
   testError,
   setTestError,
   onCorrect,
+  onResults,
 }: {
   block: CodeTaskBlock;
   testAnswer: string | number | undefined;
@@ -1825,6 +2089,7 @@ function PreviewCodeTask({
   testError: string | undefined;
   setTestError: (v: string) => void;
   onCorrect: () => void;
+  onResults?: (results: any) => void;
 }) {
   const [consoleOutput, setConsoleOutput] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -1832,44 +2097,171 @@ function PreviewCodeTask({
   const [constraintResults, setConstraintResults] = useState<ConstraintResult[] | null>(null);
   const [executionTime, setExecutionTime] = useState<number | null>(null);
 
-  const fullCodeForExecution =
-    typeof testAnswer === "string" && testAnswer !== ""
+  // Получаем актуальный код для отображения
+  const getCurrentCode = useCallback(() => {
+    return typeof testAnswer === "string" && testAnswer !== ""
       ? testAnswer
       : (block.startCode ?? getDefaultStarterCode(block.language ?? "javascript"));
+  }, [testAnswer, block.startCode, block.language]);
 
-  const displayCode = stripMainMethod(fullCodeForExecution, block.language ?? "javascript");
+  // Отображаемый код (без main метода)
+  const displayCode = stripMainMethod(getCurrentCode(), block.language ?? "javascript");
 
-  const setUserCode = (code: string) => {
-    setTestAnswer(code);
-    setTestError("");
-    setConsoleOutput(null);
-    setTestResults(null);
-    setConstraintResults(null);
-    setExecutionTime(null);
-  };
+  // Обработчик изменения кода
+  const handleCodeChange = useCallback(
+    (code: string) => {
+      setTestAnswer(code);
+      setTestError("");
+      setConsoleOutput(null);
+      setTestResults(null);
+      setConstraintResults(null);
+      setExecutionTime(null);
+    },
+    [setTestAnswer, setTestError]
+  );
+
+  // Функция для оборачивания кода с перехватом console.log
+  const wrapCodeWithConsoleCapture = useCallback(
+    (code: string, language: CodeLanguage, funcName: string | null): string => {
+      if (language === "javascript") {
+        return `
+// Перехват console.log
+const __originalConsoleLog = console.log;
+const __originalConsoleError = console.error;
+const __originalConsoleWarn = console.warn;
+const __originalConsoleInfo = console.info;
+const __logs = [];
+
+console.log = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  __logs.push('📌 ' + message);
+  __originalConsoleLog.apply(console, args);
+};
+
+console.error = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  __logs.push('❌ ' + message);
+  __originalConsoleError.apply(console, args);
+};
+
+console.warn = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  __logs.push('⚠️ ' + message);
+  __originalConsoleWarn.apply(console, args);
+};
+
+console.info = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  __logs.push('ℹ️ ' + message);
+  __originalConsoleInfo.apply(console, args);
+};
+
+try {
+  ${code}
+  
+  // Выводим все перехваченные логи
+  if (__logs.length > 0) {
+    console.log('\\n📋 Логи выполнения:');
+    __logs.forEach(log => console.log(log));
+  }
+  
+} catch (error) {
+  console.error('Ошибка:', error);
+} finally {
+  console.log = __originalConsoleLog;
+  console.error = __originalConsoleError;
+  console.warn = __originalConsoleWarn;
+  console.info = __originalConsoleInfo;
+}
+      `;
+      } else if (language === "python") {
+        return `
+import sys
+from io import StringIO
+
+# Перехват вывода
+__old_stdout = sys.stdout
+__old_stderr = sys.stderr
+__stdout_buffer = StringIO()
+__stderr_buffer = StringIO()
+sys.stdout = __stdout_buffer
+sys.stderr = __stderr_buffer
+
+try:
+${code
+  .split("\n")
+  .map((line) => "  " + line)
+  .join("\n")}
+  
+  # Получаем весь вывод
+  __stdout = __stdout_buffer.getvalue()
+  __stderr = __stderr_buffer.getvalue()
+  
+  # Восстанавливаем stdout/stderr
+  sys.stdout = __old_stdout
+  sys.stderr = __old_stderr
+  
+  # Выводим результат
+  if __stdout:
+    print("📋 Вывод программы:")
+    print(__stdout)
+  if __stderr:
+    print("❌ Ошибки:")
+    print(__stderr)
+except Exception as e:
+  sys.stdout = __old_stdout
+  sys.stderr = __old_stderr
+  print(f"❌ Ошибка: {e}")
+      `;
+      } else if (language === "java") {
+        return addJavaMainMethod(code, funcName, "5");
+      } else if (language === "csharp") {
+        return code;
+      }
+      return code;
+    },
+    []
+  );
 
   const runUserCode = async () => {
     setConsoleOutput(null);
     setIsRunning(true);
     try {
-      const funcName = extractFunctionName(fullCodeForExecution, block.language ?? "javascript");
+      const currentCode = getCurrentCode();
+      const funcName = extractFunctionName(currentCode, block.language ?? "javascript");
 
-      let codeToRun = fullCodeForExecution;
-
-      if (block.language === "java") {
-        codeToRun = addJavaMainMethod(fullCodeForExecution, funcName, "5");
-      }
+      // Оборачиваем код для захвата консоли
+      const codeToRun = wrapCodeWithConsoleCapture(
+        currentCode,
+        block.language ?? "javascript",
+        funcName
+      );
 
       const res = await CodeService.executeCode({
         language: block.language ?? "javascript",
         code: codeToRun,
       });
 
-      setConsoleOutput(
-        res.output || (res.error ? `Ошибка: ${res.error}` : "Код выполнен успешно (без вывода)")
-      );
+      // Форматируем вывод
+      let output = "";
+      if (res.output) {
+        output = res.output;
+      }
+      if (res.error) {
+        output += `\n❌ Ошибка: ${res.error}`;
+      }
+
+      setConsoleOutput(output || "✅ Код выполнен успешно (нет вывода)");
     } catch (e) {
-      setConsoleOutput(`Ошибка выполнения: ${e}`);
+      setConsoleOutput(`❌ Ошибка выполнения: ${e}`);
     } finally {
       setIsRunning(false);
     }
@@ -2110,9 +2502,11 @@ function PreviewCodeTask({
     setConstraintResults(null);
     setExecutionTime(null);
 
+    const currentCode = getCurrentCode();
+
     if (block.runnable) {
       if (block.testCases?.length) {
-        const funcName = extractFunctionName(fullCodeForExecution, block.language ?? "javascript");
+        const funcName = extractFunctionName(currentCode, block.language ?? "javascript");
 
         if (!funcName) {
           setTestError(
@@ -2124,7 +2518,7 @@ function PreviewCodeTask({
         let results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
 
         if (block.language === "java") {
-          const codeToRun = buildJavaTestSuite(fullCodeForExecution, block.testCases, funcName);
+          const codeToRun = buildJavaTestSuite(currentCode, block.testCases, funcName);
 
           const res = await CodeService.executeCode({
             language: "java",
@@ -2186,7 +2580,7 @@ function PreviewCodeTask({
             }
 
             const codeToRun = buildTestCode(
-              fullCodeForExecution,
+              currentCode,
               tc.input,
               block.language ?? "javascript",
               funcName
@@ -2235,12 +2629,23 @@ function PreviewCodeTask({
 
         let constraintCheckResults: ConstraintResult[] = [];
         if (block.constraints?.length) {
-          constraintCheckResults = await checkConstraints(fullCodeForExecution, block.constraints);
+          constraintCheckResults = await checkConstraints(currentCode, block.constraints);
           setConstraintResults(constraintCheckResults);
         }
 
         const allTestsPassed = results.every((r) => r.passed);
         const allConstraintsPassed = constraintCheckResults.every((c) => c.passed);
+
+        if (onResults) {
+          onResults({
+            testResults: results,
+            constraintResults: constraintCheckResults,
+            passedTests: results.filter((r) => r.passed).length,
+            totalTests: results.length,
+            allPassed: allTestsPassed && allConstraintsPassed,
+            constraintsPassed: allConstraintsPassed,
+          });
+        }
 
         if (allTestsPassed && allConstraintsPassed) {
           onCorrect();
@@ -2277,7 +2682,7 @@ function PreviewCodeTask({
     } else if (!block.runnable) {
       const res = await CodeService.executeCode({
         language: block.language ?? "javascript",
-        code: fullCodeForExecution,
+        code: currentCode,
       });
       const out = (res.output || "").trim();
 
@@ -2295,9 +2700,8 @@ function PreviewCodeTask({
       <p className={styles.taskDescription}>{block.description}</p>
 
       <StableCodeEditor
-        key={`${block.id}_task_${testAnswer}`}
         value={displayCode}
-        onChange={setUserCode}
+        onChange={handleCodeChange}
         language={block.language ?? "javascript"}
         height={250}
       />
@@ -2320,6 +2724,13 @@ function PreviewCodeTask({
           disabled={isRunning}
         />
       </div>
+
+      {consoleOutput !== null && (
+        <div className={styles.consoleOutput}>
+          <div className={styles.consoleHeader}>Консоль</div>
+          <pre className={styles.consoleBody}>{consoleOutput}</pre>
+        </div>
+      )}
 
       {testResults && (
         <div className={styles.testResults}>
@@ -2381,13 +2792,6 @@ function PreviewCodeTask({
         </div>
       )}
 
-      {consoleOutput !== null && (
-        <div className={styles.consoleOutput}>
-          <div className={styles.consoleHeader}>Консоль</div>
-          <pre className={styles.consoleBody}>{consoleOutput}</pre>
-        </div>
-      )}
-
       {testError && (
         <div className={styles.testError}>
           <pre>{testError}</pre>
@@ -2424,6 +2828,7 @@ function PreviewTheoryQuestion({
           language="javascript"
           readOnly
           height={120}
+          //     blockId={`${block.id}_theory`}
         />
       )}
       {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
@@ -2463,6 +2868,7 @@ function PreviewBlock({
   testError,
   setTestError,
   onCorrect,
+  onResults,
 }: {
   block: SlideBlock;
   slideId: string;
@@ -2474,6 +2880,7 @@ function PreviewBlock({
   testError: string | undefined;
   setTestError: (v: string) => void;
   onCorrect: () => void;
+  onResults?: (results: any) => void;
 }) {
   if (block.type === "text") return <p>{block.content || ""}</p>;
 
@@ -2489,6 +2896,7 @@ function PreviewBlock({
           height={200}
           onRun={block.runnable ? () => runCode(block.id, block.language, block.code) : undefined}
           runLoading={block.runnable && !!codeRunLoading}
+          //   blockId={`${block.id}_example`}
         />
         {block.runnable && codeRunOutput != null && (
           <pre className={styles.codeOutput}>{codeRunOutput}</pre>
@@ -2530,6 +2938,7 @@ function PreviewBlock({
         testError={testError}
         setTestError={setTestError}
         onCorrect={onCorrect}
+        onResults={onResults}
       />
     );
   }
