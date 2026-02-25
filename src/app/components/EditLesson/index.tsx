@@ -111,20 +111,19 @@ const addJavaMainMethod = (code: string, funcName: string | null, input: string 
         try {
             Object result = ${funcName}(${input});
             
-            // Восстанавливаем System.out
+        
             System.setOut(originalOut);
-            
-            // Получаем все логи
+           
             String logs = baos.toString();
             
-            // Выводим логи отдельно
+           
             if (!logs.isEmpty()) {
                 System.out.println("===LOGS_START===");
                 System.out.print(logs);
                 System.out.println("===LOGS_END===");
             }
             
-            // Выводим результат
+         
             System.out.println("===RESULT_START===");
             if (result == null) {
                 System.out.print("null");
@@ -727,7 +726,8 @@ function SourceModal({
   );
 }
 
-// Компонент модального окна результатов
+// ResultsModal компонент с анимацией падающих звезд
+// ResultsModal компонент с анимацией падающих звезд
 function ResultsModal({
   isOpen,
   onClose,
@@ -737,6 +737,7 @@ function ResultsModal({
   totalTestCases,
   passedTestCases,
   constraintsPassed,
+  slides, // Добавляем slides как пропс
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -753,21 +754,75 @@ function ResultsModal({
   totalTestCases: number;
   passedTestCases: number;
   constraintsPassed: boolean;
+  slides: Slide[]; // Добавляем тип Slide[]
 }) {
+  const [stars, setStars] = useState(0);
+  const [animatingStars, setAnimatingStars] = useState<number[]>([]);
+  const [showStars, setShowStars] = useState(false);
+
+  // Рассчитываем количество звезд при открытии модалки
+  useEffect(() => {
+    if (isOpen) {
+      // Сбрасываем состояние
+      setStars(0);
+      setAnimatingStars([]);
+      setShowStars(false);
+
+      // Определяем количество звезд
+      const theoryTasks = results.filter((r: { slideId: string }) => {
+        const slide = slides.find((s: Slide) => s.id === r.slideId);
+        return slide?.blocks.some((b: SlideBlock) => b.type === "theoryQuestion");
+      });
+
+      const theoryPassed = theoryTasks.every((t: { passed: boolean }) => t.passed);
+      const allTestsPassed = passedTestCases === totalTestCases && totalTestCases > 0;
+      const allTasksCompleted = completedTasks === totalTasks;
+
+      let starCount = 0;
+
+      // 1 звезда: все тесты пройдены, но ограничения не соблюдены
+      if (allTestsPassed && !constraintsPassed) {
+        starCount = 1;
+      }
+
+      // 2 звезды: все тесты пройдены, теория верна, но ограничения не соблюдены
+      if (allTestsPassed && theoryPassed && !constraintsPassed) {
+        starCount = 2;
+      }
+
+      // 3 звезды: все тесты пройдены, теория верна, ограничения соблюдены
+      if (allTestsPassed && theoryPassed && constraintsPassed && allTasksCompleted) {
+        starCount = 3;
+      }
+
+      // Запускаем анимацию звезд
+      setStars(starCount);
+
+      // Анимируем падение звезд
+      const animateStars = async () => {
+        setShowStars(true);
+
+        for (let i = 0; i < starCount; i++) {
+          setAnimatingStars((prev) => [...prev, i]);
+          // Ждем окончания анимации текущей звезды
+          await new Promise((resolve) => setTimeout(resolve, 800));
+        }
+      };
+
+      animateStars();
+    }
+  }, [
+    isOpen,
+    results,
+    completedTasks,
+    totalTasks,
+    totalTestCases,
+    passedTestCases,
+    constraintsPassed,
+    slides,
+  ]);
+
   if (!isOpen) return null;
-
-  const allCompleted =
-    completedTasks === totalTasks && passedTestCases === totalTestCases && constraintsPassed;
-  const moreThanHalf = completedTasks > totalTasks / 2;
-
-  let stars = 0;
-  if (allCompleted) {
-    stars = 3;
-  } else if (moreThanHalf) {
-    stars = 2;
-  } else if (completedTasks > 0) {
-    stars = 1;
-  }
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -784,14 +839,23 @@ function ResultsModal({
 
         <div className={styles.modalBody}>
           <div className={styles.starsContainer}>
-            {[1, 2, 3].map((star) => (
-              <span
-                key={star}
-                className={`${styles.star} ${star <= stars ? styles.starFilled : ""}`}
-              >
-                ★
-              </span>
-            ))}
+            {showStars &&
+              [0, 1, 2].map((index) => (
+                <div
+                  key={index}
+                  className={`${styles.starWrapper} ${
+                    animatingStars.includes(index) ? styles.starFalling : ""
+                  } ${index < stars ? styles.starVisible : styles.starHidden}`}
+                  style={{
+                    animationDelay: `${index * 0.2}s`,
+                    left: `${30 + index * 20}%`,
+                  }}
+                >
+                  <span className={`${styles.star} ${index < stars ? styles.starFilled : ""}`}>
+                    ★
+                  </span>
+                </div>
+              ))}
           </div>
 
           <div className={styles.resultsSummary}>
@@ -1616,6 +1680,7 @@ export default function EditLesson() {
         totalTestCases={lessonResults.totalTestCases}
         passedTestCases={lessonResults.passedTestCases}
         constraintsPassed={lessonResults.constraintsPassed}
+        slides={slides}
       />
     </section>
   );

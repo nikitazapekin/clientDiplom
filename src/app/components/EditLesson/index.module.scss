@@ -495,3 +495,164 @@ height: 100%;
     border-radius: px($radius-small);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Добавьте в index.module.scss
+
+.starsContainer {
+  position: relative;
+  height: 100px;
+  margin: 20px 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 10px;
+}
+
+.starWrapper {
+  position: absolute;
+  top: -50px;
+  font-size: 48px;
+  transform: translateX(-50%);
+  transition: all 0.3s ease;
+  
+  &.starFalling {
+    animation: starFall 0.8s ease-out forwards;
+  }
+  
+  &.starVisible {
+    opacity: 1;
+    transform: translateY(20px) translateX(-50%);
+  }
+  
+  &.starHidden {
+    opacity: 0;
+  }
+}
+
+.star {
+  color: #4a4a4a;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  
+  &.starFilled {
+    color: #ffd700;
+    text-shadow: 0 0 20px #ffd700, 0 0 40px #ffaa00;
+    animation: starGlow 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes starFall {
+  0% {
+    top: -50px;
+    opacity: 0;
+    transform: translateX(-50%) rotate(0deg);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-50%) rotate(10deg);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(60px) translateX(-50%) rotate(-5deg);
+  }
+  100% {
+    top: 20px;
+    opacity: 1;
+    transform: translateY(20px) translateX(-50%) rotate(0deg);
+  }
+}
+
+@keyframes starGlow {
+  0%, 100% {
+    text-shadow: 0 0 20px #ffd700, 0 0 40px #ffaa00;
+  }
+  50% {
+    text-shadow: 0 0 30px #ffd700, 0 0 60px #ffaa00, 0 0 80px #ff8c00;
+  }
+}
+
+// Дополнительные стили для модального окна
+.resultsModal {
+  min-width: 500px;
+  
+  .modalBody {
+    padding: 20px;
+  }
+}
+
+.resultsSummary {
+  display: flex;
+  justify-content: space-around;
+  margin: 20px 0;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.summaryLabel {
+  font-size: 14px;
+  color: #666;
+}
+
+.summaryValue {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.resultsList {
+  margin-top: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+  
+  h4 {
+    margin-bottom: 10px;
+    color: #333;
+  }
+}
+
+.resultItem {
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  background: #f9f9f9;
+  
+  &.resultPassed {
+    border-left: 4px solid #4caf50;
+  }
+  
+  &.resultFailed {
+    border-left: 4px solid #f44336;
+  }
+}
+
+.resultTitle {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.resultDetails {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #666;
+}
