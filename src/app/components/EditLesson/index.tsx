@@ -278,6 +278,111 @@ const formatArgumentsForCode = (args: any[]): string => {
     .join(", ");
 };
 
+// Добавьте эту функцию после buildJavaTestSuite
+
+const buildCSharpTestSuite = (
+  userCode: string,
+  testCases: { input: string; expectedOutput: string }[],
+  funcName: string | null
+): string => {
+  if (!funcName) return userCode;
+
+  const testCasesCode = testCases
+    .map((tc, index) => {
+      const testNum = index + 1;
+      const args = parseArguments(tc.input);
+      const argsStr = formatArgumentsForCode(args);
+
+      return `
+        // Тест ${testNum}
+        {
+            var originalOut = Console.Out;
+            var originalError = Console.Error;
+            var outWriter = new StringWriter();
+            var errorWriter = new StringWriter();
+            Console.SetOut(outWriter);
+            Console.SetError(errorWriter);
+            
+            try {
+                var result = Program.${funcName}(${argsStr});
+                
+                Console.SetOut(originalOut);
+                Console.SetError(originalError);
+                
+                var outLogs = outWriter.ToString();
+                var errorLogs = errorWriter.ToString();
+                
+                // Выводим логи если есть
+                if (!string.IsNullOrEmpty(outLogs) || !string.IsNullOrEmpty(errorLogs)) {
+                    Console.WriteLine("===LOGS_START_" + ${testNum} + "===");
+                    if (!string.IsNullOrEmpty(outLogs)) {
+                        Console.Write(outLogs);
+                    }
+                    if (!string.IsNullOrEmpty(errorLogs)) {
+                        Console.Write("ERROR: " + errorLogs);
+                    }
+                    if (!outLogs.EndsWith("\\n") && !errorLogs.EndsWith("\\n")) {
+                        Console.WriteLine();
+                    }
+                    Console.WriteLine("===LOGS_END_" + ${testNum} + "===");
+                }
+                
+                // Выводим результат
+                Console.WriteLine("===RESULT_START_" + ${testNum} + "===");
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+                Console.WriteLine("===RESULT_END_" + ${testNum} + "===");
+                
+            } catch (Exception e) {
+                Console.SetOut(originalOut);
+                Console.SetError(originalError);
+                Console.WriteLine("===RESULT_START_" + ${testNum} + "===");
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { error = e.Message }));
+                Console.WriteLine("===RESULT_END_" + ${testNum} + "===");
+            }
+        }`;
+    })
+    .join("\n");
+
+  // Добавляем необходимые using директории
+  const usings = `using System;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Collections.Generic;
+`;
+
+  // Проверяем, есть ли уже using директивы
+  if (userCode.includes("using System;")) {
+    // Заменяем существующие using или добавляем в начало
+    return (
+      usings +
+      "\n" +
+      userCode.replace(/^using.*;(\r\n|\r|\n)?/g, "") +
+      `
+    
+public class Runner {
+    public static void Main() {
+${testCasesCode}
+    }
+}`
+    );
+  } else {
+    // Добавляем using и класс Runner
+    return (
+      usings +
+      "\n" +
+      userCode +
+      `
+    
+public class Runner {
+    public static void Main() {
+${testCasesCode}
+    }
+}`
+    );
+  }
+};
+
 // Улучшенная функция для Java с поддержкой нескольких тест-кейсов и логов
 const buildJavaTestSuiteWithLogs = (
   userCode: string,
@@ -2334,59 +2439,8 @@ except Exception as e:
       return buildJavaTestSuiteWithLogs(userCode, [{ input, expectedOutput: "" }], funcName);
 
     case "csharp":
-      return `${userCode}
-using System;
-using System.IO;
-using System.Text;
-using System.Text.Json;
-
-public class Runner {
-    public static void Main() {
-        // Перехватываем Console.Out и Console.Error
-        var originalOut = Console.Out;
-        var originalError = Console.Error;
-        var outWriter = new StringWriter();
-        var errorWriter = new StringWriter();
-        Console.SetOut(outWriter);
-        Console.SetError(errorWriter);
-        
-        try {
-            var result = Program.${funcName}(${argsStr});
-            
-            // Восстанавливаем вывод
-            Console.SetOut(originalOut);
-            Console.SetError(originalError);
-            
-            // Получаем логи
-            var outLogs = outWriter.ToString();
-            var errorLogs = errorWriter.ToString();
-            
-            // Выводим логи отдельно
-            if (!string.IsNullOrEmpty(outLogs) || !string.IsNullOrEmpty(errorLogs)) {
-                Console.WriteLine("===LOGS_START===");
-                if (!string.IsNullOrEmpty(outLogs)) {
-                    Console.Write(outLogs);
-                }
-                if (!string.IsNullOrEmpty(errorLogs)) {
-                    Console.Write("ERROR: " + errorLogs);
-                }
-                Console.WriteLine("===LOGS_END===");
-            }
-            
-            // Выводим результат
-            Console.WriteLine("===RESULT_START===");
-            Console.WriteLine(JsonSerializer.Serialize(result));
-            Console.WriteLine("===RESULT_END===");
-            
-        } catch (Exception e) {
-            Console.SetOut(originalOut);
-            Console.SetError(originalError);
-            Console.WriteLine("===RESULT_START===");
-            Console.WriteLine(JsonSerializer.Serialize(new { error = e.Message }));
-            Console.WriteLine("===RESULT_END===");
-        }
-    }
-}`;
+      // Для одиночного теста используем buildCSharpTestSuite с одним тест-кейсом
+      return buildCSharpTestSuite(userCode, [{ input, expectedOutput: "" }], funcName);
 
     case "golang":
       // Проверяем, есть ли уже импорты в коде пользователя
@@ -3013,6 +3067,103 @@ function PreviewCodeTask({
               allLogs.push(...testLogs);
             }
           }
+        } else if (block.language === "csharp") {
+          // Собираем все логи из всех тестов
+          const codeToRun = buildCSharpTestSuite(currentCode, block.testCases, funcName);
+
+          console.log("C# code to run:", codeToRun); // Для отладки
+
+          const res = await CodeService.executeCode({
+            language: "csharp",
+            code: codeToRun,
+          });
+
+          if (res.error) {
+            setTestError(`Ошибка выполнения: ${res.error}`);
+            return;
+          }
+
+          const output = res.output || "";
+          const lines = output.split("\n");
+
+          console.log("C# output:", output); // Для отладки
+
+          // Парсим вывод для каждого теста
+          for (let i = 0; i < block.testCases.length; i++) {
+            const testNum = i + 1;
+            let inLogs = false;
+            let inResult = false;
+            let currentLogs: string[] = [];
+            let currentResult: string[] = [];
+            let testLogs: string[] = [];
+
+            for (const line of lines) {
+              if (line.includes(`===LOGS_START_${testNum}===`)) {
+                inLogs = true;
+                currentLogs = [];
+                continue;
+              }
+
+              if (line.includes(`===LOGS_END_${testNum}===`)) {
+                inLogs = false;
+                if (currentLogs.length > 0) {
+                  testLogs.push(`📋 Логи теста #${testNum} (вход: ${block.testCases[i].input}):`);
+                  testLogs.push(currentLogs.join("\n"));
+                  testLogs.push("");
+                }
+                continue;
+              }
+
+              if (line.includes(`===RESULT_START_${testNum}===`)) {
+                inResult = true;
+                currentResult = [];
+                continue;
+              }
+
+              if (line.includes(`===RESULT_END_${testNum}===`)) {
+                inResult = false;
+                if (currentResult.length > 0) {
+                  const actual = currentResult.join("\n").trim();
+                  const expected = block.testCases[i].expectedOutput.trim();
+
+                  let actualParsed: any;
+                  let expectedParsed: any;
+
+                  try {
+                    actualParsed = JSON.parse(actual);
+                  } catch {
+                    actualParsed = actual;
+                  }
+
+                  try {
+                    expectedParsed = JSON.parse(expected);
+                  } catch {
+                    expectedParsed = expected;
+                  }
+
+                  const passed = compareOutputs(actualParsed, expectedParsed);
+
+                  results.push({
+                    input: block.testCases[i].input,
+                    expected,
+                    actual,
+                    passed,
+                  });
+                }
+                continue;
+              }
+
+              if (inLogs) {
+                currentLogs.push(line);
+              } else if (inResult) {
+                currentResult.push(line);
+              }
+            }
+
+            if (testLogs.length > 0) {
+              allLogs.push(...testLogs);
+            }
+          }
         } else {
           // Для остальных языков (как было раньше)
           for (const tc of block.testCases) {
@@ -3254,7 +3405,7 @@ function PreviewCodeTask({
       {constraintResults && constraintResults.length > 0 && (
         <div className={styles.constraintResults}>
           <div className={styles.resultsHeader}>
-            <h4>🎯 Проверка ограничений</h4>
+            <h4> Проверка ограничений</h4>
             <span className={styles.constraintSummary}>
               Выполнено: {constraintResults.filter((c) => c.passed).length} /{" "}
               {constraintResults.length}
