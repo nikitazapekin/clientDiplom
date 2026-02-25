@@ -2389,21 +2389,29 @@ public class Runner {
 }`;
 
     case "golang":
-      return `${userCode}
-import (
+      // Проверяем, есть ли уже импорты в коде пользователя
+      const hasImports = userCode.includes("import (");
+
+      if (hasImports) {
+        // Если есть импорты, добавляем наши импорты к существующим
+        return (
+          userCode.replace(
+            /import\s+\(([\s\S]*?)\)/,
+            `import ($1
     "encoding/json"
     "fmt"
+    "os"
     "bytes"
     "io"
-)
+    "strings")`
+          ) +
+          `
 
 func main() {
-    // Перехватываем stdout
     old := os.Stdout
     r, w, _ := os.Pipe()
     os.Stdout = w
     
-    // Канал для сбора вывода
     outC := make(chan string)
     go func() {
         var buf bytes.Buffer
@@ -2413,24 +2421,78 @@ func main() {
     
     result := ${funcName}(${argsStr})
     
-    // Восстанавливаем stdout
     w.Close()
     os.Stdout = old
     logs := <-outC
     
-    // Выводим логи отдельно
     if logs != "" {
         fmt.Println("===LOGS_START===")
         fmt.Print(logs)
+        if !strings.HasSuffix(logs, "\\n") {
+            fmt.Println()
+        }
         fmt.Println("===LOGS_END===")
     }
     
-    // Выводим результат
     fmt.Println("===RESULT_START===")
     jsonResult, _ := json.Marshal(result)
     fmt.Println(string(jsonResult))
     fmt.Println("===RESULT_END===")
-}`;
+}`
+        );
+      } else {
+        // Если импортов нет, добавляем новый блок импортов
+        return (
+          userCode.replace(
+            /package main\n/,
+            `package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "os"
+    "bytes"
+    "io"
+    "strings"
+)
+`
+          ) +
+          `
+
+func main() {
+    old := os.Stdout
+    r, w, _ := os.Pipe()
+    os.Stdout = w
+    
+    outC := make(chan string)
+    go func() {
+        var buf bytes.Buffer
+        io.Copy(&buf, r)
+        outC <- buf.String()
+    }()
+    
+    result := ${funcName}(${argsStr})
+    
+    w.Close()
+    os.Stdout = old
+    logs := <-outC
+    
+    if logs != "" {
+        fmt.Println("===LOGS_START===")
+        fmt.Print(logs)
+        if !strings.HasSuffix(logs, "\\n") {
+            fmt.Println()
+        }
+        fmt.Println("===LOGS_END===")
+    }
+    
+    fmt.Println("===RESULT_START===")
+    jsonResult, _ := json.Marshal(result)
+    fmt.Println(string(jsonResult))
+    fmt.Println("===RESULT_END===")
+}`
+        );
+      }
 
     default:
       return userCode;
