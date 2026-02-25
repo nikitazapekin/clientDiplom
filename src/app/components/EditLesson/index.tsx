@@ -97,32 +97,70 @@ const stripMainMethod = (code: string, language: CodeLanguage): string => {
   return code;
 };
 
+// Исправленный addJavaMainMethod для Java с поддержкой логов
 const addJavaMainMethod = (code: string, funcName: string | null, input: string = "5"): string => {
   if (!funcName) return code;
+
+  const mainMethod = `
+    public static void main(String[] args) {
+        // Создаем поток для перехвата System.out
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        java.io.PrintStream originalOut = System.out;
+        System.setOut(new java.io.PrintStream(baos));
+        
+        try {
+            Object result = ${funcName}(${input});
+            
+            // Восстанавливаем System.out
+            System.setOut(originalOut);
+            
+            // Получаем все логи
+            String logs = baos.toString();
+            
+            // Выводим логи отдельно
+            if (!logs.isEmpty()) {
+                System.out.println("===LOGS_START===");
+                System.out.print(logs);
+                System.out.println("===LOGS_END===");
+            }
+            
+            // Выводим результат
+            System.out.println("===RESULT_START===");
+            if (result == null) {
+                System.out.print("null");
+            } else if (result instanceof String) {
+                System.out.print("\\"" + result + "\\"");
+            } else if (result.getClass().isArray()) {
+                if (result instanceof int[]) {
+                    System.out.print(java.util.Arrays.toString((int[])result));
+                } else if (result instanceof Integer[]) {
+                    System.out.print(java.util.Arrays.toString((Integer[])result));
+                } else if (result instanceof String[]) {
+                    System.out.print(java.util.Arrays.toString((String[])result));
+                } else {
+                    System.out.print(java.util.Arrays.toString((Object[])result));
+                }
+            } else {
+                System.out.print(result);
+            }
+            System.out.println("===RESULT_END===");
+            
+        } catch (Exception e) {
+            System.setOut(originalOut);
+            System.out.println("===RESULT_START===");
+            System.out.print("{\\"error\\":\\"" + e.getMessage() + "\\"}");
+            System.out.println("===RESULT_END===");
+        }
+    }`;
 
   if (code.includes("public static void main")) {
     return code.replace(
       /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
-      `public static void main(String[] args) {
-        try {
-            System.out.println(${funcName}(${input}));
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-        }
-    }`
+      mainMethod
     );
   } else {
     const codeWithoutLastBrace = code.trim().replace(/\}\s*$/, "");
-    return `${codeWithoutLastBrace}
-
-    public static void main(String[] args) {
-        try {
-            System.out.println(${funcName}(${input}));
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-        }
-    }
-}`;
+    return `${codeWithoutLastBrace}\n${mainMethod}\n}`;
   }
 };
 
@@ -240,6 +278,94 @@ const formatArgumentsForCode = (args: any[]): string => {
     .join(", ");
 };
 
+// Улучшенная функция для Java с поддержкой нескольких тест-кейсов и логов
+const buildJavaTestSuiteWithLogs = (
+  userCode: string,
+  testCases: { input: string; expectedOutput: string }[],
+  funcName: string | null
+): string => {
+  if (!funcName) return userCode;
+
+  const testCasesCode = testCases
+    .map((tc, index) => {
+      const args = parseArguments(tc.input);
+      const argsStr = formatArgumentsForCode(args);
+
+      return `
+        // Тест ${index + 1}
+        {
+            // Перехватываем System.out для этого теста
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            java.io.PrintStream originalOut = System.out;
+            System.setOut(new java.io.PrintStream(baos));
+            
+            try {
+                Object result = ${funcName}(${argsStr});
+                
+                // Восстанавливаем System.out
+                System.setOut(originalOut);
+                
+                // Получаем логи для этого теста
+                String logs = baos.toString();
+                
+                // Выводим логи, если они есть
+                if (!logs.isEmpty()) {
+                    System.out.println("===LOGS_START_" + ${index + 1} + "===");
+                    System.out.print(logs);
+                    System.out.println("===LOGS_END_" + ${index + 1} + "===");
+                }
+                
+                // Выводим результат
+                System.out.println("===RESULT_START_" + ${index + 1} + "===");
+                if (result == null) {
+                    System.out.print("null");
+                } else if (result instanceof String) {
+                    System.out.print("\\"");
+                    System.out.print(result);
+                    System.out.print("\\"");
+                } else if (result.getClass().isArray()) {
+                    if (result instanceof int[]) {
+                        System.out.print(java.util.Arrays.toString((int[])result));
+                    } else if (result instanceof Integer[]) {
+                        System.out.print(java.util.Arrays.toString((Integer[])result));
+                    } else if (result instanceof String[]) {
+                        System.out.print(java.util.Arrays.toString((String[])result));
+                    } else {
+                        System.out.print(java.util.Arrays.toString((Object[])result));
+                    }
+                } else {
+                    System.out.print(result);
+                }
+                System.out.println("===RESULT_END_" + ${index + 1} + "===");
+                
+            } catch (Exception e) {
+                System.setOut(originalOut);
+                System.out.println("===RESULT_START_" + ${index + 1} + "===");
+                System.out.print("{\\"error\\":\\"" + e.getMessage() + "\\"}");
+                System.out.println("===RESULT_END_" + ${index + 1} + "===");
+            }
+        }`;
+    })
+    .join("\n");
+
+  if (userCode.includes("public static void main")) {
+    return userCode.replace(
+      /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
+      `public static void main(String[] args) {
+${testCasesCode}
+    }`
+    );
+  } else {
+    const codeWithoutLastBrace = userCode.trim().replace(/\}\s*$/, "");
+    return `${codeWithoutLastBrace}
+
+    public static void main(String[] args) {
+${testCasesCode}
+    }
+}`;
+  }
+};
+
 const buildJavaTestSuite = (
   userCode: string,
   testCases: { input: string; expectedOutput: string }[],
@@ -310,30 +436,56 @@ const getDefaultStarterCode = (language: CodeLanguage): string => {
 
 public class Program
 {
-    public static int YourFunction(int n)
+    public static int YourFunction(int n, int z)
     {
         // Ваш код здесь
-        return n + 1;
+        Console.WriteLine("HELLO", n, z);
+        if(n == 3 && z == 6) {
+            return new int[] { 1, 2, 3, 5 };
+        }
+        return 6;
     }
 }`;
     case "java":
       return `public class Main {
-    public static int yourFunction(int n) {
+    public static Object yourFunction(int n, int z) {
         // Ваш код здесь
-        return n + 1;
+        System.out.println("HELLO " + n + " " + z);
+        if(n == 3 && z == 6) {
+            return new int[]{1, 2, 3, 5};
+        }
+        return 6;
     }
 }`;
     case "python":
-      return "def your_function(n):\n    # Ваш код здесь\n    return 0";
+      return `def your_function(n, z):
+    # Ваш код здесь
+    print("HELLO", n, z)
+    if n == 3 and z == 6:
+        return [1, 2, 3, 5]
+    return 6`;
     case "golang":
       return `package main
 
-func yourFunction(n int) int {
+import "fmt"
+
+func yourFunction(n int, z int) interface{} {
     // Ваш код здесь
-    return 0
+    fmt.Println("HELLO", n, z)
+    if n == 3 && z == 6 {
+        return []int{1, 2, 3, 5}
+    }
+    return 6
 }`;
     default:
-      return "function yourFunction(n) {\n    // Ваш код здесь\n    return 0;\n}";
+      return `function yourFunction(n, z) {
+    // Ваш код здесь
+    console.log("HELLO", n, z);
+    if(n == 3 && z == 6) {
+        return [1, 2, 3, 5];
+    }
+    return 6;
+}`;
   }
 };
 
@@ -1398,7 +1550,6 @@ function BlockEditor({
           height={220}
           onRun={block.runnable ? () => runCode(block.id, block.language, block.code) : undefined}
           runLoading={block.runnable && !!codeRunLoading}
-          //    blockId={block.id}
         />
         {block.runnable && codeRunOutput != null && (
           <pre className={styles.codeOutput}>{codeRunOutput}</pre>
@@ -1623,7 +1774,6 @@ function BlockEditor({
               onChange={(v) => updateBlock(slideIndex, block.id, { startCode: v })}
               language={block.language ?? "javascript"}
               height={220}
-              //    blockId={`${block.id}_start`}
             />
 
             <div className={styles.section}>
@@ -1876,7 +2026,6 @@ function BlockEditor({
           onChange={(v) => updateBlock(slideIndex, block.id, { code: v })}
           language="javascript"
           height={120}
-          //   blockId={`${block.id}_theory`}
         />
         <input
           className={styles.form__input}
@@ -1943,7 +2092,6 @@ function PreviewBlockStatic({ block }: { block: SlideBlock }) {
         language={block.language}
         readOnly
         height={200}
-        //   blockId={`${block.id}_static`}
       />
     );
 
@@ -2017,6 +2165,7 @@ const extractFunctionName = (code: string, lang: CodeLanguage): string | null =>
   }
 };
 
+// Исправленная функция buildTestCode для всех языков с поддержкой логов
 const buildTestCode = (
   userCode: string,
   input: string,
@@ -2030,19 +2179,230 @@ const buildTestCode = (
 
   switch (lang) {
     case "javascript":
-      return `${userCode}\nconsole.log(JSON.stringify(${funcName}(${argsStr})));`;
+      return `${userCode}
+
+// Перехватываем все методы console
+const __originalConsole = {
+  log: console.log,
+  error: console.error,
+  warn: console.warn,
+  info: console.info
+};
+
+const __logs = [];
+
+console.log = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  __logs.push('📌 ' + message);
+  __originalConsole.log.apply(console, args);
+};
+
+console.error = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  __logs.push('❌ ' + message);
+  __originalConsole.error.apply(console, args);
+};
+
+console.warn = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  __logs.push('⚠️ ' + message);
+  __originalConsole.warn.apply(console, args);
+};
+
+console.info = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  __logs.push('ℹ️ ' + message);
+  __originalConsole.info.apply(console, args);
+};
+
+try {
+  const result = ${funcName}(${argsStr});
+  
+  // Восстанавливаем console
+  console.log = __originalConsole.log;
+  console.error = __originalConsole.error;
+  console.warn = __originalConsole.warn;
+  console.info = __originalConsole.info;
+  
+  // Выводим логи отдельно
+  if (__logs.length > 0) {
+    console.log('\\n===LOGS_START===');
+    __logs.forEach(log => console.log(log));
+    console.log('===LOGS_END===');
+  }
+  
+  // Выводим результат
+  console.log('===RESULT_START===');
+  console.log(JSON.stringify(result));
+  console.log('===RESULT_END===');
+  
+} catch (error) {
+  // Восстанавливаем console
+  console.log = __originalConsole.log;
+  console.error = __originalConsole.error;
+  console.warn = __originalConsole.warn;
+  console.info = __originalConsole.info;
+  
+  console.log('===RESULT_START===');
+  console.log(JSON.stringify({ error: error.message }));
+  console.log('===RESULT_END===');
+}`;
 
     case "python":
-      return `${userCode}\nimport json\nprint(json.dumps(${funcName}(${argsStr})))`;
+      return `${userCode}
+import json
+import sys
+from io import StringIO
 
-    case "csharp":
-      return `${userCode}\n\npublic class Runner {\n    public static void Main() {\n        Console.WriteLine(JsonSerializer.Serialize(Program.${funcName}(${argsStr})));\n    }\n}`;
+# Перехватываем stdout и stderr
+__old_stdout = sys.stdout
+__old_stderr = sys.stderr
+__stdout_buffer = StringIO()
+__stderr_buffer = StringIO()
+sys.stdout = __stdout_buffer
+sys.stderr = __stderr_buffer
+
+try:
+    result = ${funcName}(${argsStr})
+    
+    # Восстанавливаем stdout/stderr
+    sys.stdout = __old_stdout
+    sys.stderr = __old_stderr
+    
+    # Получаем логи
+    __stdout = __stdout_buffer.getvalue()
+    __stderr = __stderr_buffer.getvalue()
+    
+    # Выводим логи отдельно
+    if __stdout or __stderr:
+        print("===LOGS_START===")
+        if __stdout:
+            print(__stdout, end='')
+        if __stderr:
+            print("STDERR:", __stderr, end='')
+        print("===LOGS_END===")
+    
+    # Выводим результат
+    print("===RESULT_START===")
+    print(json.dumps(result))
+    print("===RESULT_END===")
+    
+except Exception as e:
+    sys.stdout = __old_stdout
+    sys.stderr = __old_stderr
+    print("===RESULT_START===")
+    print(json.dumps({"error": str(e)}))
+    print("===RESULT_END===")`;
 
     case "java":
-      return addJavaMainMethod(userCode, funcName, argsStr);
+      return buildJavaTestSuiteWithLogs(userCode, [{ input, expectedOutput: "" }], funcName);
+
+    case "csharp":
+      return `${userCode}
+using System;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+
+public class Runner {
+    public static void Main() {
+        // Перехватываем Console.Out и Console.Error
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var outWriter = new StringWriter();
+        var errorWriter = new StringWriter();
+        Console.SetOut(outWriter);
+        Console.SetError(errorWriter);
+        
+        try {
+            var result = Program.${funcName}(${argsStr});
+            
+            // Восстанавливаем вывод
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+            
+            // Получаем логи
+            var outLogs = outWriter.ToString();
+            var errorLogs = errorWriter.ToString();
+            
+            // Выводим логи отдельно
+            if (!string.IsNullOrEmpty(outLogs) || !string.IsNullOrEmpty(errorLogs)) {
+                Console.WriteLine("===LOGS_START===");
+                if (!string.IsNullOrEmpty(outLogs)) {
+                    Console.Write(outLogs);
+                }
+                if (!string.IsNullOrEmpty(errorLogs)) {
+                    Console.Write("ERROR: " + errorLogs);
+                }
+                Console.WriteLine("===LOGS_END===");
+            }
+            
+            // Выводим результат
+            Console.WriteLine("===RESULT_START===");
+            Console.WriteLine(JsonSerializer.Serialize(result));
+            Console.WriteLine("===RESULT_END===");
+            
+        } catch (Exception e) {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+            Console.WriteLine("===RESULT_START===");
+            Console.WriteLine(JsonSerializer.Serialize(new { error = e.Message }));
+            Console.WriteLine("===RESULT_END===");
+        }
+    }
+}`;
 
     case "golang":
-      return `${userCode}\n\nfunc main() { result := ${funcName}(${argsStr}); jsonResult, _ := json.Marshal(result); fmt.Println(string(jsonResult)) }`;
+      return `${userCode}
+import (
+    "encoding/json"
+    "fmt"
+    "bytes"
+    "io"
+)
+
+func main() {
+    // Перехватываем stdout
+    old := os.Stdout
+    r, w, _ := os.Pipe()
+    os.Stdout = w
+    
+    // Канал для сбора вывода
+    outC := make(chan string)
+    go func() {
+        var buf bytes.Buffer
+        io.Copy(&buf, r)
+        outC <- buf.String()
+    }()
+    
+    result := ${funcName}(${argsStr})
+    
+    // Восстанавливаем stdout
+    w.Close()
+    os.Stdout = old
+    logs := <-outC
+    
+    // Выводим логи отдельно
+    if logs != "" {
+        fmt.Println("===LOGS_START===")
+        fmt.Print(logs)
+        fmt.Println("===LOGS_END===")
+    }
+    
+    // Выводим результат
+    fmt.Println("===RESULT_START===")
+    jsonResult, _ := json.Marshal(result)
+    fmt.Println(string(jsonResult))
+    fmt.Println("===RESULT_END===")
+}`;
 
     default:
       return userCode;
@@ -2073,7 +2433,8 @@ interface ConstraintResult {
   actual: string;
   value?: number | string[] | boolean;
 }
-// Полностью исправленный PreviewCodeTask
+
+// Полностью исправленный PreviewCodeTask с поддержкой логов
 function PreviewCodeTask({
   block,
   testAnswer,
@@ -2120,117 +2481,6 @@ function PreviewCodeTask({
     [setTestAnswer, setTestError]
   );
 
-  // Функция для оборачивания кода с перехватом console.log
-  const wrapCodeWithConsoleCapture = useCallback(
-    (code: string, language: CodeLanguage, funcName: string | null): string => {
-      if (language === "javascript") {
-        return `
-// Перехват console.log
-const __originalConsoleLog = console.log;
-const __originalConsoleError = console.error;
-const __originalConsoleWarn = console.warn;
-const __originalConsoleInfo = console.info;
-const __logs = [];
-
-console.log = function(...args) {
-  const message = args.map(arg => 
-    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-  ).join(' ');
-  __logs.push('📌 ' + message);
-  __originalConsoleLog.apply(console, args);
-};
-
-console.error = function(...args) {
-  const message = args.map(arg => 
-    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-  ).join(' ');
-  __logs.push('❌ ' + message);
-  __originalConsoleError.apply(console, args);
-};
-
-console.warn = function(...args) {
-  const message = args.map(arg => 
-    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-  ).join(' ');
-  __logs.push('⚠️ ' + message);
-  __originalConsoleWarn.apply(console, args);
-};
-
-console.info = function(...args) {
-  const message = args.map(arg => 
-    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-  ).join(' ');
-  __logs.push('ℹ️ ' + message);
-  __originalConsoleInfo.apply(console, args);
-};
-
-try {
-  ${code}
-  
-  // Выводим все перехваченные логи
-  if (__logs.length > 0) {
-    console.log('\\n📋 Логи выполнения:');
-    __logs.forEach(log => console.log(log));
-  }
-  
-} catch (error) {
-  console.error('Ошибка:', error);
-} finally {
-  console.log = __originalConsoleLog;
-  console.error = __originalConsoleError;
-  console.warn = __originalConsoleWarn;
-  console.info = __originalConsoleInfo;
-}
-      `;
-      } else if (language === "python") {
-        return `
-import sys
-from io import StringIO
-
-# Перехват вывода
-__old_stdout = sys.stdout
-__old_stderr = sys.stderr
-__stdout_buffer = StringIO()
-__stderr_buffer = StringIO()
-sys.stdout = __stdout_buffer
-sys.stderr = __stderr_buffer
-
-try:
-${code
-  .split("\n")
-  .map((line) => "  " + line)
-  .join("\n")}
-  
-  # Получаем весь вывод
-  __stdout = __stdout_buffer.getvalue()
-  __stderr = __stderr_buffer.getvalue()
-  
-  # Восстанавливаем stdout/stderr
-  sys.stdout = __old_stdout
-  sys.stderr = __old_stderr
-  
-  # Выводим результат
-  if __stdout:
-    print("📋 Вывод программы:")
-    print(__stdout)
-  if __stderr:
-    print("❌ Ошибки:")
-    print(__stderr)
-except Exception as e:
-  sys.stdout = __old_stdout
-  sys.stderr = __old_stderr
-  print(f"❌ Ошибка: {e}")
-      `;
-      } else if (language === "java") {
-        return addJavaMainMethod(code, funcName, "5");
-      } else if (language === "csharp") {
-        return code;
-      }
-      return code;
-    },
-    []
-  );
-
   const runUserCode = async () => {
     setConsoleOutput(null);
     setIsRunning(true);
@@ -2238,23 +2488,72 @@ except Exception as e:
       const currentCode = getCurrentCode();
       const funcName = extractFunctionName(currentCode, block.language ?? "javascript");
 
-      // Оборачиваем код для захвата консоли
-      const codeToRun = wrapCodeWithConsoleCapture(
-        currentCode,
-        block.language ?? "javascript",
-        funcName
-      );
+      let codeToRun = currentCode;
+
+      if (block.language === "java" && funcName) {
+        codeToRun = addJavaMainMethod(currentCode, funcName, "5");
+      }
 
       const res = await CodeService.executeCode({
         language: block.language ?? "javascript",
         code: codeToRun,
       });
 
-      // Форматируем вывод
+      // Парсим вывод для отделения логов от результата
       let output = "";
       if (res.output) {
-        output = res.output;
+        // Разбиваем на строки для обработки
+        const lines = res.output.split("\n");
+        let inLogs = false;
+        let inResult = false;
+        let currentLogs: string[] = [];
+        let currentResult: string[] = [];
+
+        for (const line of lines) {
+          if (line.includes("===LOGS_START===")) {
+            inLogs = true;
+            currentLogs = [];
+            continue;
+          }
+
+          if (line.includes("===LOGS_END===")) {
+            inLogs = false;
+            if (currentLogs.length > 0) {
+              output += "📋 Логи выполнения:\n" + currentLogs.join("\n") + "\n\n";
+            }
+            continue;
+          }
+
+          if (line.includes("===RESULT_START===")) {
+            inResult = true;
+            currentResult = [];
+            continue;
+          }
+
+          if (line.includes("===RESULT_END===")) {
+            inResult = false;
+            if (currentResult.length > 0) {
+              output += "✅ Результат функции:\n" + currentResult.join("\n");
+            }
+            continue;
+          }
+
+          if (inLogs) {
+            currentLogs.push(line);
+          } else if (inResult) {
+            currentResult.push(line);
+          } else if (!inLogs && !inResult && !line.includes("===")) {
+            // Если нет маркеров, добавляем весь вывод
+            output += line + "\n";
+          }
+        }
+
+        // Если не нашли маркеры, используем весь вывод
+        if (!output && res.output) {
+          output = res.output;
+        }
       }
+
       if (res.error) {
         output += `\n❌ Ошибка: ${res.error}`;
       }
@@ -2266,7 +2565,6 @@ except Exception as e:
       setIsRunning(false);
     }
   };
-
   const countCodeLines = (code: string): number => {
     return code
       .split("\n")
@@ -2495,12 +2793,12 @@ except Exception as e:
 
     return results;
   };
-
   const check = async () => {
     setTestError("");
     setTestResults(null);
     setConstraintResults(null);
     setExecutionTime(null);
+    setConsoleOutput(null);
 
     const currentCode = getCurrentCode();
 
@@ -2516,9 +2814,10 @@ except Exception as e:
         }
 
         let results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
+        let allLogs: string[] = [];
 
         if (block.language === "java") {
-          const codeToRun = buildJavaTestSuite(currentCode, block.testCases, funcName);
+          const codeToRun = buildJavaTestSuiteWithLogs(currentCode, block.testCases, funcName);
 
           const res = await CodeService.executeCode({
             language: "java",
@@ -2531,48 +2830,82 @@ except Exception as e:
           }
 
           const output = res.output || "";
-          results = [];
+          const lines = output.split("\n");
 
           for (let i = 0; i < block.testCases.length; i++) {
             const testNum = i + 1;
-            const pattern = new RegExp(
-              `===TEST_START_${testNum}===(.*?)===TEST_END_${testNum}===`,
-              "s"
-            );
-            const match = output.match(pattern);
+            let inLogs = false;
+            let inResult = false;
+            let currentLogs: string[] = [];
+            let currentResult: string[] = [];
 
-            let actual = match ? match[1].trim() : "NO_OUTPUT";
-            const expected = block.testCases[i].expectedOutput.trim();
+            for (const line of lines) {
+              // Поиск логов для текущего теста
+              if (line.includes(`===LOGS_START_${testNum}===`)) {
+                inLogs = true;
+                currentLogs = [];
+                continue;
+              }
 
-            if (actual.startsWith('"') && actual.endsWith('"')) {
-              actual = actual.slice(1, -1);
+              if (line.includes(`===LOGS_END_${testNum}===`)) {
+                inLogs = false;
+                if (currentLogs.length > 0) {
+                  allLogs.push(`📋 Логи теста #${testNum} (вход: ${block.testCases[i].input}):`);
+                  allLogs.push(currentLogs.join("\n"));
+                  allLogs.push("");
+                }
+                continue;
+              }
+
+              // Поиск результата для текущего теста
+              if (line.includes(`===RESULT_START_${testNum}===`)) {
+                inResult = true;
+                currentResult = [];
+                continue;
+              }
+
+              if (line.includes(`===RESULT_END_${testNum}===`)) {
+                inResult = false;
+                if (currentResult.length > 0) {
+                  const actual = currentResult.join("\n").trim();
+                  const expected = block.testCases[i].expectedOutput.trim();
+
+                  let actualParsed: any;
+                  let expectedParsed: any;
+
+                  try {
+                    actualParsed = JSON.parse(actual);
+                  } catch {
+                    actualParsed = actual;
+                  }
+
+                  try {
+                    expectedParsed = JSON.parse(expected);
+                  } catch {
+                    expectedParsed = expected;
+                  }
+
+                  const passed = compareOutputs(actualParsed, expectedParsed);
+
+                  results.push({
+                    input: block.testCases[i].input,
+                    expected,
+                    actual,
+                    passed,
+                  });
+                }
+                continue;
+              }
+
+              if (inLogs) {
+                currentLogs.push(line);
+              } else if (inResult) {
+                currentResult.push(line);
+              }
             }
-
-            let actualParsed: any;
-            let expectedParsed: any;
-
-            try {
-              actualParsed = JSON.parse(actual);
-            } catch {
-              actualParsed = actual;
-            }
-
-            try {
-              expectedParsed = JSON.parse(expected);
-            } catch {
-              expectedParsed = expected;
-            }
-
-            const passed = compareOutputs(actualParsed, expectedParsed);
-
-            results.push({
-              input: block.testCases[i].input,
-              expected,
-              actual,
-              passed,
-            });
           }
         } else {
+          // Для всех остальных языков
           for (const tc of block.testCases) {
             if (!tc.input || !tc.expectedOutput) {
               setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
@@ -2596,33 +2929,96 @@ except Exception as e:
               return;
             }
 
-            const actualOutput = (res.output || "").trim();
-            let expectedOutput = (tc.expectedOutput || "").trim();
+            const output = res.output || "";
+            const lines = output.split("\n");
 
-            let actualParsed: any;
-            let expectedParsed: any;
+            let inLogs = false;
+            let inResult = false;
+            let currentLogs: string[] = [];
+            let currentResult: string[] = [];
+            let hasLogs = false;
+            let hasResult = false;
 
-            try {
-              actualParsed = JSON.parse(actualOutput);
-            } catch {
-              actualParsed = actualOutput;
+            for (const line of lines) {
+              if (line.includes("===LOGS_START===")) {
+                inLogs = true;
+                currentLogs = [];
+                hasLogs = true;
+                continue;
+              }
+
+              if (line.includes("===LOGS_END===")) {
+                inLogs = false;
+                if (currentLogs.length > 0) {
+                  allLogs.push(`📋 Логи для входа "${tc.input}":`);
+                  allLogs.push(currentLogs.join("\n"));
+                  allLogs.push("");
+                }
+                continue;
+              }
+
+              if (line.includes("===RESULT_START===")) {
+                inResult = true;
+                currentResult = [];
+                hasResult = true;
+                continue;
+              }
+
+              if (line.includes("===RESULT_END===")) {
+                inResult = false;
+                if (currentResult.length > 0) {
+                  const resultStr = currentResult.join("\n").trim();
+
+                  let actualParsed: any;
+                  let expectedParsed: any;
+
+                  try {
+                    actualParsed = JSON.parse(resultStr);
+                  } catch {
+                    actualParsed = resultStr;
+                  }
+
+                  try {
+                    expectedParsed = JSON.parse(tc.expectedOutput);
+                  } catch {
+                    expectedParsed = tc.expectedOutput;
+                  }
+
+                  const passed = compareOutputs(actualParsed, expectedParsed);
+
+                  results.push({
+                    input: tc.input,
+                    expected: tc.expectedOutput,
+                    actual: resultStr,
+                    passed,
+                  });
+                }
+                continue;
+              }
+
+              if (inLogs) {
+                currentLogs.push(line);
+              } else if (inResult) {
+                currentResult.push(line);
+              }
             }
 
-            try {
-              expectedParsed = JSON.parse(expectedOutput);
-            } catch {
-              expectedParsed = expectedOutput;
+            // Если не нашли маркеры, используем весь вывод
+            if (!hasLogs && !hasResult) {
+              const passed = compareOutputs(output.trim(), tc.expectedOutput.trim());
+              results.push({
+                input: tc.input,
+                expected: tc.expectedOutput,
+                actual: output.trim(),
+                passed,
+              });
             }
-
-            const passed = compareOutputs(actualParsed, expectedParsed);
-
-            results.push({
-              input: tc.input,
-              expected: expectedOutput,
-              actual: actualOutput,
-              passed,
-            });
           }
+        }
+
+        // Устанавливаем консольные логи
+        if (allLogs.length > 0) {
+          setConsoleOutput(allLogs.join("\n"));
         }
 
         setTestResults(results);
@@ -2655,7 +3051,7 @@ except Exception as e:
             .filter((r) => !r.passed)
             .map(
               (r, i) =>
-                `Тест ${i + 1}: ${r.input} → ожидалось: ${r.expected}, получено: ${r.actual}`
+                `Тест ${results.findIndex((tr) => tr === r) + 1}: ${r.input} → ожидалось: ${r.expected}, получено: ${r.actual}`
             );
 
           const failedConstraints = constraintCheckResults
@@ -2828,7 +3224,6 @@ function PreviewTheoryQuestion({
           language="javascript"
           readOnly
           height={120}
-          //     blockId={`${block.id}_theory`}
         />
       )}
       {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
@@ -2896,7 +3291,6 @@ function PreviewBlock({
           height={200}
           onRun={block.runnable ? () => runCode(block.id, block.language, block.code) : undefined}
           runLoading={block.runnable && !!codeRunLoading}
-          //   blockId={`${block.id}_example`}
         />
         {block.runnable && codeRunOutput != null && (
           <pre className={styles.codeOutput}>{codeRunOutput}</pre>
