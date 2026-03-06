@@ -15,7 +15,7 @@ const Header = () => {
   const isAdminPath = pathname?.startsWith("/admin");
 
   const navItems = [
-    { id: "problems", label: "Проблемы", path: "/problems" },
+    { id: "problems", label: "Coding", path: "/problems" },
     { id: "study", label: "Учиться", path: "/study" },
     { id: "articles", label: "Статьи", path: "/articles" },
     { id: "messages", label: "Сообщения", path: "/messages" },
@@ -28,6 +28,7 @@ const Header = () => {
     { id: "certificates", label: "Сертификаты", path: "/admin/certificates" },
     { id: "profile", label: "Профиль", path: "/admin/profile" },
     { id: "mentorship", label: "Для менторов", path: "/admin/mentorship" },
+    { id: "coding", label: "Coding", path: "/admin/coding" },
   ];
 
   const handleNavigation = (path: string) => {

@@ -1,0 +1,160 @@
+@use "../../styles/index.scss" as *;
+
+.page {
+  width: 100%;
+  min-height: 100vh;
+  padding: px($spacing-lg) px($spacing-md);
+  display: flex;
+  justify-content: center;
+  background: $color-gray-50;
+}
+
+.container {
+  max-width: $container-md;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-lg);
+}
+
+.header {
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: $color-gray-900;
+    margin: 0;
+  }
+}
+
+.subtitle {
+  font-size: 16px;
+  color: $color-gray-500;
+  margin: 4px 0 0;
+}
+
+.filters {
+  display: flex;
+  gap: px($spacing-sm);
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1px solid $color-gray;
+  background: $color-white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $color-grayLight;
+  }
+}
+
+.filterActive {
+  color: $color-white;
+  border-color: $color-purple;
+}
+
+.emptyText {
+  text-align: center;
+  color: $color-gray-500;
+  padding: 60px 0;
+  font-size: 16px;
+}
+
+.taskTable {
+  background: $color-white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid $color-gray-200;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 0.8fr 0.6fr 0.8fr;
+  padding: 14px 20px;
+  background: $color-gray-100;
+  font-size: 13px;
+  font-weight: 600;
+  color: $color-gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 0.8fr 0.6fr 0.8fr;
+  padding: 16px 20px;
+  align-items: center;
+  border-bottom: 1px solid $color-gray-100;
+  transition: background 0.15s;
+
+  &:hover {
+    background: $color-gray-50;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.colTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.colDiff,
+.colLang,
+.colXp,
+.colTests,
+.colAction {
+  display: flex;
+  align-items: center;
+}
+
+.taskName {
+  font-weight: 600;
+  color: $color-gray-900;
+  font-size: 15px;
+}
+
+.taskAuthor {
+  font-size: 12px;
+  color: $color-gray-400;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.xpBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.solveBtn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  background: $color-purple;
+  color: $color-white;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}

@@ -1,0 +1,374 @@
+@use "../../../styles/index.scss" as *;
+
+.page {
+  width: 100%;
+  min-height: 100vh;
+  padding: px($spacing-lg) px($spacing-md);
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  max-width: $container-md;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-lg);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: px($spacing-sm);
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: $color-gray-900;
+  }
+}
+
+.headerActions {
+  display: flex;
+  gap: px($spacing-sm);
+}
+
+.filters {
+  display: flex;
+  gap: px($spacing-sm);
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid $color-gray;
+  background: $color-white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $color-grayLight;
+  }
+}
+
+.filterActive {
+  background: $color-purple;
+  color: $color-white;
+  border-color: $color-purple;
+}
+
+.emptyText {
+  text-align: center;
+  color: $color-gray-500;
+  padding: 40px 0;
+  font-size: 16px;
+}
+
+.emptyHint {
+  color: $color-gray-400;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-md);
+}
+
+.taskCard {
+  background: $color-white;
+  border: 1px solid $color-gray-200;
+  border-radius: 12px;
+  padding: px($spacing-lg);
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.taskCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.taskTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: $color-gray-900;
+  margin: 0;
+}
+
+.taskMeta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.xpBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.taskDesc {
+  color: $color-gray-600;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.taskFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.taskInfo {
+  font-size: 13px;
+  color: $color-gray-400;
+}
+
+.taskActions {
+  display: flex;
+  gap: 8px;
+}
+
+.editBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid $color-purple;
+  color: $color-purple;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $color-purple;
+    color: $color-white;
+  }
+}
+
+.deleteBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid $color-red;
+  color: $color-red;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $color-red;
+    color: $color-white;
+  }
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: px($spacing-lg);
+
+  @media (max-width: $breakpoint-lg) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formLeft,
+.formRight {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-md);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 14px;
+    font-weight: 600;
+    color: $color-gray-700;
+  }
+}
+
+.formRow {
+  display: flex;
+  gap: px($spacing-md);
+  flex-wrap: wrap;
+
+  .formGroup {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+.input {
+  padding: 10px 12px;
+  border: 1px solid $color-gray-200;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+
+  &:focus {
+    border-color: $color-purple;
+  }
+}
+
+.textarea {
+  padding: 10px 12px;
+  border: 1px solid $color-gray-200;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  width: 100%;
+  min-height: 100px;
+
+  &:focus {
+    border-color: $color-purple;
+  }
+}
+
+.select {
+  padding: 10px 12px;
+  border: 1px solid $color-gray-200;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: $color-white;
+  cursor: pointer;
+  width: 100%;
+
+  &:focus {
+    border-color: $color-purple;
+  }
+}
+
+.codeEditorWrap {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid $color-gray-200;
+}
+
+.codeOutput {
+  background: $color-darkLight;
+  color: $color-white;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+
+  pre {
+    margin: 4px 0 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+}
+
+.section {
+  background: $color-white;
+  border: 1px solid $color-gray-200;
+  border-radius: 12px;
+  padding: px($spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-sm);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    color: $color-gray-800;
+  }
+}
+
+.testCase {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: $color-gray-50;
+  border-radius: 8px;
+}
+
+.testCaseHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.testCaseTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: $color-purple;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: $color-red;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(216, 9, 9, 0.1);
+  }
+}
+
+.constraint {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: $color-gray-50;
+  border-radius: 8px;
+}
+
+.constraintHeader {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  .select {
+    flex: 1;
+  }
+}

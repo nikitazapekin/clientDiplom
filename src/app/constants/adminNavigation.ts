@@ -22,4 +22,11 @@ export const adminNavigation = [
     image: Achievements,
     path: "/admin/mentorship",
   },
+  {
+    id: 6,
+    title: "Coding Tasks",
+    type: "/admin/coding",
+    image: Study,
+    path: "/admin/coding",
+  },
 ];
