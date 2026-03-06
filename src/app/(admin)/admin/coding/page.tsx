@@ -72,8 +72,11 @@ export default function CodingPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [language, setLanguage] = useState<CodeLanguage>("javascript");
-  const [startCode, setStartCode] = useState(getDefaultStarterCode("javascript"));
+  const [selectedLanguages, setSelectedLanguages] = useState<CodeLanguage[]>(["javascript"]);
+  const [startCodes, setStartCodes] = useState<Record<string, string>>({
+    javascript: getDefaultStarterCode("javascript"),
+  });
+  const [activeEditorLang, setActiveEditorLang] = useState<CodeLanguage>("javascript");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [constraints, setConstraints] = useState<CodeConstraint[]>([]);
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
@@ -102,8 +105,9 @@ export default function CodingPage() {
     setEditId(null);
     setTitle("");
     setDescription("");
-    setLanguage("javascript");
-    setStartCode(getDefaultStarterCode("javascript"));
+    setSelectedLanguages(["javascript"]);
+    setStartCodes({ javascript: getDefaultStarterCode("javascript") });
+    setActiveEditorLang("javascript");
     setTestCases([]);
     setConstraints([]);
     setDifficulty("easy");
@@ -120,8 +124,9 @@ export default function CodingPage() {
     setEditId(task.id);
     setTitle(task.title);
     setDescription(task.description);
-    setLanguage(task.language as CodeLanguage);
-    setStartCode(task.startCode);
+    setSelectedLanguages((task.languages || []) as CodeLanguage[]);
+    setStartCodes(task.startCodes || {});
+    setActiveEditorLang((task.languages?.[0] || "javascript") as CodeLanguage);
     setTestCases(task.testCases || []);
     setConstraints(task.constraints || []);
     setDifficulty(task.difficulty as "easy" | "medium" | "hard");
@@ -144,8 +149,18 @@ export default function CodingPage() {
       alert("Заполните название и описание задачи");
       return;
     }
+    if (selectedLanguages.length === 0) {
+      alert("Выберите хотя бы один язык программирования");
+      return;
+    }
     if (testCases.length === 0) {
       alert("Добавьте хотя бы один тест-кейс");
+      return;
+    }
+    const missingCode = selectedLanguages.filter((l) => !startCodes[l]?.trim());
+    if (missingCode.length > 0) {
+      const labels = missingCode.map((l) => LANGUAGES.find((ll) => ll.value === l)?.label || l);
+      alert(`Напишите стартовый код для: ${labels.join(", ")}`);
       return;
     }
 
@@ -154,8 +169,8 @@ export default function CodingPage() {
       const payload = {
         title,
         description,
-        language,
-        startCode,
+        languages: selectedLanguages,
+        startCodes,
         testCases,
         constraints,
         difficulty,
@@ -179,9 +194,29 @@ export default function CodingPage() {
     }
   };
 
-  const handleLanguageChange = (newLang: CodeLanguage) => {
-    setLanguage(newLang);
-    setStartCode(getDefaultStarterCode(newLang));
+  const toggleLanguage = (lang: CodeLanguage) => {
+    setSelectedLanguages((prev) => {
+      if (prev.includes(lang)) {
+        if (prev.length === 1) return prev;
+        const next = prev.filter((l) => l !== lang);
+        if (activeEditorLang === lang) setActiveEditorLang(next[0]);
+        setStartCodes((codes) => {
+          const copy = { ...codes };
+          delete copy[lang];
+          return copy;
+        });
+        return next;
+      }
+      setStartCodes((codes) => ({
+        ...codes,
+        [lang]: codes[lang] || getDefaultStarterCode(lang),
+      }));
+      return [...prev, lang];
+    });
+  };
+
+  const updateStartCode = (lang: string, code: string) => {
+    setStartCodes((prev) => ({ ...prev, [lang]: code }));
   };
 
   const addTestCase = () => setTestCases((prev) => [...prev, { input: "", expectedOutput: "" }]);
@@ -200,7 +235,10 @@ export default function CodingPage() {
     setRunLoading(true);
     setCodeOutput("");
     try {
-      const res = await CodeService.executeCode({ language, code: startCode });
+      const res = await CodeService.executeCode({
+        language: activeEditorLang,
+        code: startCodes[activeEditorLang] || "",
+      });
       setCodeOutput(res.error || res.output || "Нет вывода");
     } catch {
       setCodeOutput("Ошибка выполнения");
@@ -220,6 +258,9 @@ export default function CodingPage() {
       </span>
     );
   };
+
+  const langLabels = (langs: string[]) =>
+    (langs || []).map((l) => LANGUAGES.find((ll) => ll.value === l)?.label || l).join(", ");
 
   if (view === "list") {
     return (
@@ -271,7 +312,7 @@ export default function CodingPage() {
                   </p>
                   <div className={styles.taskFooter}>
                     <span className={styles.taskInfo}>
-                      {LANGUAGES.find((l) => l.value === task.language)?.label || task.language} |{" "}
+                      {langLabels(task.languages)} |{" "}
                       {task.testCases?.length || 0} тестов | Автор: {task.authorName}
                     </span>
                     <div className={styles.taskActions}>
@@ -334,21 +375,6 @@ export default function CodingPage() {
 
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
-                <label>Язык</label>
-                <select
-                  className={styles.select}
-                  value={language}
-                  onChange={(e) => handleLanguageChange(e.target.value as CodeLanguage)}
-                >
-                  {LANGUAGES.map((l) => (
-                    <option key={l.value} value={l.value}>
-                      {l.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
                 <label>Сложность</label>
                 <select
                   className={styles.select}
@@ -376,12 +402,48 @@ export default function CodingPage() {
             </div>
 
             <div className={styles.formGroup}>
+              <label>Языки программирования</label>
+              <div className={styles.langChips}>
+                {LANGUAGES.map((l) => {
+                  const active = selectedLanguages.includes(l.value);
+                  return (
+                    <button
+                      key={l.value}
+                      className={`${styles.langChip} ${active ? styles.langChipActive : ""}`}
+                      onClick={() => toggleLanguage(l.value)}
+                      type="button"
+                    >
+                      {active ? "✓ " : ""}
+                      {l.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className={styles.formGroup}>
               <label>Стартовый код</label>
+              <div className={styles.langTabs}>
+                {selectedLanguages.map((lang) => {
+                  const info = LANGUAGES.find((l) => l.value === lang);
+                  return (
+                    <button
+                      key={lang}
+                      className={`${styles.langTab} ${activeEditorLang === lang ? styles.langTabActive : ""}`}
+                      onClick={() => setActiveEditorLang(lang)}
+                      type="button"
+                    >
+                      {info?.label || lang}
+                    </button>
+                  );
+                })}
+              </div>
               <div className={styles.codeEditorWrap}>
                 <CodeEditor
-                  value={startCode}
-                  onChange={setStartCode}
-                  language={language}
+                  key={activeEditorLang}
+                  value={startCodes[activeEditorLang] || ""}
+                  onChange={(v) => updateStartCode(activeEditorLang, v)}
+                  language={activeEditorLang}
                   height={250}
                   onRun={handleRunCode}
                   runLoading={runLoading}
@@ -389,7 +451,7 @@ export default function CodingPage() {
               </div>
               {codeOutput && (
                 <div className={styles.codeOutput}>
-                  <strong>Вывод:</strong>
+                  <strong>Вывод ({LANGUAGES.find((l) => l.value === activeEditorLang)?.label}):</strong>
                   <pre>{codeOutput}</pre>
                 </div>
               )}
@@ -399,7 +461,7 @@ export default function CodingPage() {
           <div className={styles.formRight}>
             <div className={styles.section}>
               <div className={styles.sectionHeader}>
-                <h3>Тест-кейсы</h3>
+                <h3>Тест-кейсы (общие для всех языков)</h3>
                 <Button
                   color="#9F0FA7"
                   width="auto"

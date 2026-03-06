@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import Button from "@/app/components/Button";
 import type { CodeLanguage } from "@/app/http/codeService";
 import {
   CodingTasksService,
@@ -103,7 +102,9 @@ export default function ProblemsPage() {
                       {diff.label}
                     </span>
                   </span>
-                  <span className={styles.colLang}>{LANG_LABELS[task.language] || task.language}</span>
+                  <span className={styles.colLang}>
+                    {(task.languages || []).map((l) => LANG_LABELS[l] || l).join(", ")}
+                  </span>
                   <span className={styles.colXp}>
                     <span className={styles.xpBadge}>+{task.experienceReward}</span>
                   </span>

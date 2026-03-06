@@ -28,12 +28,22 @@ const DIFF_LABELS: Record<string, string> = {
   hard: "Сложный",
 };
 
+const LANG_LABELS: Record<string, string> = {
+  javascript: "JavaScript",
+  python: "Python",
+  csharp: "C#",
+  java: "Java",
+  golang: "Go",
+  cpp: "C++",
+};
+
 export default function SolveProblemPage() {
   const params = useParams();
   const router = useRouter();
   const taskId = params.id as string;
 
   const [task, setTask] = useState<CodeTask | null>(null);
+  const [selectedLang, setSelectedLang] = useState<CodeLanguage>("javascript");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [runLoading, setRunLoading] = useState(false);
@@ -49,7 +59,9 @@ export default function SolveProblemPage() {
         CodingTasksService.getStudentLevel().catch(() => null),
       ]);
       setTask(data);
-      setCode(data.startCode || "");
+      const firstLang = (data.languages?.[0] || "javascript") as CodeLanguage;
+      setSelectedLang(firstLang);
+      setCode(data.startCodes?.[firstLang] || "");
       setStudentLevel(level);
     } catch (e) {
       console.error("Failed to load task:", e);
@@ -62,15 +74,19 @@ export default function SolveProblemPage() {
     loadTask();
   }, [loadTask]);
 
+  const handleLangChange = (lang: CodeLanguage) => {
+    setSelectedLang(lang);
+    setCode(task?.startCodes?.[lang] || "");
+    setConsoleOutput("");
+    setResult(null);
+  };
+
   const handleRun = async () => {
     if (!task) return;
     setRunLoading(true);
     setConsoleOutput("");
     try {
-      const res = await CodeService.executeCode({
-        language: task.language as CodeLanguage,
-        code,
-      });
+      const res = await CodeService.executeCode({ language: selectedLang, code });
       setConsoleOutput(res.error || res.output || "Нет вывода");
     } catch {
       setConsoleOutput("Ошибка выполнения");
@@ -84,7 +100,7 @@ export default function SolveProblemPage() {
     setSubmitLoading(true);
     setResult(null);
     try {
-      const res = await CodingTasksService.submitSolution(task.id, code, task.language);
+      const res = await CodingTasksService.submitSolution(task.id, code, selectedLang);
       setResult(res);
     } catch (e: any) {
       alert(e?.message || "Ошибка отправки решения");
@@ -123,7 +139,6 @@ export default function SolveProblemPage() {
                 {diffLabel}
               </span>
               <span className={styles.xpBadge}>+{task.experienceReward} XP</span>
-              <span className={styles.langTag}>{task.language}</span>
               <span className={styles.authorTag}>Автор: {task.authorName}</span>
             </div>
           </div>
@@ -199,7 +214,17 @@ export default function SolveProblemPage() {
 
         <div className={styles.rightPanel}>
           <div className={styles.editorHeader}>
-            <span className={styles.editorTitle}>Решение</span>
+            <div className={styles.langSelector}>
+              {(task.languages || []).map((lang) => (
+                <button
+                  key={lang}
+                  className={`${styles.langBtn} ${selectedLang === lang ? styles.langBtnActive : ""}`}
+                  onClick={() => handleLangChange(lang as CodeLanguage)}
+                >
+                  {LANG_LABELS[lang] || lang}
+                </button>
+              ))}
+            </div>
             <div className={styles.editorActions}>
               <Button
                 color="#374151"
@@ -222,9 +247,10 @@ export default function SolveProblemPage() {
 
           <div className={styles.editorWrap}>
             <CodeEditor
+              key={selectedLang}
               value={code}
               onChange={setCode}
-              language={task.language as CodeLanguage}
+              language={selectedLang}
               height={400}
               onRun={handleRun}
               runLoading={runLoading}

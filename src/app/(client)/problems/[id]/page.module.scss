@@ -223,12 +223,47 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.editorTitle {
-  font-size: 15px;
-  font-weight: 600;
-  color: $color-gray-800;
+.langSelector {
+  display: flex;
+  gap: 0;
+  border: 1px solid $color-gray-200;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.langBtn {
+  padding: 8px 16px;
+  border: none;
+  background: $color-white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: $color-gray-600;
+  border-right: 1px solid $color-gray-200;
+  transition: all 0.15s;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &:hover {
+    background: $color-gray-50;
+    color: $color-purple;
+  }
+}
+
+.langBtnActive {
+  background: $color-purple;
+  color: $color-white;
+
+  &:hover {
+    background: $color-purple;
+    color: $color-white;
+  }
 }
 
 .editorActions {

@@ -14,8 +14,8 @@ export interface CodeTask {
   id: string;
   title: string;
   description: string;
-  language: string;
-  startCode: string;
+  languages: string[];
+  startCodes: Record<string, string>;
   testCases: TestCase[];
   constraints: CodeConstraint[];
   difficulty: "easy" | "medium" | "hard";
@@ -29,8 +29,8 @@ export interface CodeTask {
 export interface CreateCodeTaskPayload {
   title: string;
   description: string;
-  language: string;
-  startCode: string;
+  languages: string[];
+  startCodes: Record<string, string>;
   testCases: TestCase[];
   constraints: CodeConstraint[];
   difficulty: "easy" | "medium" | "hard";

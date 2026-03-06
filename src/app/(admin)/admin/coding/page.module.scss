@@ -372,3 +372,67 @@
     flex: 1;
   }
 }
+
+.langChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.langChip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid $color-gray-200;
+  background: $color-white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: $color-gray-700;
+
+  &:hover {
+    border-color: $color-purple;
+    color: $color-purple;
+  }
+}
+
+.langChipActive {
+  background: $color-purple;
+  border-color: $color-purple;
+  color: $color-white;
+
+  &:hover {
+    background: darken(#9f0fa7, 10%);
+    color: $color-white;
+  }
+}
+
+.langTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid $color-gray-200;
+  margin-bottom: -1px;
+}
+
+.langTab {
+  padding: 8px 18px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: $color-gray-500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+
+  &:hover {
+    color: $color-purple;
+  }
+}
+
+.langTabActive {
+  color: $color-purple;
+  border-bottom-color: $color-purple;
+  font-weight: 600;
+}
