@@ -46,15 +46,40 @@ const getDefaultStarterCode = (lang: CodeLanguage): string => {
     case "python":
       return `def solution(n):\n    # Ваш код здесь\n    return n`;
     case "java":
-      return `public static int solution(int n) {\n    // Ваш код здесь\n    return n;\n}`;
+      return `public class Main {
+    public static int solution(int n) {
+        // Ваш код здесь
+        return n;
+    }
+}`;
     case "csharp":
-      return `public static int Solution(int n) {\n    // Ваш код здесь\n    return n;\n}`;
+      return `using System;
+
+public class Program
+{
+    public static int Solution(int n)
+    {
+        // Ваш код здесь
+        return n;
+    }
+}`;
     case "golang":
-      return `func solution(n int) interface{} {\n    // Ваш код здесь\n    return n\n}`;
+      return `package main
+
+func solution(n int) interface{} {
+    // Ваш код здесь
+    return n
+}`;
     case "cpp":
-      return `int solution(int n) {\n    // Ваш код здесь\n    return n;\n}`;
+      return `int solution(int n) {
+    // Ваш код здесь
+    return n;
+}`;
     default:
-      return `function solution(n) {\n    // Ваш код здесь\n    return n;\n}`;
+      return `function solution(n) {
+    // Ваш код здесь
+    return n;
+}`;
   }
 };
 
