@@ -9,11 +9,23 @@ import Button from "../Button";
 import styles from "./index.module.scss";
 import type { CourseResponse } from "./types";
 
+import { AuthService } from "@/app/http/auth";
+
 const CourseDetails = ({ course }: CourseResponse) => {
   const router = useRouter();
   const handleRedirect = () => {
-    router.push(`/admin/courses/${course.id}/map`);
+    const userRole = AuthService.getCurrentUser().role;
+    const isUserAdmin = userRole === "admin";
+
+    if (isUserAdmin) {
+      router.push(`/admin/courses/${course.id}/map`);
+    } else {
+      router.push(`/study/${course.id}/map`);
+    }
   };
+
+  const userRole = AuthService.getCurrentUser().role;
+  const isAdmin = userRole === "admin";
 
   return (
     <div className={styles.courses}>
@@ -29,7 +41,7 @@ const CourseDetails = ({ course }: CourseResponse) => {
           <div className={styles.courses__info}>
             <div className={styles.courses__infoPreview}>
               <h1 className={styles.courses__title}>{course.title}</h1>
-              <p className={styles.courses__edit}>Редактировать</p>
+              {isAdmin && <p className={styles.courses__edit}>Редактировать</p>}
             </div>
 
             <h2 className={styles.courses__description}>{course.description}</h2>
@@ -75,7 +87,7 @@ const CourseDetails = ({ course }: CourseResponse) => {
         </div>
         <div className={styles.courses__actions}>
           <Button
-            text="Просмотреть карту курса"
+            text={isAdmin ? "Просмотреть карту курса" : "Начать изучение курса"}
             onClick={handleRedirect}
             width="313px"
             color="#9F0FA7"

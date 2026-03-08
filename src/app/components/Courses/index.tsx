@@ -24,8 +24,6 @@ const Courses = ({ initialCourses }: { initialCourses: CourseListResponse }) => 
       <div className={styles.courses__container}>
         <CourseFilters handleOpen={handleOpen} />
 
-        <p>hello</p>
-
         {(initialCourses?.courses ?? []).map((itemm) => {
           const item = {
             id: itemm.id,
@@ -36,38 +34,12 @@ const Courses = ({ initialCourses }: { initialCourses: CourseListResponse }) => 
             tags: itemm.tags,
           };
 
-          return <Course key={item.id} item={item} />;
+          return <Course key={item.id} item={item} isAdmin={false} />;
         })}
       </div>
     </div>
   );
-  /*   return (
-    <div className={styles.courses}>
-      <div className={styles.courses__container}>
-        <div className={styles.courses__preview}>
-          <h1 className={styles.courses__title}>Выберите курс для обучения</h1>
-        </div>
-        <SearchCourses onSearchChange={setSearchQuery} onSortChange={setSortOption} />
 
-        {shouldShowCategories ? (
-          categories.map((category) => (
-            <CourseCategory title={category.title} courses={category.courses} key={category.id} />
-          ))
-        ) : (
-          <div className={styles.courses__list}>
-            {filteredCourses.length > 0 ? (
-              filteredCourses.map((course) => <Course item={course} key={course.id} />)
-            ) : (
-              <div className={styles.courses__empty}>
-                <p>Курсы не найдены</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}; */
 };
 
 export default Courses;

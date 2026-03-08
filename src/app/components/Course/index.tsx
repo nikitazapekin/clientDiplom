@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import styles from "./index.module.scss";
 import type { CourseItem } from "./types";
 
+import { AuthService } from "@/app/http/auth";
 import { getBaseUrl } from "@/app/http/api";
 
 const getValidImageSrc = (logo: string): string | null => {
@@ -28,12 +29,24 @@ const getValidImageSrc = (logo: string): string | null => {
   }
 };
 
-const Course = ({ item }: CourseItem) => {
+interface CourseProps {
+  item: CourseItem["item"];
+  isAdmin?: boolean;
+}
+
+const Course = ({ item, isAdmin }: CourseProps) => {
   const router = useRouter();
   const imageSrc = getValidImageSrc(item.logo);
 
   const handleNavigate = () => {
-    router.push(`/admin/courses/${item.id}`);
+    const userRole = AuthService.getCurrentUser().role;
+    const isUserAdmin = isAdmin ?? userRole === "admin";
+
+    if (isUserAdmin) {
+      router.push(`/admin/courses/${item.id}`);
+    } else {
+      router.push(`/study/${item.id}/course`);
+    }
   };
 
   return (

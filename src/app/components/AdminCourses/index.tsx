@@ -31,7 +31,7 @@ const AdminCourses = ({ initialCourses }: CourseListResponse) => {
               tags: itemm.tags,
             };
 
-            return <Course key={item.id} item={item} />;
+            return <Course key={item.id} item={item} isAdmin={true} />;
           })}
 
           <CreateCourseModal handleOpen={handleOpen} isOpen={isOpenCourse} />
