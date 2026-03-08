@@ -1,5 +1,7 @@
+import UserProfile from "@/app/components/UserProfile";
+
 const Account = () => {
-  return <> account</>;
+  return <UserProfile />;
 };
 
 export default Account;

@@ -19,6 +19,14 @@ Console.WriteLine(11 + 444);`,
 fmt.Println(11 + 444)`,
   java: `// Java
 System.out.println(11 + 444);`,
+  cpp: `// C++
+#include <iostream>
+using namespace std;
+
+int main() {
+    cout << (11 + 444) << endl;
+    return 0;
+}`,
 };
 
 const languages: { value: CodeLanguage; label: string }[] = [
@@ -27,6 +35,7 @@ const languages: { value: CodeLanguage; label: string }[] = [
   { value: "csharp", label: "C#" },
   { value: "golang", label: "Go" },
   { value: "java", label: "Java" },
+  { value: "cpp", label: "C++" },
 ];
 
 const Page = () => {
