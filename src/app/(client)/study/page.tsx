@@ -23,3 +23,7 @@ export default Study;
     
       <AdminCourses initialCourses={courses} />
       */
+
+
+
+      
