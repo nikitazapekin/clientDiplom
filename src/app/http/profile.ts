@@ -7,31 +7,40 @@ import type {
   StudentResultResponse,
   UpdateAvatarRequest,
 } from "./types/profile";
-import $api from "./api";
+import $api, { $apiNoRedirect } from "./api";
 
 export class ProfileService {
   /**
-   * Получение полного профиля по auditoryId
+   * Получение полного профиля по auditoryId (без редиректа на login)
    */
   static async getFullProfileByAuditoryId(auditoryId: string): Promise<FullClientInfo> {
     try {
-      const response = await $api.get(
+      const response = await $apiNoRedirect.get(
         `/profile/client/auditory/${auditoryId}/full`
       );
 
       return response.data;
     } catch (error: any) {
-      console.error("Get full profile error:", error.response?.data || error.message);
+      console.error("Get full profile error:", error);
+      console.error("Error response status:", error.response?.status);
+      console.error("Error response headers:", error.response?.headers);
+      console.error("Error response data:", error.response?.data);
+      
+      const responseData = error.response?.data;
+      if (typeof responseData === 'string' && responseData.includes('<!DOCTYPE')) {
+        throw new Error("Server returned HTML instead of JSON - possible redirect or auth error");
+      }
+      
       throw new Error(error.response?.data?.message || "Failed to fetch profile");
     }
   }
 
   /**
-   * Получение полной информации о клиенте по clientId
+   * Получение полной информации о клиенте по clientId (без редиректа на login)
    */
   static async getFullProfileByClientId(clientId: string): Promise<FullClientInfo> {
     try {
-      const response = await $api.get(
+      const response = await $apiNoRedirect.get(
         `/profile/client/${clientId}/full`
       );
 

@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { StudentsService, StudentResponse } from "@/app/http/students";
 import styles from "./page.module.scss";
 
 const StudentsPage = () => {
+  const router = useRouter();
   const [students, setStudents] = useState<StudentResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +54,10 @@ const StudentsPage = () => {
     if (newPage >= 1 && newPage <= totalPages) {
       fetchStudents(searchQuery, newPage);
     }
+  };
+
+  const handleRowClick = (auditoryId: string) => {
+    router.push(`/admin/students/${auditoryId}`);
   };
 
   const renderPagination = () => {
@@ -140,7 +146,11 @@ const StudentsPage = () => {
               </tr>
             ) : (
               students.map((student) => (
-                <tr key={student.id}>
+                <tr 
+                  key={student.id} 
+                  onClick={() => handleRowClick(student.auditoryId)}
+                  className={styles.clickableRow}
+                >
                   <td className={styles.id}>{student.auditoryId}</td>
                   <td>{student.lastName}</td>
                   <td>{student.firstName}</td>

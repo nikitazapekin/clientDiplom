@@ -84,6 +84,7 @@ $api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
+      _skipRedirect?: boolean;
     };
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
@@ -91,7 +92,7 @@ $api.interceptors.response.use(
 
       TokenManager.clearAll();
 
-      if (isBrowser && window.location.pathname !== "/login") {
+      if (isBrowser && window.location.pathname !== "/login" && !originalRequest._skipRedirect) {
         window.location.href = "/login?session=expired";
       }
     }
@@ -105,5 +106,53 @@ export const setBaseUrl = (url: string) => {
 };
 
 export const getBaseUrl = () => $api.defaults.baseURL;
+
+export const $apiNoRedirect = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
+  timeout: 10000,
+  maxRedirects: 0,
+  validateStatus: (status) => status < 500,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+$apiNoRedirect.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    if (isBrowser) {
+      const token = TokenManager.getAccessToken();
+
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+
+    return config;
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  }
+);
+
+$apiNoRedirect.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    if (error.response?.status === 302) {
+      console.log("Redirect detected:", error.response.headers.location);
+    }
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+      TokenManager.clearAll();
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default $api;

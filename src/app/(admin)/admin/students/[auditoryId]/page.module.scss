@@ -1,0 +1,490 @@
+@use '../../../../styles/variables.scss' as *;
+
+.container {
+  padding: px($spacing-lg);
+  max-width: px($container-md);
+  margin: 0 auto;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  padding: px($spacing-sm) px($spacing-md);
+  background-color: transparent;
+  color: $color-info;
+  border: 1px solid $color-info;
+  border-radius: px($radius-medium);
+  font-size: px($font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: px($spacing-lg);
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: $color-info;
+    color: $color-white;
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: px($font-sx);
+  color: $color-gray-600;
+}
+
+.loadingSmall {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: px($spacing-lg);
+  font-size: px($font-xs);
+  color: $color-gray-500;
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: px($spacing-lg);
+  gap: px($spacing-md);
+}
+
+.errorIcon {
+  font-size: 48px;
+}
+
+.errorText {
+  font-size: px($font-sx);
+  color: $color-error;
+  text-align: center;
+}
+
+.retryButton {
+  padding: px($spacing-sm) px($spacing-xl);
+  background-color: $color-info;
+  color: $color-white;
+  border: none;
+  border-radius: px($radius-medium);
+  font-size: px($font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: darken($color-info, 10%);
+  }
+}
+
+.header {
+  background: linear-gradient(135deg, $color-info 0%, darken($color-info, 15%) 100%);
+  padding: px($spacing-xxl) px($spacing-lg);
+  border-radius: px($radius-large);
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba($color-black, 0.15);
+  margin-bottom: px($spacing-lg);
+}
+
+.avatarWrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.avatarContainer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid $color-white;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid $color-white;
+  background-color: $color-info;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.avatarPlaceholderText {
+  font-size: 48px;
+  color: $color-white;
+  font-weight: bold;
+}
+
+.name {
+  font-size: px($font-lg);
+  font-weight: 700;
+  color: $color-white;
+  margin-top: px($spacing-md);
+}
+
+.emailContainer {
+  margin-top: px($spacing-xs);
+}
+
+.email {
+  font-size: px($font-xs);
+  color: rgba($color-white, 0.9);
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: px($spacing-xs) px($spacing-md);
+  border-radius: px($radius-large);
+  margin-top: px($spacing-md);
+}
+
+.statusActive {
+  background-color: $color-success;
+}
+
+.statusInactive {
+  background-color: $color-error;
+}
+
+.statusText {
+  color: $color-white;
+  font-size: px($font-xs);
+  font-weight: 600;
+}
+
+.statsContainer {
+  display: flex;
+  background-color: $color-white;
+  padding: px($spacing-lg);
+  border-radius: px($radius-large);
+  box-shadow: 0 2px 8px rgba($color-black, 0.08);
+  margin-bottom: px($spacing-lg);
+}
+
+.statItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: px($spacing-xs);
+}
+
+.statDivider {
+  width: 1px;
+  background-color: $color-gray-200;
+}
+
+.statValue {
+  font-size: px($font-lg);
+  font-weight: 700;
+  color: $color-info;
+}
+
+.statLabel {
+  font-size: px($border-radius-sm);
+  color: $color-gray-600;
+}
+
+.section {
+  background-color: $color-white;
+  padding: px($spacing-lg);
+  border-radius: px($radius-large);
+  box-shadow: 0 2px 8px rgba($color-black, 0.08);
+  margin-bottom: px($spacing-lg);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: px($spacing-md);
+  padding-bottom: px($spacing-sm);
+  border-bottom: 1px solid $color-gray-100;
+}
+
+.sectionTitle {
+  font-size: px($font-md);
+  font-weight: 600;
+  color: $color-gray-800;
+}
+
+.viewAllButton {
+  background: none;
+  border: none;
+  color: $color-purple;
+  font-size: px($font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  padding: px($spacing-xs) px($spacing-sm);
+  transition: color 0.2s;
+
+  &:hover {
+    color: darken($color-purple, 10%);
+  }
+}
+
+.certSliderContainer {
+  display: flex;
+  align-items: center;
+  gap: px($spacing-sm);
+  margin-top: px($spacing-md);
+}
+
+.certNavButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid $color-gray-200;
+  background-color: $color-white;
+  color: $color-gray-600;
+  font-size: px($font-xs);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background-color: $color-gray-50;
+    border-color: $color-info;
+    color: $color-info;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+.certSlider {
+  display: flex;
+  gap: px($spacing-md);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: px($spacing-xs) 0;
+  flex: 1;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.certSlide {
+  min-width: 280px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.certImage {
+  width: 280px;
+  height: 180px;
+  object-fit: contain;
+  border-radius: px($radius-medium);
+  background-color: $color-gray-50;
+}
+
+.certDate {
+  margin-top: px($spacing-xs);
+  font-size: px($border-radius-sm);
+  color: $color-gray-500;
+}
+
+.certDots {
+  display: flex;
+  justify-content: center;
+  gap: px($spacing-xs);
+  margin-top: px($spacing-md);
+}
+
+.certDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: $color-gray-200;
+  transition: all 0.2s;
+
+  &.certDotActive {
+    background-color: $color-purple;
+    width: 20px;
+    border-radius: 4px;
+  }
+}
+
+.infoGrid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 (-(px($spacing-xs)));
+}
+
+.infoItem {
+  width: 50%;
+  padding: px($spacing-xs);
+  box-sizing: border-box;
+}
+
+.infoItemFull {
+  width: 100%;
+}
+
+.infoItemLabel {
+  display: block;
+  font-size: px($border-radius-sm);
+  color: $color-gray-500;
+  margin-bottom: 2px;
+}
+
+.infoItemValue {
+  display: block;
+  font-size: px($font-xs);
+  color: $color-gray-800;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.tasksList {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-sm);
+}
+
+.taskCard {
+  background-color: $color-gray-50;
+  padding: px($spacing-md);
+  border-radius: px($radius-medium);
+  border: 1px solid $color-gray-100;
+  border-left: 4px solid $color-success;
+}
+
+.taskHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: px($spacing-xs);
+}
+
+.taskTitle {
+  font-size: px($font-xs);
+  font-weight: 600;
+  color: $color-gray-800;
+  flex: 1;
+  margin-right: px($spacing-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskBadge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: $color-white;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.taskDesc {
+  font-size: px($border-radius-sm);
+  color: $color-gray-600;
+  line-height: 1.4;
+  margin-bottom: px($spacing-xs);
+}
+
+.taskFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: px($spacing-xs);
+}
+
+.taskMeta {
+  font-size: 11px;
+  color: $color-gray-400;
+}
+
+.taskXp {
+  padding: 2px 6px;
+  border-radius: 8px;
+  background-color: $color-info;
+  color: $color-white;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.taskAuthor {
+  font-size: 11px;
+  color: $color-gray-400;
+}
+
+.taskSolvedDate {
+  font-size: 11px;
+  color: $color-gray-500;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background-color: $color-gray-100;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: px($spacing-xxl);
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: px($spacing-sm);
+}
+
+.emptyText {
+  font-size: px($font-xs);
+  color: $color-gray-500;
+}
+
+@media (max-width: $breakpoint-md) {
+  .container {
+    padding: px($spacing-md);
+  }
+
+  .statsContainer {
+    flex-direction: column;
+    gap: px($spacing-md);
+  }
+
+  .statDivider {
+    width: 100%;
+    height: 1px;
+  }
+
+  .infoItem {
+    width: 100%;
+  }
+
+  .certSlide {
+    min-width: 240px;
+  }
+
+  .certImage {
+    width: 240px;
+    height: 150px;
+  }
+}

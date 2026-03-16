@@ -1,4 +1,4 @@
-import $api from "./api";
+import $api, { $apiNoRedirect } from "./api";
 
 export interface TestCase {
   input: string;
@@ -76,27 +76,27 @@ export class CodingTasksService {
   }
 
   static async getAllTasks(): Promise<CodeTask[]> {
-    const response = await $api.get("/coding-tasks");
+    const response = await $apiNoRedirect.get("/coding-tasks");
     return response.data;
   }
 
   static async getTask(id: string): Promise<CodeTask> {
-    const response = await $api.get(`/coding-tasks/${id}`);
+    const response = await $apiNoRedirect.get(`/coding-tasks/${id}`);
     return response.data;
   }
 
   static async getTasksByDifficulty(difficulty: string): Promise<CodeTask[]> {
-    const response = await $api.get(`/coding-tasks/difficulty/${difficulty}`);
+    const response = await $apiNoRedirect.get(`/coding-tasks/difficulty/${difficulty}`);
     return response.data;
   }
 
   static async submitSolution(taskId: string, code: string, language: string): Promise<SubmitSolutionResult> {
-    const response = await $api.post("/coding-tasks/submit", { taskId, code, language });
+    const response = await $apiNoRedirect.post("/coding-tasks/submit", { taskId, code, language });
     return response.data;
   }
 
   static async getStudentLevel(): Promise<StudentLevel> {
-    const response = await $api.get("/coding-tasks/student-level");
+    const response = await $apiNoRedirect.get("/coding-tasks/student-level");
     return response.data;
   }
 }

@@ -1,4 +1,4 @@
-import $api from "./api";
+import $api, { $apiNoRedirect } from "./api";
 
 // Типы для сертификатов
 export interface CertificateResponse {
@@ -75,7 +75,7 @@ export class CertificateService {
     try {
       console.log("📥 Fetching certificates for auditory:", auditoryId);
 
-      const response = await $api.get(
+      const response = await $apiNoRedirect.get(
         `/certificates/auditory/${auditoryId}`
       );
 
@@ -91,7 +91,7 @@ export class CertificateService {
    */
   static async getCertificatesByClientId(clientId: string): Promise<CertificateResponse[]> {
     try {
-      const response = await $api.get(
+      const response = await $apiNoRedirect.get(
         `/certificates/client/${clientId}`
       );
 
