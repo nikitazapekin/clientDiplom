@@ -13,8 +13,15 @@ const CertificatesPage = () => {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDate, setEditDate] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
+  const [editData, setEditData] = useState({
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    courseName: "",
+    date: "",
+  });
 
   const [searchFirstName, setSearchFirstName] = useState("");
   const [searchLastName, setSearchLastName] = useState("");
@@ -74,14 +81,24 @@ const CertificatesPage = () => {
 
   const handleEdit = (cert: CertificateResponse) => {
     setEditingId(cert.id);
-    setEditDate(new Date(cert.date).toISOString().split('T')[0]);
+    setEditData({
+      firstName: cert.firstName || "",
+      lastName: cert.lastName || "",
+      middleName: cert.middleName || "",
+      courseName: cert.courseName || "",
+      date: new Date(cert.date).toISOString().split('T')[0],
+    });
   };
 
   const handleSaveEdit = async () => {
     if (!editingId) return;
     try {
       await CertificateService.updateCertificate(editingId, {
-        date: editDate,
+        firstName: editData.firstName,
+        lastName: editData.lastName,
+        middleName: editData.middleName,
+        courseName: editData.courseName,
+        date: editData.date,
       });
       setEditingId(null);
       fetchCertificates({ page });
@@ -92,7 +109,13 @@ const CertificatesPage = () => {
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setEditDate("");
+    setEditData({
+      firstName: "",
+      lastName: "",
+      middleName: "",
+      courseName: "",
+      date: "",
+    });
   };
 
   const handleDelete = async (id: string) => {
@@ -202,8 +225,10 @@ const CertificatesPage = () => {
           <thead>
             <tr>
               <th>ID</th>
-              <th>ID клиента</th>
-              <th>ID курса</th>
+              <th>Имя</th>
+              <th>Фамилия</th>
+              <th>Отчество</th>
+              <th>Курс</th>
               <th>Дата</th>
               <th>URL</th>
               <th>Просмотрен</th>
@@ -213,7 +238,7 @@ const CertificatesPage = () => {
           <tbody>
             {certificates.length === 0 ? (
               <tr>
-                <td colSpan={7} className={styles.empty}>
+                <td colSpan={9} className={styles.empty}>
                   Сертификаты не найдены
                 </td>
               </tr>
@@ -221,20 +246,62 @@ const CertificatesPage = () => {
               certificates.map((cert) => (
                 <tr key={cert.id}>
                   <td className={styles.id}>{cert.id}</td>
-                  <td className={styles.mono}>{cert.clientId}</td>
-                  <td className={styles.mono}>{cert.courseId}</td>
-                  <td>
-                    {editingId === cert.id ? (
-                      <input
-                        type="date"
-                        className={styles.editInput}
-                        value={editDate}
-                        onChange={(e) => setEditDate(e.target.value)}
-                      />
-                    ) : (
-                      new Date(cert.date).toLocaleDateString("ru-RU")
-                    )}
-                  </td>
+                  {editingId === cert.id ? (
+                    <>
+                      <td>
+                        <input
+                          type="text"
+                          className={styles.editInput}
+                          value={editData.firstName}
+                          onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
+                          placeholder="Имя"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          className={styles.editInput}
+                          value={editData.lastName}
+                          onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
+                          placeholder="Фамилия"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          className={styles.editInput}
+                          value={editData.middleName}
+                          onChange={(e) => setEditData({ ...editData, middleName: e.target.value })}
+                          placeholder="Отчество"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          className={styles.editInput}
+                          value={editData.courseName}
+                          onChange={(e) => setEditData({ ...editData, courseName: e.target.value })}
+                          placeholder="Курс"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="date"
+                          className={styles.editInput}
+                          value={editData.date}
+                          onChange={(e) => setEditData({ ...editData, date: e.target.value })}
+                        />
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td>{cert.firstName || "-"}</td>
+                      <td>{cert.lastName || "-"}</td>
+                      <td>{cert.middleName || "-"}</td>
+                      <td>{cert.courseName || "-"}</td>
+                      <td>{new Date(cert.date).toLocaleDateString("ru-RU")}</td>
+                    </>
+                  )}
                   <td className={styles.url}>
                     {cert.digital ? (
                       <a href={cert.digital} target="_blank" rel="noopener noreferrer">

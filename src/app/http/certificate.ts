@@ -8,6 +8,10 @@ export interface CertificateResponse {
   url: string;
   digital: string;
   isViewed: boolean;
+  firstName: string;
+  lastName: string;
+  middleName: string;
+  courseName: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +35,10 @@ export interface UpdateCertificateRequest {
   date?: string;
   url?: string;
   digital?: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  courseName?: string;
 }
 
 export interface CertificateSearchParams {

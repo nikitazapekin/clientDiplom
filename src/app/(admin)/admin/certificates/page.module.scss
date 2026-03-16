@@ -281,6 +281,8 @@
   border-radius: px($radius-medium);
   font-size: px($border-radius-sm);
   outline: none;
+  width: 100%;
+  min-width: 80px;
 
   &:focus {
     border-color: darken($color-info, 10%);
