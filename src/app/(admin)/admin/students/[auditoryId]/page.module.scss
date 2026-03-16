@@ -198,6 +198,48 @@
   color: $color-gray-600;
 }
 
+.levelSection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: px($spacing-lg) 0;
+}
+
+.circularProgressContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.expInfoContainer {
+  display: flex;
+  align-items: baseline;
+  margin-top: px($spacing-md);
+}
+
+.expValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #9f0fa7;
+}
+
+.expSeparator {
+  font-size: 18px;
+  color: #999;
+  margin: 0 4px;
+}
+
+.expTotal {
+  font-size: 18px;
+  color: #666;
+}
+
+.expLabel {
+  font-size: 14px;
+  color: #666;
+  margin-left: 4px;
+}
+
 .section {
   background-color: $color-white;
   padding: px($spacing-lg);
@@ -465,6 +507,29 @@
     padding: px($spacing-md);
   }
 
+  .header {
+    padding: px($spacing-lg) px($spacing-md);
+    border-radius: px($radius-medium);
+  }
+
+  .avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatarPlaceholder {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatarPlaceholderText {
+    font-size: 32px;
+  }
+
+  .name {
+    font-size: px($font-md);
+  }
+
   .statsContainer {
     flex-direction: column;
     gap: px($spacing-md);
@@ -475,16 +540,75 @@
     height: 1px;
   }
 
+  .statItem {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
   .infoItem {
     width: 100%;
   }
 
+  .certSliderContainer {
+    flex-direction: column;
+    gap: px($spacing-sm);
+  }
+
+  .certNavButton {
+    display: none;
+  }
+
+  .certSlider {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    gap: px($spacing-sm);
+    padding: 0;
+  }
+
   .certSlide {
-    min-width: 240px;
+    min-width: calc(100vw - px($spacing-lg) * 2 - px($spacing-lg) * 2);
+    scroll-snap-align: center;
+    max-width: 100%;
   }
 
   .certImage {
-    width: 240px;
-    height: 150px;
+    width: 100%;
+    height: auto;
+    min-height: 150px;
+  }
+
+  .levelSection {
+    padding: px($spacing-md) 0;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: px($spacing-sm);
+  }
+
+  .taskCard {
+    padding: px($spacing-sm);
+  }
+
+  .taskHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: px($spacing-xs);
+  }
+
+  .taskTitle {
+    width: 100%;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: none;
+  }
+
+  .taskFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: px($spacing-xs);
   }
 }

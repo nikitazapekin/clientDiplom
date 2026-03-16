@@ -8,6 +8,79 @@ import { CodingTasksService, type CodeTask, type StudentLevel } from "@/app/http
 import type { FullClientInfo } from "@/app/http/types/profile";
 import styles from "./page.module.scss";
 
+const CIRCLE_SIZE = 140;
+const CIRCLE_RADIUS = (CIRCLE_SIZE - 16) / 2;
+const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS;
+
+const CircularProgress = ({
+  progress,
+  level,
+  experience,
+  nextLevelExp,
+}: {
+  progress: number;
+  level: number;
+  experience: number;
+  nextLevelExp: number;
+}) => {
+  const clampedProgress = Math.min(Math.max(progress, 0), 1);
+  const strokeDashoffset = CIRCLE_CIRCUMFERENCE * (1 - clampedProgress);
+
+  return (
+    <div className={styles.circularProgressContainer}>
+      <svg width={CIRCLE_SIZE} height={CIRCLE_SIZE} viewBox={`0 0 ${CIRCLE_SIZE} ${CIRCLE_SIZE}`}>
+        <circle
+          cx={CIRCLE_SIZE / 2}
+          cy={CIRCLE_SIZE / 2}
+          r={CIRCLE_RADIUS}
+          stroke="#e5e7eb"
+          strokeWidth={8}
+          fill="none"
+        />
+        <circle
+          cx={CIRCLE_SIZE / 2}
+          cy={CIRCLE_SIZE / 2}
+          r={CIRCLE_RADIUS}
+          stroke="#667eea"
+          strokeWidth={8}
+          fill="none"
+          strokeDasharray={CIRCLE_CIRCUMFERENCE}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          transform={`rotate(-90, ${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2})`}
+        />
+        <text
+          x={CIRCLE_SIZE / 2}
+          y={CIRCLE_SIZE / 2 - 6}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="24"
+          fontWeight="bold"
+          fill="#1f2937"
+        >
+          {level}
+        </text>
+        <text
+          x={CIRCLE_SIZE / 2}
+          y={CIRCLE_SIZE / 2 + 16}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="10"
+          fill="#6b7280"
+        >
+          УРОВЕНЬ
+        </text>
+      </svg>
+      <div className={styles.expInfoContainer}>
+        <span className={styles.expValue}>{experience}</span>
+        <span className={styles.expSeparator}>/</span>
+        <span className={styles.expTotal}>{nextLevelExp}</span>
+        <span className={styles.expLabel}>XP</span>
+      </div>
+    </div>
+  );
+};
+
 const DIFFICULTIES: Record<string, { label: string; color: string }> = {
   easy: { label: "Легкий", color: "#4caf50" },
   medium: { label: "Средний", color: "#ff9800" },
@@ -79,7 +152,7 @@ const StudentProfilePage = () => {
       try {
         const [tasksData, levelData] = await Promise.all([
           CodingTasksService.getAllTasks(),
-          CodingTasksService.getStudentLevel().catch(() => null),
+          CodingTasksService.getStudentLevelByAuditoryId(auditoryId).catch(() => null),
         ]);
         setAllTasks(tasksData);
         setStudentLevel(levelData);
@@ -136,15 +209,25 @@ const StudentProfilePage = () => {
 
   const handleScroll = (direction: "prev" | "next") => {
     if (!certSliderRef.current) return;
-    const scrollAmount = 320;
-    certSliderRef.current.scrollBy({
-      left: direction === "next" ? scrollAmount : -scrollAmount,
-      behavior: "smooth",
-    });
+    const newIndex = direction === "next" ? activeCertIndex + 1 : activeCertIndex - 1;
+    if (newIndex >= 0 && newIndex < certificates.length) {
+      setActiveCertIndex(newIndex);
+      const scrollAmount = 300;
+      certSliderRef.current.scrollBy({
+        left: direction === "next" ? scrollAmount : -scrollAmount,
+        behavior: "smooth",
+      });
+    }
   };
 
   const solvedTasks = getSolvedTasks();
   const displayTasks = showAllTasks ? solvedTasks : solvedTasks.slice(0, 5);
+
+  const getRequiredExp = (level: number) => Math.pow(10, level - 1);
+  const currentLevel = studentLevel?.level || 1;
+  const currentExp = studentLevel?.experience || 0;
+  const requiredExp = getRequiredExp(currentLevel);
+  const progress = currentExp / requiredExp;
 
   if (loading) {
     return <div className={styles.loading}>Загрузка профиля...</div>;
@@ -213,6 +296,20 @@ const StudentProfilePage = () => {
         </div>
       </div>
 
+      {!tasksLoading && studentLevel && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Прогресс в задачах</h2>
+          <div className={styles.levelSection}>
+            <CircularProgress
+              progress={progress}
+              level={currentLevel}
+              experience={currentExp}
+              nextLevelExp={requiredExp}
+            />
+          </div>
+        </div>
+      )}
+
       <div className={styles.statsContainer}>
         <div className={styles.statItem}>
           <span className={styles.statValue}>{solvedTasks.length}</span>
@@ -249,11 +346,6 @@ const StudentProfilePage = () => {
             <div 
               className={styles.certSlider} 
               ref={certSliderRef}
-              onScroll={(e) => {
-                const scrollLeft = e.currentTarget.scrollLeft;
-                const index = Math.round(scrollLeft / 320);
-                setActiveCertIndex(index);
-              }}
             >
               {certificates.map((cert) => (
                 <div key={cert.id} className={styles.certSlide}>

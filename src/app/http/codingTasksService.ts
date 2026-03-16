@@ -99,4 +99,9 @@ export class CodingTasksService {
     const response = await $apiNoRedirect.get("/coding-tasks/student-level");
     return response.data;
   }
+
+  static async getStudentLevelByAuditoryId(auditoryId: string): Promise<StudentLevel> {
+    const response = await $apiNoRedirect.get(`/coding-tasks/student-level/${auditoryId}`);
+    return response.data;
+  }
 }
