@@ -16,11 +16,20 @@ export interface CertificateResponse {
   updatedAt: string;
 }
 
-export interface CertificateWithStudentInfo extends CertificateResponse {
+export interface CertificateWithStudentInfo {
+  id: string;
+  clientId: string;
+  courseId: string;
+  date: string;
+  url: string;
+  digital: string;
+  isViewed: boolean;
   firstName?: string;
   lastName?: string;
   middleName?: string;
   courseName?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateCertificateRequest {

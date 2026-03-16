@@ -231,14 +231,13 @@ const CertificatesPage = () => {
               <th>Курс</th>
               <th>Дата</th>
               <th>URL</th>
-              <th>Просмотрен</th>
               <th>Действия</th>
             </tr>
           </thead>
           <tbody>
             {certificates.length === 0 ? (
               <tr>
-                <td colSpan={9} className={styles.empty}>
+                <td colSpan={8} className={styles.empty}>
                   Сертификаты не найдены
                 </td>
               </tr>
@@ -295,10 +294,10 @@ const CertificatesPage = () => {
                     </>
                   ) : (
                     <>
-                      <td>{cert.firstName || "-"}</td>
-                      <td>{cert.lastName || "-"}</td>
-                      <td>{cert.middleName || "-"}</td>
-                      <td>{cert.courseName || "-"}</td>
+                      <td>{cert.firstName}</td>
+                      <td>{cert.lastName}</td>
+                      <td>{cert.middleName}</td>
+                      <td>{cert.courseName}</td>
                       <td>{new Date(cert.date).toLocaleDateString("ru-RU")}</td>
                     </>
                   )}
@@ -310,11 +309,6 @@ const CertificatesPage = () => {
                     ) : (
                       "-"
                     )}
-                  </td>
-                  <td>
-                    <span className={`${styles.status} ${cert.isViewed ? styles.status_viewed : styles.status_notViewed}`}>
-                      {cert.isViewed ? "Да" : "Нет"}
-                    </span>
                   </td>
                   <td className={styles.actions}>
                     {editingId === cert.id ? (
