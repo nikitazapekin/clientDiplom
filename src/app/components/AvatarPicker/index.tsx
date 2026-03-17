@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useRef,useState } from 'react';
+
 import styles from './index.module.scss';
 
 import { ProfileService } from '@/app/http/profile';
@@ -27,12 +28,14 @@ const AvatarPicker: React.FC<AvatarPickerProps> = ({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
 
     try {
       setLoading(true);
 
       const reader = new FileReader();
+
       reader.onload = async (event) => {
         try {
           const base64 = event.target?.result as string;

@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AdminService, type AdminResponse, type AvatarResponse } from "@/app/http/admin";
+
+import styles from "./page.module.scss";
+
+import { type AdminResponse, AdminService, type AvatarResponse } from "@/app/http/admin";
 import { CourseService } from "@/app/http/courses";
 import type { CourseResponse } from "@/app/http/types/course";
-import styles from "./page.module.scss";
 
 const AdminDetailPage = () => {
   const params = useParams();
@@ -27,6 +29,7 @@ const AdminDetailPage = () => {
 
       if (!auditoryId) {
         setError("ID администратора не указан");
+
         return;
       }
 
@@ -37,6 +40,7 @@ const AdminDetailPage = () => {
 
       if (!profileData) {
         setError("Администратор не найден");
+
         return;
       }
 
@@ -53,6 +57,7 @@ const AdminDetailPage = () => {
       try {
         const allCourses = await CourseService.getCourses({ limit: 100 });
         const adminCourses = allCourses.courses.filter(c => c.adminId === profileData.id);
+
         setCourses(adminCourses);
       } catch (coursesErr) {
         console.error("Failed to load courses:", coursesErr);
@@ -82,6 +87,7 @@ const AdminDetailPage = () => {
 
   const formatDateShort = (dateString: string) => {
     const date = new Date(dateString);
+
     return date.toLocaleDateString("ru-RU", {
       day: "numeric",
       month: "short",
@@ -97,6 +103,7 @@ const AdminDetailPage = () => {
     };
     
     const statusInfo = statusMap[status] || statusMap.draft;
+
     return (
       <span className={`${styles.courseStatus} ${statusInfo.className}`}>
         {statusInfo.label}
@@ -111,7 +118,7 @@ const AdminDetailPage = () => {
   if (error) {
     return (
       <div className={styles.errorContainer}>
-        <div className={styles.errorIcon}>⚠️</div>
+     
         <div className={styles.errorText}>{error}</div>
         <button className={styles.retryButton} onClick={loadProfile}>
           Повторить
@@ -237,7 +244,7 @@ const AdminDetailPage = () => {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Курсы администратора</h2>
           <div className={styles.emptyState}>
-            <span className={styles.emptyIcon}>📚</span>
+          
             <span className={styles.emptyText}>У этого администратора пока нет созданных курсов</span>
           </div>
         </div>

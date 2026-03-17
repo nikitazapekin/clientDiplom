@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import styles from "./page.module.scss";
+
 import type { CodeLanguage } from "@/app/http/codeService";
 import {
-  CodingTasksService,
   type CodeTask,
+  CodingTasksService,
 } from "@/app/http/codingTasksService";
-
-import styles from "./page.module.scss";
 
 const DIFFICULTIES: Record<string, { label: string; color: string }> = {
   easy: { label: "Легкий", color: "#4caf50" },
@@ -35,6 +35,7 @@ export default function ProblemsPage() {
   const loadTasks = useCallback(async () => {
     try {
       const data = await CodingTasksService.getAllTasks();
+
       setTasks(data);
     } catch (e) {
       console.error("Failed to load tasks:", e);
@@ -91,6 +92,7 @@ export default function ProblemsPage() {
             </div>
             {filtered.map((task) => {
               const diff = DIFFICULTIES[task.difficulty] || DIFFICULTIES.easy;
+
               return (
                 <div key={task.id} className={styles.tableRow}>
                   <div className={styles.colTitle}>

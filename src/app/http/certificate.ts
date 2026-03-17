@@ -74,17 +74,24 @@ export class CertificateService {
       const queryParams = new URLSearchParams();
 
       if (params.firstName) queryParams.append("firstName", params.firstName);
+
       if (params.lastName) queryParams.append("lastName", params.lastName);
+
       if (params.courseName) queryParams.append("courseName", params.courseName);
+
       if (params.dateFrom) queryParams.append("dateFrom", params.dateFrom);
+
       if (params.dateTo) queryParams.append("dateTo", params.dateTo);
+
       if (params.page) queryParams.append("page", params.page.toString());
+
       if (params.limit) queryParams.append("limit", params.limit.toString());
 
       const queryString = queryParams.toString();
       const url = queryString ? `/certificates/search?${queryString}` : "/certificates/search";
 
       const response = await $api.get(url);
+
       return response.data;
     } catch (error: any) {
       console.error("Search certificates error:", error.response?.data || error.message);
@@ -95,6 +102,7 @@ export class CertificateService {
   static async updateCertificate(id: string, data: UpdateCertificateRequest): Promise<CertificateResponse> {
     try {
       const response = await $api.put(`/certificates/${id}`, data);
+
       return response.data;
     } catch (error: any) {
       console.error("Update certificate error:", error.response?.data || error.message);
@@ -114,6 +122,7 @@ export class CertificateService {
   static async getCertificateById(id: string): Promise<CertificateResponse> {
     try {
       const response = await $api.get(`/certificates/${id}`);
+
       return response.data;
     } catch (error: any) {
       console.error("Get certificate error:", error.response?.data || error.message);
@@ -135,6 +144,7 @@ export class CertificateService {
       );
 
       console.log("✅ Certificate created:", response.data);
+
       return response.data;
     } catch (error: any) {
       console.error("❌ Create certificate error:", error.response?.data || error.message);
@@ -148,6 +158,7 @@ export class CertificateService {
         `/certificates/setIsViewed`,
         { id }
       );
+
       return response.data;
     } catch (error: any) {
       console.error("❌ setIsViewed error:", error.response?.data || error.message);

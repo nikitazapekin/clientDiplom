@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import styles from "./index.module.scss";
 import type { CourseItem } from "./types";
 
-import { AuthService } from "@/app/http/auth";
 import { getBaseUrl } from "@/app/http/api";
+import { AuthService } from "@/app/http/auth";
 
 const getValidImageSrc = (logo: string): string | null => {
   if (!logo || typeof logo !== "string" || !logo.trim()) return null;

@@ -27,6 +27,7 @@ export class ProfileService {
       console.error("Error response data:", error.response?.data);
       
       const responseData = error.response?.data;
+
       if (typeof responseData === 'string' && responseData.includes('<!DOCTYPE')) {
         throw new Error("Server returned HTML instead of JSON - possible redirect or auth error");
       }
@@ -164,9 +165,11 @@ export class ProfileService {
 
       if (existingAvatar) {
         console.log('Updating existing avatar with ID:', existingAvatar.id);
+
         return await this.updateAvatarByAuditoryIdBase64(auditoryId, base64Image, mimeType);
       } else {
         console.log('Creating new avatar');
+
         return await this.createAvatarBase64(auditoryId, base64Image, mimeType);
       }
     } catch (error: any) {

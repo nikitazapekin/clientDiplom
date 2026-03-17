@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { StudentsService, StudentResponse } from "@/app/http/students";
+
 import styles from "./page.module.scss";
+
+import type { StudentResponse} from "@/app/http/students";
+import {StudentsService } from "@/app/http/students";
 
 const StudentsPage = () => {
   const router = useRouter();
@@ -25,6 +28,7 @@ const StudentsPage = () => {
         limit,
         search: search || searchQuery,
       });
+
       setStudents(response.students);
       setTotal(response.total);
       setTotalPages(response.totalPages);

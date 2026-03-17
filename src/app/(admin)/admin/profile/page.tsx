@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminService, type AdminResponse, type AvatarResponse } from "@/app/http/admin";
+
+import styles from "./page.module.scss";
+
+import { type AdminResponse, AdminService, type AvatarResponse } from "@/app/http/admin";
 import { CourseService } from "@/app/http/courses";
 import type { CourseResponse } from "@/app/http/types/course";
-import styles from "./page.module.scss";
 
 const AdminProfilePage = () => {
   const router = useRouter();
@@ -29,6 +31,7 @@ const AdminProfilePage = () => {
       
       if (!auditoryId) {
         setError("ID пользователя не найден");
+
         return;
       }
 
@@ -49,6 +52,7 @@ const AdminProfilePage = () => {
       setCoursesLoading(true);
       try {
         const coursesData = await CourseService.getMyCourses();
+
         setCourses(coursesData);
       } catch (coursesErr) {
         console.error("Failed to load courses:", coursesErr);
@@ -60,6 +64,7 @@ const AdminProfilePage = () => {
       try {
         const adminsData = await AdminService.getAdminsList();
         const filtered = adminsData.filter(a => a.auditoryId !== auditoryId);
+
         setOtherAdmins(filtered);
       } catch (adminsErr) {
         console.error("Failed to load admins:", adminsErr);
@@ -89,6 +94,7 @@ const AdminProfilePage = () => {
 
   const formatDateShort = (dateString: string) => {
     const date = new Date(dateString);
+
     return date.toLocaleDateString("ru-RU", {
       day: "numeric",
       month: "short",
@@ -104,6 +110,7 @@ const AdminProfilePage = () => {
     };
     
     const statusInfo = statusMap[status] || statusMap.draft;
+
     return (
       <span className={`${styles.courseStatus} ${statusInfo.className}`}>
         {statusInfo.label}

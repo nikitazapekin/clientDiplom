@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+
+import AvatarPicker from '../AvatarPicker';
+
 import styles from './index.module.scss';
 
-import { ProfileService } from '@/app/http/profile';
-import { CertificateService } from '@/app/http/certificate';
-import type { CertificateResponse } from '@/app/http/certificate';
-import type { FullClientInfo } from '@/app/http/types/profile';
-import { CodingTasksService, type CodeTask, type StudentLevel } from '@/app/http/codingTasksService';
-import AvatarPicker from '../AvatarPicker';
 import { AuthService } from '@/app/http/auth';
+import type { CertificateResponse } from '@/app/http/certificate';
+import { CertificateService } from '@/app/http/certificate';
+import { type CodeTask, CodingTasksService, type StudentLevel } from '@/app/http/codingTasksService';
+import { ProfileService } from '@/app/http/profile';
+import type { FullClientInfo } from '@/app/http/types/profile';
 
 // Цвета для сложности задач
 const DIFFICULTIES: Record<string, { label: string; color: string }> = {
@@ -120,8 +122,11 @@ const SolvedTaskCard = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return 'Сегодня';
+
     if (diffDays === 1) return 'Вчера';
+
     if (diffDays < 7) return `${diffDays} дн. назад`;
+
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   };
 
@@ -179,6 +184,7 @@ const SolvedTasksPreview = ({
 
       {recentSolved.map((solved) => {
         const task = allTasks.find((t) => t.id === solved.codeTaskId);
+
         if (!task) return null;
 
         return (
@@ -233,6 +239,7 @@ const AllSolvedTasksModal = ({
           ) : (
             sortedTasks.map((item) => {
               const task = allTasks.find((t) => t.id === item.codeTaskId);
+
               if (!task) return null;
 
               return (
@@ -270,6 +277,7 @@ const AvatarPickerModal = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
       onUpload(file);
     }
@@ -331,6 +339,7 @@ const UserProfile: React.FC = () => {
 
       if (!userId) {
         setError('User not authenticated');
+
         return;
       }
 
@@ -352,6 +361,7 @@ const UserProfile: React.FC = () => {
       setCertificatesLoading(true);
       try {
         const certs = await CertificateService.getCertificatesByAuditoryId(userId);
+
         setCertificates(certs);
       } catch (certErr) {
         console.error('Failed to load certificates:', certErr);
@@ -366,6 +376,7 @@ const UserProfile: React.FC = () => {
           CodingTasksService.getAllTasks(),
           CodingTasksService.getStudentLevel().catch(() => null),
         ]);
+
         setCodingTasks(tasksData);
         setStudentLevel(levelData);
       } catch (codingErr) {
@@ -418,9 +429,11 @@ const UserProfile: React.FC = () => {
     setUploadingAvatar(true);
     try {
       const userId = AuthService.getCurrentUser().userId;
+
       if (!userId) throw new Error('User not authenticated');
 
       const reader = new FileReader();
+
       reader.onload = async (e) => {
         try {
           const base64 = e.target?.result as string;

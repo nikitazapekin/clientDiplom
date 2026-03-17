@@ -190,6 +190,19 @@
   margin: 4px 0 0;
 }
 
+.codeBlock {
+  background: $color-gray-900;
+  color: $color-white;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: $font-secondary;
+  font-size: 12px;
+  overflow-x: auto;
+  margin: 8px 0 12px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
 .levelBox {
   background: $color-white;
   border-radius: 12px;

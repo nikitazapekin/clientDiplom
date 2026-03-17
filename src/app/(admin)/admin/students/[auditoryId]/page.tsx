@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useRef,useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ProfileService } from "@/app/http/profile";
-import { CertificateService, type CertificateResponse } from "@/app/http/certificate";
-import { CodingTasksService, type CodeTask, type StudentLevel } from "@/app/http/codingTasksService";
-import type { FullClientInfo } from "@/app/http/types/profile";
+
 import styles from "./page.module.scss";
+
+import { type CertificateResponse,CertificateService } from "@/app/http/certificate";
+import { type CodeTask, CodingTasksService, type StudentLevel } from "@/app/http/codingTasksService";
+import { ProfileService } from "@/app/http/profile";
+import type { FullClientInfo } from "@/app/http/types/profile";
 
 const CIRCLE_SIZE = 140;
 const CIRCLE_RADIUS = (CIRCLE_SIZE - 16) / 2;
@@ -125,6 +127,7 @@ const StudentProfilePage = () => {
 
       if (!auditoryId) {
         setError("ID студента не указан");
+
         return;
       }
 
@@ -141,6 +144,7 @@ const StudentProfilePage = () => {
       setCertificatesLoading(true);
       try {
         const certs = await CertificateService.getCertificatesByAuditoryId(auditoryId);
+
         setCertificates(certs);
       } catch (certErr) {
         console.error("Failed to load certificates:", certErr);
@@ -154,6 +158,7 @@ const StudentProfilePage = () => {
           CodingTasksService.getAllTasks(),
           CodingTasksService.getStudentLevelByAuditoryId(auditoryId).catch(() => null),
         ]);
+
         setAllTasks(tasksData);
         setStudentLevel(levelData);
       } catch (tasksErr) {
@@ -178,9 +183,11 @@ const StudentProfilePage = () => {
 
   const getSolvedTasks = () => {
     if (!studentLevel?.solvedTasks) return [];
+
     return studentLevel.solvedTasks
       .map((solved) => {
         const task = allTasks.find((t) => t.id === solved.codeTaskId);
+
         return task ? { ...task, solvedAt: solved.solvedAt } : null;
       })
       .filter(Boolean)
@@ -202,17 +209,23 @@ const StudentProfilePage = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "Сегодня";
+
     if (diffDays === 1) return "Вчера";
+
     if (diffDays < 7) return `${diffDays} дн. назад`;
+
     return date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
   };
 
   const handleScroll = (direction: "prev" | "next") => {
     if (!certSliderRef.current) return;
+
     const newIndex = direction === "next" ? activeCertIndex + 1 : activeCertIndex - 1;
+
     if (newIndex >= 0 && newIndex < certificates.length) {
       setActiveCertIndex(newIndex);
       const scrollAmount = 300;
+
       certSliderRef.current.scrollBy({
         left: direction === "next" ? scrollAmount : -scrollAmount,
         behavior: "smooth",
@@ -438,6 +451,7 @@ const StudentProfilePage = () => {
           <div className={styles.tasksList}>
             {displayTasks.map((task: any) => {
               const diffInfo = DIFFICULTIES[task.difficulty] || DIFFICULTIES.easy;
+
               return (
                 <div key={task.id} className={styles.taskCard}>
                   <div className={styles.taskHeader}>

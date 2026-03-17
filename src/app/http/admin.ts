@@ -27,6 +27,7 @@ export class AdminService {
   static async getAdminsList(): Promise<AdminResponse[]> {
     try {
       const response = await $api.get("/students/admins-list");
+
       return response.data;
     } catch (error: any) {
       console.error("Get admins list error:", error.response?.data || error.message);
@@ -37,6 +38,7 @@ export class AdminService {
   static async getAdminByAuditoryId(auditoryId: string): Promise<AdminResponse> {
     try {
       const response = await $api.get(`/students/auditory/${auditoryId}/admin`);
+
       return response.data;
     } catch (error: any) {
       console.error("Get admin by auditoryId error:", error.response?.data || error.message);
@@ -48,15 +50,19 @@ export class AdminService {
     try {
       const response = await $api.get(`/profile/avatar/user/${auditoryId}`);
       const data = response.data;
+
       if (data && data.imageData && !data.imageUrl) {
         data.imageUrl = `data:${data.mimeType};base64,${data.imageData}`;
       }
+
       return data;
     } catch (error: any) {
       if (error.response?.status === 404) {
         return null;
       }
+
       console.error("Get avatar error:", error.response?.data || error.message);
+
       return null;
     }
   }

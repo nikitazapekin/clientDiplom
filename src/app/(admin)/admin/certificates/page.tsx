@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CertificateService, CertificateResponse, CertificateSearchParams } from "@/app/http/certificate";
+
 import styles from "./page.module.scss";
+
+import type { CertificateResponse, CertificateSearchParams} from "@/app/http/certificate";
+import {CertificateService } from "@/app/http/certificate";
 
 const CertificatesPage = () => {
   const [certificates, setCertificates] = useState<CertificateResponse[]>([]);
@@ -44,6 +47,7 @@ const CertificatesPage = () => {
         ...params,
       };
       const response = await CertificateService.searchCertificates(searchParams);
+
       setCertificates(response.certificates);
       setTotal(response.total);
       setTotalPages(response.totalPages);
@@ -92,6 +96,7 @@ const CertificatesPage = () => {
 
   const handleSaveEdit = async () => {
     if (!editingId) return;
+
     try {
       await CertificateService.updateCertificate(editingId, {
         firstName: editData.firstName,

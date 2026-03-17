@@ -3,24 +3,49 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+import styles from "./page.module.scss";
+
 import Button from "@/app/components/Button";
 import CodeEditor from "@/app/components/CodeEditor";
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";
 import {
-  CodingTasksService,
-  type CodeTask,
-  type SubmitSolutionResult,
-  type StudentLevel,
   type CodeConstraint,
+  type CodeTask,
+  CodingTasksService,
+  type StudentLevel,
+  type SubmitSolutionResult,
 } from "@/app/http/codingTasksService";
-
-import styles from "./page.module.scss";
 
 const DIFF_COLORS: Record<string, string> = {
   easy: "#4caf50",
   medium: "#ff9800",
   hard: "#f44336",
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  int: "число (int)",
+  string: "строка (string)",
+  number: "число (number)",
+  double: "число с плавающей точкой (double)",
+  float: "число с плавающей точкой (float)",
+  long: "длинное число (long)",
+  boolean: "логическое значение (boolean)",
+  char: "символ (char)",
+  byte: "байт (byte)",
+  short: "короткое число (short)",
+  array: "массив",
+  list: "список",
+  map: "словарь (map)",
+  object: "объект",
+  void: "без возвращаемого значения",
+  array_int: "массив чисел (int[])",
+  array_string: "массив строк (String[])",
+  array_double: "массив чисел (double[])",
+  array_float: "массив чисел (float[])",
+  array_long: "массив длинных чисел (long[])",
+  array_boolean: "массив логических значений (boolean[])",
+  array_char: "массив символов (char[])",
 };
 
 const DIFF_LABELS: Record<string, string> = {
@@ -49,6 +74,233 @@ type CodeConstraintType =
   | "memoryLimit"
   | "requiredKeywords";
 
+interface TestCaseArgument {
+  index: number;
+  value: string;
+  objectValues?: Record<string, string>;
+}
+
+interface TestCase {
+  input: string;
+  expectedOutput: string;
+  args?: TestCaseArgument[];
+}
+
+interface ArgumentSchema {
+  name: string;
+  type: string;
+  className?: string;
+  arrayElementType?: string;
+  objectFields?: { name: string; type: string; value: string }[];
+  arrayElementObjectFields?: { name: string; type: string; value: string }[];
+  arrayElementClassName?: string;
+}
+
+// Функция для форматирования аргументов для Java и C# (как в EditLesson)
+const formatArgsForJavaOrCSharp = (
+  testCaseArgs: TestCaseArgument[] | undefined,
+  argumentScheme: ArgumentSchema[],
+  language: string
+): string => {
+  if (!testCaseArgs || !argumentScheme) return "";
+
+  const cleanValue = (val: string) => {
+    if ((val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))) {
+      return val.slice(1, -1);
+    }
+    return val;
+  };
+
+  const args = testCaseArgs.map((arg, idx) => {
+    const scheme = argumentScheme[idx];
+    if (!scheme) return null;
+
+    const cleanVal = cleanValue(arg.value);
+
+    if (scheme.type === "string") {
+      return `"${cleanVal}"`;
+    }
+    if (scheme.type === "char") {
+      return `'${cleanVal}'`;
+    }
+    if (scheme.type === "boolean") {
+      return cleanVal.toLowerCase() === "true" ? "true" : "false";
+    }
+    if (scheme.type === "object" && scheme.objectFields) {
+      const objValues = arg.objectValues ?? {};
+      const fields = scheme.objectFields.map(f => {
+        const val = cleanValue(objValues[f.name] ?? "");
+        if (f.type === "string") {
+          return `"${val}"`;
+        } else if (f.type === "boolean") {
+          return val.toLowerCase() === "true" ? "true" : "false";
+        } else if (f.type === "double" || f.type === "float") {
+          return val;
+        } else if (f.type === "char") {
+          return `'${val}'`;
+        } else {
+          return val;
+        }
+      });
+
+      if (language === "java") {
+        const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+        return `new ${className}(${fields.join(", ")})`;
+      } else if (language === "csharp") {
+        const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+        return `new ${className}(${fields.join(", ")})`;
+      }
+      return `{${fields.join(", ")}}`;
+    }
+    if (scheme.type && scheme.type.startsWith("array_")) {
+      const elementType = scheme.type.replace("array_", "");
+      const typeToUse = elementType === "string" ? "String" : elementType;
+
+      if (arg.value && arg.value.trim().startsWith("[")) {
+        try {
+          const arr = JSON.parse(arg.value);
+          if (Array.isArray(arr)) {
+            const formatted = arr.map((item: any) => {
+              if (elementType === "string") return `"${item}"`;
+              if (elementType === "boolean") return item ? "true" : "false";
+              return String(item);
+            });
+            if (language === "java") {
+              return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
+            }
+            return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
+          }
+        } catch {}
+      }
+      if (arg.objectValues && Object.keys(arg.objectValues).length > 0) {
+        const elements = Object.values(arg.objectValues).map((val: any) => {
+          if (elementType === "string") return `"${val}"`;
+          if (elementType === "boolean") return val.toLowerCase() === "true" ? "true" : "false";
+          return String(val);
+        });
+        if (language === "java") {
+          return `new ${typeToUse}[] { ${elements.join(", ")} }`;
+        }
+        return `new ${typeToUse}[] { ${elements.join(", ")} }`;
+      }
+      return `new ${typeToUse}[0]`;
+    }
+    if (scheme.type === "array" || scheme.type === "list") {
+      const arrayElementType = scheme.arrayElementType ?? "int";
+      if (scheme.arrayElementObjectFields) {
+        const arrayObjValues = arg.objectValues ?? {};
+        const elements = Object.entries(arrayObjValues).map(([key, val]) => {
+          const objFields = scheme.arrayElementObjectFields!;
+          const valObj = typeof val === "object" ? val as Record<string, string> : {};
+          const fields = objFields.map(f => {
+            const fieldVal = cleanValue(valObj?.[f.name] ?? "");
+            if (f.type === "string") {
+              return `"${fieldVal}"`;
+            } else if (f.type === "boolean") {
+              return fieldVal.toLowerCase() === "true" ? "true" : "false";
+            } else if (f.type === "double" || f.type === "float") {
+              return fieldVal;
+            } else if (f.type === "char") {
+              return `'${fieldVal}'`;
+            } else {
+              return fieldVal;
+            }
+          });
+
+          const elemClassName = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+
+          if (language === "java") {
+            return `new ${elemClassName}(${fields.join(", ")})`;
+          }
+          const csharpFields = objFields.map(f => {
+            const fieldVal = cleanValue(valObj?.[f.name] ?? "");
+            if (f.type === "string") {
+              return `"${fieldVal}"`;
+            } else if (f.type === "boolean") {
+              return fieldVal.toLowerCase() === "true" ? "true" : "false";
+            } else {
+              return fieldVal;
+            }
+          });
+          return `new ${elemClassName}(${csharpFields.join(", ")})`;
+        });
+        const arrClassName = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+        return `new ${arrClassName}[] { ${elements.join(", ")} }`;
+      }
+
+      if (arg.value && arg.value.trim().startsWith("[")) {
+        try {
+          const arr = JSON.parse(arg.value);
+          if (Array.isArray(arr)) {
+            const formatted = arr.map(item => {
+              if (arrayElementType === "string") return `"${item}"`;
+              if (arrayElementType === "boolean") return item ? "true" : "false";
+              return String(item);
+            });
+            return `new ${arrayElementType}[] { ${formatted.join(", ")} }`;
+          }
+        } catch {}
+      }
+      return `new ${arrayElementType}[0]`;
+    }
+
+    return arg.value;
+  }).filter(a => a !== null).join(", ");
+
+  return args;
+};
+
+// Функция для форматирования аргументов для динамических языков (JS, Python)
+const formatArgsForDynamicLang = (
+  testCaseArgs: TestCaseArgument[] | undefined,
+  argumentScheme: ArgumentSchema[],
+  language: string
+): string => {
+  if (!testCaseArgs || !argumentScheme) return "";
+
+  return testCaseArgs.map((arg, idx) => {
+    const scheme = argumentScheme[idx];
+    if (!scheme) return arg.value;
+
+    if (scheme.type === "string") {
+      return `"${arg.value}"`;
+    }
+    if (scheme.type === "object" && arg.objectValues) {
+      return JSON.stringify(arg.objectValues);
+    }
+    if ((scheme.type === "array" || scheme.type === "list") && arg.value) {
+      try {
+        return JSON.stringify(JSON.parse(arg.value));
+      } catch {
+        return arg.value;
+      }
+    }
+
+    return arg.value;
+  }).join(", ");
+};
+
+// Функция для получения отображаемого ввода тест-кейса (как в EditLesson)
+const getDisplayInput = (
+  testCase: TestCase,
+  argumentScheme: ArgumentSchema[] | undefined,
+  language: string
+): string => {
+  if (!testCase) return "";
+
+  if (testCase.args && testCase.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
+    if (language === "java" || language === "csharp") {
+      return formatArgsForJavaOrCSharp(testCase.args, argumentScheme, language);
+    }
+    if (language === "javascript" || language === "python") {
+      return formatArgsForDynamicLang(testCase.args, argumentScheme, language);
+    }
+  }
+
+  return testCase.input ?? "";
+};
+
 // Интерфейс для результата проверки ограничений
 interface ConstraintCheckResult {
   passed: boolean;
@@ -65,22 +317,27 @@ const extractFunctionName = (code: string, lang: CodeLanguage): string | null =>
         const jsMatch = code.match(
           /function\s+(\w+)|const\s+(\w+)\s*=\s*\([^)]*\)\s*=>|let\s+(\w+)\s*=\s*\([^)]*\)\s*=>|var\s+(\w+)\s*=\s*\([^)]*\)\s*=>/
         );
+
         return jsMatch ? jsMatch[1] || jsMatch[2] || jsMatch[3] || jsMatch[4] : null;
 
       case "python":
         const pyMatch = code.match(/def\s+(\w+)\s*\(/);
+
         return pyMatch ? pyMatch[1] : null;
 
       case "golang":
         const goMatch = code.match(/func\s+(\w+)\s*\(/);
+
         return goMatch ? goMatch[1] : null;
 
       case "csharp":
         const csMatch = code.match(/public\s+static\s+[\w<>\[\]]+\s+(\w+)\s*\([^)]*\)/);
+
         return csMatch ? csMatch[1] : null;
 
       case "java":
         const javaMatch = code.match(/public\s+static\s+[\w<>\[\]]+\s+(\w+)\s*\([^)]*\)/);
+
         return javaMatch ? javaMatch[1] : null;
 
       default:
@@ -88,6 +345,7 @@ const extractFunctionName = (code: string, lang: CodeLanguage): string | null =>
     }
   } catch (e) {
     console.error("Error extracting function name:", e);
+
     return null;
   }
 };
@@ -138,9 +396,11 @@ const parseArguments = (input: string): any[] => {
       current += char;
     } else if (char === "," && !inString && braceCount === 0 && bracketCount === 0) {
       const trimmed = current.trim();
+
       if (trimmed) {
         args.push(parseValue(trimmed));
       }
+
       current = "";
     } else {
       current += char;
@@ -168,8 +428,11 @@ const parseValue = (value: string): any => {
   }
 
   if (value === "true") return true;
+
   if (value === "false") return false;
+
   if (value === "null") return null;
+
   if (value === "undefined") return undefined;
 
   if (
@@ -197,9 +460,11 @@ const formatArgumentsForCode = (args: any[]): string => {
       if (typeof arg === "string") {
         return `"${arg}"`;
       }
+
       if (typeof arg === "object") {
         return JSON.stringify(arg);
       }
+
       return String(arg);
     })
     .join(", ");
@@ -208,15 +473,24 @@ const formatArgumentsForCode = (args: any[]): string => {
 // Улучшенная функция для Java с поддержкой нескольких тест-кейсов и логов
 const buildJavaTestSuite = (
   userCode: string,
-  testCases: { input: string; expectedOutput: string }[],
-  funcName: string | null
+  testCases: { input: string; expectedOutput: string; args?: TestCaseArgument[] }[],
+  funcName: string | null,
+  argumentScheme?: ArgumentSchema[]
 ): string => {
   if (!funcName) return userCode;
 
   const testCasesCode = testCases
     .map((tc, index) => {
-      const args = parseArguments(tc.input);
-      const argsStr = formatArgumentsForCode(args);
+      let argsStr = "";
+
+      // Если есть args и argumentScheme, используем их для Java
+      if (tc.args && tc.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
+        argsStr = formatArgsForJavaOrCSharp(tc.args, argumentScheme, "java");
+      } else if (tc.input) {
+        // Иначе парсим input
+        const args = parseArguments(tc.input);
+        argsStr = formatArgumentsForCode(args);
+      }
 
       return `
         // Тест ${index + 1}
@@ -282,6 +556,7 @@ ${testCasesCode}
     );
   } else {
     const codeWithoutLastBrace = userCode.trim().replace(/\}\s*$/, "");
+
     return `${codeWithoutLastBrace}
 
     public static void main(String[] args) {
@@ -294,16 +569,25 @@ ${testCasesCode}
 // Функция для построения C# тестов
 const buildCSharpTestSuite = (
   userCode: string,
-  testCases: { input: string; expectedOutput: string }[],
-  funcName: string | null
+  testCases: { input: string; expectedOutput: string; args?: TestCaseArgument[] }[],
+  funcName: string | null,
+  argumentScheme?: ArgumentSchema[]
 ): string => {
   if (!funcName) return userCode;
 
   const testCasesCode = testCases
     .map((tc, index) => {
       const testNum = index + 1;
-      const args = parseArguments(tc.input);
-      const argsStr = formatArgumentsForCode(args);
+      let argsStr = "";
+
+      // Если есть args и argumentScheme, используем их для C#
+      if (tc.args && tc.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
+        argsStr = formatArgsForJavaOrCSharp(tc.args, argumentScheme, "csharp");
+      } else if (tc.input) {
+        // Иначе парсим input
+        const args = parseArguments(tc.input);
+        argsStr = formatArgumentsForCode(args);
+      }
 
       return `
         // Тест ${testNum}
@@ -410,14 +694,17 @@ const parseTestOutput = (output: string, testNum: number): { logs: string[], res
       inLogs = true;
       continue;
     }
+
     if (line.includes(`===LOGS_END_${testNum}===`) || line.includes(`===LOGS_END===`)) {
       inLogs = false;
       continue;
     }
+
     if (line.includes(`===RESULT_START_${testNum}===`) || line.includes(`===RESULT_START===`)) {
       inResult = true;
       continue;
     }
+
     if (line.includes(`===RESULT_END_${testNum}===`) || line.includes(`===RESULT_END===`)) {
       inResult = false;
       continue;
@@ -426,12 +713,134 @@ const parseTestOutput = (output: string, testNum: number): { logs: string[], res
     if (inLogs) {
       logs.push(line);
     }
+
     if (inResult) {
       result += line + '\n';
     }
   }
 
   return { logs, result: result.trim() };
+};
+
+// Вспомогательные функции для работы с типами
+const getTypeString = (type: string, language: string): string => {
+  const typeMap: Record<string, Record<string, string>> = {
+    int: { javascript: "", python: "int", csharp: "int", java: "int", golang: "int", cpp: "int" },
+    string: { javascript: "", python: "str", csharp: "string", java: "String", golang: "string", cpp: "string" },
+    number: { javascript: "number", python: "float", csharp: "double", java: "double", golang: "float64", cpp: "double" },
+    boolean: { javascript: "", python: "bool", csharp: "bool", java: "boolean", golang: "bool", cpp: "bool" },
+    double: { javascript: "", python: "float", csharp: "double", java: "double", golang: "float64", cpp: "double" },
+    float: { javascript: "", python: "float", csharp: "float", java: "float", golang: "float32", cpp: "float" },
+    long: { javascript: "", python: "int", csharp: "long", java: "long", golang: "int64", cpp: "long" },
+    char: { javascript: "", python: "str", csharp: "char", java: "char", golang: "rune", cpp: "char" },
+    byte: { javascript: "", python: "bytes", csharp: "byte", java: "byte", golang: "byte", cpp: "byte" },
+    short: { javascript: "", python: "int", csharp: "short", java: "short", golang: "int16", cpp: "short" },
+    object: { javascript: "", python: "", csharp: "object", java: "Object", golang: "interface{}", cpp: "object" },
+    array: { javascript: "", python: "list", csharp: "object", java: "int[]", golang: "[]int", cpp: "vector" },
+    array_int: { javascript: "", python: "list", csharp: "int[]", java: "int[]", golang: "[]int", cpp: "vector" },
+    array_string: { javascript: "", python: "list", csharp: "string[]", java: "String[]", golang: "[]string", cpp: "vector" },
+    array_double: { javascript: "", python: "list", csharp: "double[]", java: "double[]", golang: "[]float64", cpp: "vector" },
+    array_float: { javascript: "", python: "list", csharp: "float[]", java: "float[]", golang: "[]float32", cpp: "vector" },
+    array_long: { javascript: "", python: "list", csharp: "long[]", java: "long[]", golang: "[]int64", cpp: "vector" },
+    array_boolean: { javascript: "", python: "list", csharp: "bool[]", java: "boolean[]", golang: "[]bool", cpp: "vector" },
+    array_char: { javascript: "", python: "list", csharp: "char[]", java: "char[]", golang: "[]rune", cpp: "vector" },
+    list: { javascript: "", python: "list", csharp: "List<object>", java: "List<Object>", golang: "[]interface{}", cpp: "vector" },
+    map: { javascript: "Object", python: "dict", csharp: "Dictionary<string, object>", java: "Map<String, Object>", golang: "map[string]interface{}", cpp: "map" },
+    void: { javascript: "void", python: "None", csharp: "void", java: "void", golang: "", cpp: "void" },
+  };
+  return typeMap[type]?.[language] ?? type;
+};
+
+// Функция для генерации классов объектов (как в EditLesson)
+const generateObjectClasses = (args: ArgumentSchema[], language: string): string => {
+  const objectArgs = args.filter((a) => a.type === "object" && a.objectFields);
+
+  const arrayObjectArgs = args.filter(
+    (a) =>
+      (a.type === "array" || a.type === "list") &&
+      a.arrayElementType === "object" &&
+      a.arrayElementObjectFields
+  );
+
+  const allClasses = [...objectArgs, ...arrayObjectArgs];
+
+  if (allClasses.length === 0) return "";
+
+  return allClasses
+    .map((arg) => {
+      let className: string;
+      const objectFields = arg.objectFields ?? arg.arrayElementObjectFields ?? [];
+
+      if (arg.objectFields) {
+        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+      } else if (arg.arrayElementObjectFields) {
+        className = arg.arrayElementClassName || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+      } else {
+        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+      }
+
+      if (language === "java") {
+        const accessModifier = "private";
+        const fields = objectFields.map((f) => `        ${accessModifier} ${getTypeString(f.type, language)} ${f.name};`).join("\n");
+        const constructorParams = objectFields.map((f) => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
+        const constructorBody = objectFields.map((f) => `this.${f.name} = ${f.name};`).join("\n        ");
+        const constructor = objectFields.length > 0 ?
+          `
+    public ${className}(${constructorParams}) {
+        ${constructorBody}
+    }` : "";
+        const gettersSetters = objectFields
+          .map((f) => {
+            const fieldName = f.name;
+            const fieldType = getTypeString(f.type, language);
+            return `
+    public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
+        return ${fieldName};
+    }
+    public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
+        this.${fieldName} = ${fieldName};
+    }`;
+          })
+          .join("");
+        return `    class ${className} {
+${fields}
+${constructor}
+${gettersSetters}
+    }`;
+      }
+
+      if (language === "csharp") {
+        const fields = objectFields.map((f) => `        public ${getTypeString(f.type, language)} ${f.name};`).join("\n");
+        const constructorParams = objectFields.map((f) => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
+        const constructorBody = objectFields.map((f) => `this.${f.name} = ${f.name};`).join("\n        ");
+        const constructor = objectFields.length > 0 ?
+          `
+    public ${className}(${constructorParams}) {
+        ${constructorBody}
+    }` : "";
+        const gettersSetters = objectFields
+          .map((f) => {
+            const fieldName = f.name;
+            const fieldType = getTypeString(f.type, language);
+            return `
+    public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
+        return ${fieldName};
+    }
+    public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
+        this.${fieldName} = ${fieldName};
+    }`;
+          })
+          .join("");
+        return `public class ${className} {
+${fields.replace(/        /g, "    ")}
+${constructor.replace(/        /g, "    ")}
+${gettersSetters}
+}`;
+      }
+
+      return "";
+    })
+    .join("\n\n");
 };
 
 // Функция для сравнения выводов
@@ -446,6 +855,7 @@ const compareOutputs = (actual: string, expected: string): boolean => {
     // Пробуем распарсить как JSON для сравнения объектов
     const actualObj = JSON.parse(actual);
     const expectedObj = JSON.parse(expected);
+
     return JSON.stringify(actualObj) === JSON.stringify(expectedObj);
   } catch {
     // Если не JSON, сравниваем как строки
@@ -463,20 +873,25 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
     switch (type) {
       case "maxLines":
         const lineCount = code.split('\n').length;
+
         if (lineCount > constraint.value) {
           errors.push(`Превышено максимальное количество строк: ${lineCount} > ${constraint.value}`);
         }
+
         break;
 
       case "forbiddenTokens":
         const forbiddenTokens = constraint.value as string[];
+
         for (const token of forbiddenTokens) {
           // Проверяем наличие запрещенного токена как отдельного слова
           const tokenRegex = new RegExp(`\\b${token}\\b`, 'g');
+
           if (tokenRegex.test(code)) {
             errors.push(`Использование запрещенного токена: "${token}"`);
           }
         }
+
         break;
 
       case "noComments":
@@ -496,6 +911,7 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
             errors.push("Использование комментариев запрещено");
           }
         }
+
         break;
 
       case "noConsoleLog":
@@ -509,14 +925,17 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
             errors.push("Использование вывода в консоль запрещено");
           }
         }
+
         break;
 
       case "maxComplexity":
         // Простая оценка сложности по количеству вложенных циклов/условий
         const complexity = estimateCodeComplexity(code, language);
+
         if (complexity > constraint.value) {
           errors.push(`Превышена максимальная сложность кода: ${complexity} > ${constraint.value}`);
         }
+
         break;
 
       case "memoryLimit":
@@ -531,13 +950,16 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
 
       case "requiredKeywords":
         const requiredKeywords = constraint.value as string[];
+
         for (const keyword of requiredKeywords) {
           // Проверяем наличие обязательного ключевого слова
           const keywordRegex = new RegExp(`\\b${keyword}\\b`, 'g');
+
           if (!keywordRegex.test(code)) {
             errors.push(`Отсутствует обязательное ключевое слово: "${keyword}"`);
           }
         }
+
         break;
     }
   }
@@ -563,6 +985,7 @@ const estimateCodeComplexity = (code: string, language: CodeLanguage): number =>
 
   for (const pattern of loopPatterns) {
     const matches = code.match(pattern);
+
     if (matches) {
       complexity += matches.length;
     }
@@ -578,6 +1001,7 @@ const estimateCodeComplexity = (code: string, language: CodeLanguage): number =>
 
   for (const pattern of conditionPatterns) {
     const matches = code.match(pattern);
+
     if (matches) {
       complexity += matches.length * 0.5;
     }
@@ -670,8 +1094,10 @@ export default function SolveProblemPage() {
         CodingTasksService.getTask(taskId),
         CodingTasksService.getStudentLevel().catch(() => null),
       ]);
+
       setTask(data);
       const firstLang = (data.languages?.[0] || "javascript") as CodeLanguage;
+
       setSelectedLang(firstLang);
       setCode(data.startCodes?.[firstLang] || "");
       setStudentLevel(level);
@@ -690,6 +1116,7 @@ export default function SolveProblemPage() {
   const refreshStudentLevel = async () => {
     try {
       const level = await CodingTasksService.getStudentLevel();
+
       setStudentLevel(level);
     } catch (e) {
       console.error("Failed to refresh student level:", e);
@@ -701,10 +1128,12 @@ export default function SolveProblemPage() {
     if (!task || !task.constraints || task.constraints.length === 0) {
       setConstraintErrors([]);
       setConstraintsPassed(true);
+
       return true;
     }
 
     const result = checkConstraints(code, selectedLang, task.constraints);
+
     setConstraintErrors(result.errors);
     setConstraintsPassed(result.passed);
     
@@ -723,22 +1152,26 @@ export default function SolveProblemPage() {
 
   const handleRun = async () => {
     if (!task) return;
+
     setRunLoading(true);
     setConsoleOutput("");
     try {
       let codeToRun = code;
+      const argumentScheme = (task as any).argumentScheme;
+      const taskTestCases = (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
       
       // Для Java и C# нужно модифицировать код для запуска с тестами
       if (selectedLang === "java" || selectedLang === "csharp") {
         const funcName = extractFunctionName(code, selectedLang);
-        
-        if (funcName && task.testCases && task.testCases.length > 0) {
+
+        if (funcName && taskTestCases.length > 0) {
           // Используем первый тест-кейс для быстрого запуска
-          const firstTestCase = task.testCases[0];
+          const firstTestCase = taskTestCases[0];
+
           if (selectedLang === "java") {
-            codeToRun = buildJavaTestSuite(code, [firstTestCase], funcName);
+            codeToRun = buildJavaTestSuite(code, [firstTestCase], funcName, argumentScheme);
           } else if (selectedLang === "csharp") {
-            codeToRun = buildCSharpTestSuite(code, [firstTestCase], funcName);
+            codeToRun = buildCSharpTestSuite(code, [firstTestCase], funcName, argumentScheme);
           }
         }
       }
@@ -765,6 +1198,12 @@ export default function SolveProblemPage() {
     if (!validateConstraints()) {
       // Если ограничения не пройдены, показываем ошибки и не отправляем на сервер
       setResult(null);
+
+      // Показываемalert с информацией об ограничениях
+      if (constraintErrors.length > 0) {
+        alert(`Ограничения не пройдены:\n\n${constraintErrors.join("\n")}\n\nИсправьте код и попробуйте снова.`);
+      }
+
       return;
     }
     
@@ -783,13 +1222,17 @@ export default function SolveProblemPage() {
         if (!funcName) {
           alert(`Не удалось найти имя функции в коде. Убедитесь, что функция определена правильно для ${selectedLang === "java" ? "Java" : "C#"}.`);
           setSubmitLoading(false);
+
           return;
         }
 
+        const argumentScheme = (task as any).argumentScheme;
+        const taskTestCases = (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
+
         if (selectedLang === "java") {
-          codeToSubmit = buildJavaTestSuite(code, task.testCases || [], funcName);
+          codeToSubmit = buildJavaTestSuite(code, taskTestCases, funcName, argumentScheme);
         } else if (selectedLang === "csharp") {
-          codeToSubmit = buildCSharpTestSuite(code, task.testCases || [], funcName);
+          codeToSubmit = buildCSharpTestSuite(code, taskTestCases, funcName, argumentScheme);
         }
       }
 
@@ -797,6 +1240,7 @@ export default function SolveProblemPage() {
 
       // Для Java и C# нужно получить вывод из ответа сервера
       const responseOutput = (res as any).output || (res as any).message || '';
+
       setRawOutput(responseOutput);
 
       // Если результат пришел, но нужно обработать вывод для Java/C#
@@ -819,9 +1263,19 @@ export default function SolveProblemPage() {
           });
         }
 
-        // Обновляем результаты
+        // Обновляем результаты с учётом ограничений от сервера
         res.results = parsedResults;
-        res.allPassed = parsedResults.every(r => r.passed);
+        const serverConstraintsPassed = (res as any).constraintsPassed ?? constraintsPassed;
+        const serverConstraintErrors = (res as any).constraintErrors ?? constraintErrors;
+        
+        // Обновляем allPassed с учётом ограничений
+        res.allPassed = parsedResults.every(r => r.passed) && serverConstraintsPassed;
+        
+        // Обновляем ошибки ограничений из сервера если есть
+        if (serverConstraintErrors && serverConstraintErrors.length > 0) {
+          setConstraintErrors(serverConstraintErrors);
+          setConstraintsPassed(serverConstraintsPassed);
+        }
       }
 
       setResult(res);
@@ -830,8 +1284,14 @@ export default function SolveProblemPage() {
       await refreshStudentLevel();
 
       // Показываем модальное окно, если все тесты пройдены И все ограничения соблюдены
-      if (res.allPassed && res.experienceGained > 0 && constraintsPassed) {
+      // Используем значение от сервера если доступно
+      const finalConstraintsPassed = (res as any).constraintsPassed ?? constraintsPassed;
+
+      if (res.allPassed && res.experienceGained > 0 && finalConstraintsPassed) {
         setShowSuccessModal(true);
+      } else if ((res as any).constraintErrors && (res as any).constraintErrors.length > 0) {
+        // Показываем ошибки ограничений от сервера
+        setConstraintErrors((res as any).constraintErrors);
       }
     } catch (e: any) {
       console.error("Submit error:", e);
@@ -880,6 +1340,45 @@ export default function SolveProblemPage() {
             <p>{task.description}</p>
           </div>
 
+          {(task as any).argumentScheme && (task as any).argumentScheme.length > 0 && (
+            <div className={styles.constraintsBox}>
+              <h3>Аргументы функции</h3>
+              {(task as any).argumentScheme.map((arg: ArgumentSchema, i: number) => (
+                <div key={i} className={styles.constraintItem}>
+                  <strong>{arg.name}</strong>: {TYPE_LABELS[arg.type] || arg.type}
+                  {arg.objectFields && arg.objectFields.length > 0 && (
+                    <ul style={{ marginLeft: "20px", marginTop: "5px" }}>
+                      {arg.objectFields.map((field: any, fi: number) => (
+                        <li key={fi}>
+                          {field.name}: {TYPE_LABELS[field.type] || field.type}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {arg.arrayElementObjectFields && arg.arrayElementObjectFields.length > 0 && (
+                    <ul style={{ marginLeft: "20px", marginTop: "5px" }}>
+                      <li>Массив объектов с полями:</li>
+                      {arg.arrayElementObjectFields.map((field: any, fi: number) => (
+                        <li key={fi}>
+                          {field.name}: {TYPE_LABELS[field.type] || field.type}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(task as any).returnType && (
+            <div className={styles.constraintsBox}>
+              <h3>Возвращаемое значение</h3>
+              <div className={styles.constraintItem}>
+                {TYPE_LABELS[(task as any).returnType] || (task as any).returnType}
+              </div>
+            </div>
+          )}
+
           {task.constraints && task.constraints.length > 0 && (
             <div className={styles.constraintsBox}>
               <h3>Ограничения</h3>
@@ -900,26 +1399,43 @@ export default function SolveProblemPage() {
             </div>
           )}
 
-          {task.testCases && task.testCases.length > 0 && (
+          {(() => {
+            const argScheme = (task as any).argumentScheme;
+            const langTestCases = (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
+
+            if (langTestCases.length === 0) return null;
+
+            // Генерируем классы объектов для Java и C#
+            const objectClassesCode = generateObjectClasses(argScheme || [], selectedLang);
+
+            return (
             <div className={styles.examplesBox}>
+              {objectClassesCode && (selectedLang === "java" || selectedLang === "csharp") && (
+                <>
+                  <h3>Классы объектов</h3>
+                  <pre className={styles.codeBlock}>{objectClassesCode}</pre>
+                </>
+              )}
+
               <h3>Примеры</h3>
-              {task.testCases.slice(0, 2).map((tc, i) => (
+              {langTestCases.slice(0, 2).map((tc: TestCase, i: number) => (
                 <div key={i} className={styles.example}>
                   <div>
-                    <strong>Вход:</strong> <code>{tc.input}</code>
+                    <strong>Вход:</strong> <code>{getDisplayInput(tc, argScheme, selectedLang)}</code>
                   </div>
                   <div>
                     <strong>Выход:</strong> <code>{tc.expectedOutput}</code>
                   </div>
                 </div>
               ))}
-              {task.testCases.length > 2 && (
+              {langTestCases.length > 2 && (
                 <p className={styles.moreTests}>
-                  + ещё {task.testCases.length - 2} скрытых тестов
+                  + ещё {langTestCases.length - 2} скрытых тестов
                 </p>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {studentLevel && (
             <div className={styles.levelBox}>
@@ -1018,7 +1534,7 @@ export default function SolveProblemPage() {
               )}
 
               <div className={styles.testResults}>
-                {result.results.map((r) => (
+                {(result.results || []).map((r) => (
                   <div
                     key={r.index}
                     className={`${styles.testResult} ${
