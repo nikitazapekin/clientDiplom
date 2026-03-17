@@ -9,6 +9,8 @@ import CodeEditor from "../CodeEditor";
 
 import styles from "./index.module.scss";
 import type {
+  ArgumentSchema,
+  ArgumentType,
   CodeConstraintType,
   CodeExampleBlock,
   CodeTaskBlock,
@@ -18,12 +20,9 @@ import type {
   SlideType,
   SourceBlock,
   TableBlock,
+  TestCaseArgument,
   TextBlock,
   TheoryQuestionBlock,
-  ArgumentSchema,
-  ArgumentType,
-  ObjectField,
-  TestCaseArgument,
 } from "./types";
 
 import type { CodeLanguage } from "@/app/http/codeService";
@@ -652,6 +651,7 @@ const getTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
   const typeMap: Record<ArgumentType, Record<CodeLanguage, string>> = {
     int: { javascript: "", python: "int", csharp: "int", java: "int", golang: "int", cpp: "int" },
     string: { javascript: "", python: "str", csharp: "string", java: "String", golang: "string", cpp: "string" },
+    number: { javascript: "number", python: "float", csharp: "double", java: "double", golang: "float64", cpp: "double" },
     boolean: { javascript: "", python: "bool", csharp: "bool", java: "boolean", golang: "bool", cpp: "bool" },
     double: { javascript: "", python: "float", csharp: "double", java: "double", golang: "float64", cpp: "double" },
     float: { javascript: "", python: "float", csharp: "float", java: "float", golang: "float32", cpp: "float" },
@@ -737,52 +737,39 @@ const generateObjectClasses = (args: ArgumentSchema[], language: CodeLanguage): 
 
   return allClasses
     .map((arg) => {
-      // Use custom class name if provided, otherwise capitalize the variable name
-      // For arrays, use arrayElementClassName if provided
       let className: string;
-      let fields: string;
-      
-      if (arg.objectFields) {
-        // Regular object
-        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-        // Для C# нужны public поля для object initializer
-        const accessModifier = language === "csharp" ? "public" : "private";
-        fields = arg.objectFields.map((f) => `        ${accessModifier} ${getTypeString(f.type, language)} ${f.name};`).join("\n");
-      } else if (arg.arrayElementObjectFields) {
-        // Array element object
-        className = arg.arrayElementClassName || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-        const accessModifier = language === "csharp" ? "public" : "private";
-        fields = arg.arrayElementObjectFields.map((f) => `        ${accessModifier} ${getTypeString(f.type, language)} ${f.name};`).join("\n");
-      } else {
-        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-        fields = "";
-      }
-      
       const objectFields = arg.objectFields ?? arg.arrayElementObjectFields ?? [];
       
-      // Generate constructor with parameters
-      const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
-      const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
-      const constructor = objectFields.length > 0 ? `
+      if (arg.objectFields) {
+        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+      } else if (arg.arrayElementObjectFields) {
+        className = arg.arrayElementClassName || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+      } else {
+        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+      }
+
+      if (language === "java") {
+        const accessModifier = "private";
+        const fields = objectFields.map((f) => `        ${accessModifier} ${getTypeString(f.type, language)} ${f.name};`).join("\n");
+        const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
+        const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
+        const constructor = objectFields.length > 0 ? `
     public ${className}(${constructorParams}) {
         ${constructorBody}
     }` : "";
-      
-      const gettersSetters = objectFields
-        .map((f) => {
-          const fieldName = f.name;
-          const fieldType = getTypeString(f.type, language);
-          return `
+        const gettersSetters = objectFields
+          .map((f) => {
+            const fieldName = f.name;
+            const fieldType = getTypeString(f.type, language);
+            return `
     public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
         return ${fieldName};
     }
     public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
         this.${fieldName} = ${fieldName};
     }`;
-        })
-        .join("");
-
-      if (language === "java") {
+          })
+          .join("");
         return `    class ${className} {
 ${fields}
 ${constructor}
@@ -790,11 +777,55 @@ ${gettersSetters}
     }`;
       }
       if (language === "csharp") {
+        const fields = objectFields.map((f) => `        public ${getTypeString(f.type, language)} ${f.name};`).join("\n");
+        const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
+        const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
+        const constructor = objectFields.length > 0 ? `
+    public ${className}(${constructorParams}) {
+        ${constructorBody}
+    }` : "";
+        const gettersSetters = objectFields
+          .map((f) => {
+            const fieldName = f.name;
+            const fieldType = getTypeString(f.type, language);
+            return `
+    public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
+        return ${fieldName};
+    }
+    public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
+        this.${fieldName} = ${fieldName};
+    }`;
+          })
+          .join("");
         return `public class ${className} {
 ${fields.replace(/        /g, "    ")}
 ${constructor.replace(/        /g, "    ")}
 ${gettersSetters}
 }`;
+      }
+      if (language === "javascript") {
+        const constructorParams = objectFields.map(f => f.name).join(", ");
+        const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n    ");
+        const constructor = objectFields.length > 0 ? `
+class ${className} {
+    constructor(${constructorParams}) {
+        ${constructorBody}
+    }
+}` : `
+class ${className} {
+}`;
+        return constructor;
+      }
+      if (language === "python") {
+        const constructorParams = objectFields.map(f => f.name).join(", ");
+        const constructorBody = objectFields.map(f => `self.${f.name} = ${f.name}`).join("\n        ");
+        const constructor = objectFields.length > 0 ? `
+class ${className}:
+    def __init__(self, ${constructorParams}):
+        ${constructorBody}` : `
+class ${className}:
+    pass`;
+        return constructor;
       }
       return "";
     })
@@ -2061,6 +2092,7 @@ function BlockEditor({
     const typedLanguages: CodeLanguage[] = ["java", "csharp", "golang", "cpp"];
     const isTypedLanguage = typedLanguages.includes(block.language);
     const isObjectOrientedLang = block.language === "java" || block.language === "csharp";
+    const hasArgumentScheme = (block.argumentScheme?.length ?? 0) > 0;
 
     const addTestCase = () => {
       const testCases = [...(block.testCases ?? []), { input: "", expectedOutput: "", args: [] }];
@@ -2166,8 +2198,11 @@ function BlockEditor({
       const currentScheme = block.argumentScheme ?? [];
       let newScheme = [...currentScheme];
       
+      // Дефолтный тип зависит от языка
+      const defaultType: ArgumentType = isTypedLanguage ? "int" : "string";
+      
       while (newScheme.length < count) {
-        newScheme.push({ name: `arg${newScheme.length + 1}`, type: "int" });
+        newScheme.push({ name: `arg${newScheme.length + 1}`, type: defaultType });
       }
       while (newScheme.length > count) {
         newScheme.pop();
@@ -2280,24 +2315,36 @@ function BlockEditor({
         const objValues = (block.testCases ?? []).flatMap(tc => tc.args ?? []).find(a => a.index === block.argumentScheme?.indexOf(arg))?.objectValues ?? {};
         const fields = arg.objectFields.map(f => {
           const val = objValues[f.name] ?? f.value ?? "";
-          const fieldTypeStr = getTypeString(f.type, lang);
           if (f.type === "string") {
-            return `${f.name} = "${val}"`;
+            return `${f.name}: "${val}"`;
           } else if (f.type === "boolean") {
-            return `${f.name} = ${val.toLowerCase() === "true" ? "true" : "false"}`;
+            return `${f.name}: ${val.toLowerCase() === "true" ? "true" : "false"}`;
           } else if (f.type === "double" || f.type === "float") {
-            return `${f.name} = ${val}`;
+            return `${f.name}: ${val}`;
           } else {
-            return `${f.name} = ${val}`;
+            return `${f.name}: ${val}`;
           }
         }).join(", ");
         
         if (lang === "java") {
-          return `new ${arg.name.charAt(0).toUpperCase() + arg.name.slice(1)}(${fields})`;
+          return `new ${arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1)}(${fields.replace(/,/g, ", ")})`;
         } else if (lang === "csharp") {
-          return `new ${arg.name.charAt(0).toUpperCase() + arg.name.slice(1)} { ${fields} }`;
+          const csharpFields = arg.objectFields.map(f => {
+            const val = objValues[f.name] ?? f.value ?? "";
+            if (f.type === "string") {
+              return `${f.name} = "${val}"`;
+            } else if (f.type === "boolean") {
+              return `${f.name} = ${val.toLowerCase() === "true" ? "true" : "false"}`;
+            } else if (f.type === "double" || f.type === "float") {
+              return `${f.name} = ${val}`;
+            } else {
+              return `${f.name} = ${val}`;
+            }
+          }).join(", ");
+          return `new ${arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1)} { ${csharpFields} }`;
         }
-        return `{${fields}}`;
+        // Для JS и Python объекты вводятся напрямую как {key: value}
+        return value;
       }
       if (arg.type === "array" || arg.type === "list") {
         return value;
@@ -2314,7 +2361,7 @@ function BlockEditor({
         const scheme = block.argumentScheme?.[idx];
         if (!scheme) return arg.value;
         
-        if (isObjectOrientedLang) {
+        if (hasArgumentScheme) {
           return formatValueForLanguage(scheme, arg.value);
         }
         return arg.value;
@@ -2344,10 +2391,10 @@ function BlockEditor({
 
     const untypedArgumentTypes: { value: ArgumentType; label: string }[] = [
       { value: "string", label: "string (строка)" },
+      { value: "number", label: "number (число)" },
       { value: "boolean", label: "boolean (логический)" },
       { value: "object", label: "object (объект)" },
       { value: "array", label: "array (массив)" },
-      { value: "list", label: "list (список)" },
     ];
 
     const argumentTypes = isTypedLanguage ? typedArgumentTypes : untypedArgumentTypes;
@@ -2498,7 +2545,7 @@ function BlockEditor({
                       ))}
                     </select>
                   </div>
-                      {arg.type === "object" && (
+                      {arg.type === "object" && isTypedLanguage && (
                     <div className={styles.objectFields}>
                       <div className={styles.objectFieldsHeader}>
                         <span>Имя класса:</span>
@@ -2700,14 +2747,14 @@ function BlockEditor({
                     </button>
                   </div>
                   
-                  {isObjectOrientedLang ? (
+                  {hasArgumentScheme ? (
                     <div className={styles.testCaseArgs}>
                       <span style={{fontWeight: "bold", marginBottom: "8px", display: "block"}}>Значения аргументов:</span>
                       {(block.argumentScheme ?? []).map((arg, argIdx) => (
                         <div key={argIdx} className={styles.testCaseArgRow}>
-                          <span style={{minWidth: "80px"}}>{arg.name} ({getTypeStringForLang(arg.type)}):</span>
+                          <span style={{minWidth: "80px"}}>{arg.name}{isTypedLanguage && ` (${getTypeStringForLang(arg.type)})`}:</span>
                           
-                          {arg.type === "object" && arg.objectFields ? (
+                          {arg.type === "object" && arg.objectFields && isTypedLanguage ? (
                             <div className={styles.testCaseObjectFields}>
                               {arg.objectFields.map((field, fieldIdx) => (
                                 <div key={fieldIdx} className={styles.testCaseObjectFieldRow}>
@@ -2715,7 +2762,7 @@ function BlockEditor({
                                   <input
                                     value={tc.args?.[argIdx]?.objectValues?.[field.name] ?? ""}
                                     onChange={(e) => updateTestCaseArgObjectValue(i, argIdx, field.name, e.target.value)}
-                                    placeholder={`значение ${field.type}`}
+                                    placeholder={`значение ${isTypedLanguage ? field.type : ''}`}
                                     className={styles.objectFieldValue}
                                   />
                                 </div>
@@ -2725,7 +2772,7 @@ function BlockEditor({
                             <input
                               value={tc.args?.[argIdx]?.value ?? ""}
                               onChange={(e) => updateTestCaseArgValue(i, argIdx, e.target.value)}
-                              placeholder={`значение ${arg.type}`}
+                              placeholder={arg.type === "object" ? "{key: value}" : (isTypedLanguage ? arg.type : "")}
                               className={styles.argumentValue}
                             />
                           )}
@@ -3280,6 +3327,143 @@ const formatArgsForJavaOrCSharp = (
   return args.join(", ");
 };
 
+// Функция для преобразования аргументов тест-кейса в строку для JavaScript/Python
+const formatArgsForDynamicLang = (
+  testCaseArgs: TestCaseArgument[] | undefined,
+  argumentScheme: ArgumentSchema[],
+  language: CodeLanguage
+): string => {
+  if (!testCaseArgs || !argumentScheme) return "";
+  
+  const cleanValue = (val: string) => {
+    if ((val.startsWith('"') && val.endsWith('"')) || 
+        (val.startsWith("'") && val.endsWith("'"))) {
+      return val.slice(1, -1);
+    }
+    return val;
+  };
+  
+  const args = testCaseArgs.map((arg, idx) => {
+    const scheme = argumentScheme[idx];
+    if (!scheme) return null;
+    
+    const cleanVal = cleanValue(arg.value);
+    
+    if (scheme.type === "string") {
+      return `"${cleanVal}"`;
+    }
+    if (scheme.type === "number") {
+      return cleanVal;
+    }
+    if (scheme.type === "char") {
+      return `'${cleanVal}'`;
+    }
+    if (scheme.type === "boolean") {
+      if (language === "python") {
+        return cleanVal.toLowerCase() === "true" ? "True" : "False";
+      }
+      return cleanVal.toLowerCase() === "true" ? "true" : "false";
+    }
+    if (scheme.type === "object") {
+      // Для JS и Python объекты вводятся напрямую как {key: value} или {"key": value}
+      return arg.value || "{}";
+    }
+    // Handle typed arrays (array_int, array_string, etc.)
+    if (scheme.type && scheme.type.startsWith("array_")) {
+      const elementType = scheme.type.replace("array_", "");
+      
+      if (arg.value && arg.value.trim().startsWith("[")) {
+        try {
+          const arr = JSON.parse(arg.value);
+          if (Array.isArray(arr)) {
+            const formatted = arr.map((item: any) => {
+              if (elementType === "string") return `"${item}"`;
+              if (elementType === "boolean") {
+                if (language === "python") return item ? "True" : "False";
+                return item ? "true" : "false";
+              }
+              return String(item);
+            });
+            return `[${formatted.join(", ")}]`;
+          }
+        } catch {
+          // Not valid JSON
+        }
+      }
+      return arg.value;
+    }
+    if (scheme.type === "array" || scheme.type === "list") {
+      const arrayElementType = scheme.arrayElementType ?? "int";
+      if (scheme.arrayElementObjectFields) {
+        const arrayObjValues = arg.objectValues ?? {};
+        const className = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+        const elements = Object.entries(arrayObjValues).map(([key, val]) => {
+          const objFields = scheme.arrayElementObjectFields!;
+          const fields = objFields.map(f => {
+            const fieldVal = cleanValue((val as unknown as Record<string, string>)?.[f.name] ?? "");
+            if (f.type === "string") {
+              return `${f.name}: "${fieldVal}"`;
+            } else if (f.type === "boolean") {
+              if (language === "python") {
+                return `${f.name}=${fieldVal.toLowerCase() === "true" ? "True" : "False"}`;
+              }
+              return `${f.name}: ${fieldVal.toLowerCase() === "true" ? "true" : "false"}`;
+            } else if (f.type === "double" || f.type === "float") {
+              return `${f.name}: ${fieldVal}`;
+            } else if (f.type === "char") {
+              return `${f.name}: '${fieldVal}'`;
+            } else {
+              return `${f.name}: ${fieldVal}`;
+            }
+          });
+          
+          if (language === "javascript") {
+            return `new ${className}({ ${fields.join(", ")} })`;
+          } else if (language === "python") {
+            const pyFields = objFields.map(f => {
+              const fieldVal = cleanValue((val as unknown as Record<string, string>)?.[f.name] ?? "");
+              if (f.type === "string") {
+                return `${f.name}="${fieldVal}"`;
+              } else if (f.type === "boolean") {
+                return `${f.name}=${fieldVal.toLowerCase() === "true" ? "True" : "False"}`;
+              } else {
+                return `${f.name}=${fieldVal}`;
+              }
+            });
+            return `${className}(${pyFields.join(", ")})`;
+          }
+          return arg.value;
+        });
+        return `[${elements.join(", ")}]`;
+      }
+      
+      if (arg.value && arg.value.trim().startsWith("[")) {
+        try {
+          const arr = JSON.parse(arg.value);
+          if (Array.isArray(arr)) {
+            const formatted = arr.map(item => {
+              if (arrayElementType === "string") return `"${item}"`;
+              if (arrayElementType === "boolean") {
+                if (language === "python") return item ? "True" : "False";
+                return item ? "true" : "false";
+              }
+              return String(item);
+            });
+            return `[${formatted.join(", ")}]`;
+          }
+        } catch {
+          // Not valid JSON
+        }
+      }
+      return arg.value;
+    }
+    
+    return arg.value;
+  }).filter(Boolean);
+  
+  return args.join(", ");
+};
+
 // Функция для получения входных данных для отображения
 const getDisplayInput = (
   testCase: { input?: string; args?: TestCaseArgument[] } | undefined,
@@ -3288,10 +3472,13 @@ const getDisplayInput = (
 ): string => {
   if (!testCase) return "";
   
-  // Если есть args и это Java/C#, используем форматированный вывод
+  // Если есть args и это Java/C#/JS/Python, используем форматированный вывод
   if (testCase.args && testCase.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
     if (language === "java" || language === "csharp") {
       return formatArgsForJavaOrCSharp(testCase.args, argumentScheme, language);
+    }
+    if (language === "javascript" || language === "python") {
+      return formatArgsForDynamicLang(testCase.args, argumentScheme, language);
     }
   }
   
@@ -3306,34 +3493,31 @@ const generateObjectClassesForPreview = (args: ArgumentSchema[], language: CodeL
   return objectArgs
     .map((arg) => {
       const className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-      const fields = arg.objectFields
-        ?.map((f) => `    private ${getTypeString(f.type, language)} ${f.name};`)
-        .join("\n");
-      
-      // Generate constructor with parameters
       const objectFields = arg.objectFields ?? [];
-      const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
-      const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
-      const constructor = objectFields.length > 0 ? `
+
+      if (language === "java") {
+        const fields = objectFields
+          ?.map((f) => `    private ${getTypeString(f.type, language)} ${f.name};`)
+          .join("\n");
+        const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
+        const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
+        const constructor = objectFields.length > 0 ? `
     public ${className}(${constructorParams}) {
         ${constructorBody}
     }` : "";
-      
-      const gettersSetters = objectFields
-        ?.map((f) => {
-          const fieldName = f.name;
-          const fieldType = getTypeString(f.type, language);
-          return `
+        const gettersSetters = objectFields
+          ?.map((f) => {
+            const fieldName = f.name;
+            const fieldType = getTypeString(f.type, language);
+            return `
     public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
         return ${fieldName};
     }
     public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
         this.${fieldName} = ${fieldName};
     }`;
-        })
-        .join("");
-
-      if (language === "java") {
+          })
+          .join("");
         return `class ${className} {
 ${fields}
 ${constructor}
@@ -3341,11 +3525,58 @@ ${gettersSetters}
 }`;
       }
       if (language === "csharp") {
+        const fields = objectFields
+          ?.map((f) => `    private ${getTypeString(f.type, language)} ${f.name};`)
+          .join("\n");
+        const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
+        const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
+        const constructor = objectFields.length > 0 ? `
+    public ${className}(${constructorParams}) {
+        ${constructorBody}
+    }` : "";
+        const gettersSetters = objectFields
+          ?.map((f) => {
+            const fieldName = f.name;
+            const fieldType = getTypeString(f.type, language);
+            return `
+    public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
+        return ${fieldName};
+    }
+    public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
+        this.${fieldName} = ${fieldName};
+    }`;
+          })
+          .join("");
         return `public class ${className} {
 ${fields}
 ${constructor}
 ${gettersSetters}
 }`;
+      }
+      if (language === "javascript" || language === "python") {
+        if (language === "javascript") {
+          const constructorParams = objectFields.map(f => f.name).join(", ");
+          const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n    ");
+          const constructor = objectFields.length > 0 ? `
+class ${className} {
+    constructor(${constructorParams}) {
+        ${constructorBody}
+    }
+}` : `
+class ${className} {
+}`;
+          return constructor;
+        } else {
+          const constructorParams = objectFields.map(f => f.name).join(", ");
+          const constructorBody = objectFields.map(f => `self.${f.name} = ${f.name}`).join("\n        ");
+          const constructor = objectFields.length > 0 ? `
+class ${className}:
+    def __init__(self, ${constructorParams}):
+        ${constructorBody}` : `
+class ${className}:
+    pass`;
+          return constructor;
+        }
       }
       return "";
     })
@@ -3430,12 +3661,16 @@ const buildTestCode = (
   userCode: string,
   input: string,
   lang: CodeLanguage,
-  funcName: string | null
+  funcName: string | null,
+  preformattedArgs?: string // Для JS/Python с аргументами из схемы
 ): string => {
   if (!funcName) return userCode;
 
-  const args = parseArguments(input);
-  const argsStr = formatArgumentsForCode(args);
+  // Если переданы предварительно отформатированные аргументы - используем их
+  const argsStr = preformattedArgs ?? (() => {
+    const args = parseArguments(input);
+    return formatArgumentsForCode(args);
+  })();
 
   switch (lang) {
     case "javascript":
@@ -4282,6 +4517,123 @@ function PreviewCodeTask({
                 if (currentResult.length > 0) {
                   const actual = currentResult.join("\n").trim();
                   const expected = block.testCases[i].expectedOutput.trim();
+
+                  let actualParsed: any;
+                  let expectedParsed: any;
+
+                  try {
+                    actualParsed = JSON.parse(actual);
+                  } catch {
+                    actualParsed = actual;
+                  }
+
+                  try {
+                    expectedParsed = JSON.parse(expected);
+                  } catch {
+                    expectedParsed = expected;
+                  }
+
+                  const passed = compareOutputs(actualParsed, expectedParsed);
+
+                  results.push({
+                    input: getDisplayInput(block.testCases[i], block.argumentScheme, block.language),
+                    expected,
+                    actual,
+                    passed,
+                  });
+                }
+                continue;
+              }
+
+              if (inLogs) {
+                currentLogs.push(line);
+              } else if (inResult) {
+                currentResult.push(line);
+              }
+            }
+
+            if (testLogs.length > 0) {
+              allLogs.push(...testLogs);
+            }
+          }
+        } else if (block.language === "javascript" || block.language === "python") {
+          // Для JavaScript и Python используем схему аргументов
+          const lang = block.language;
+          
+          for (let i = 0; i < block.testCases.length; i++) {
+            const tc = block.testCases[i];
+            
+            // Форматируем аргументы с использованием схемы
+            const argsInput = formatArgsForDynamicLang(tc.args, block.argumentScheme ?? [], lang);
+            
+            // Если есть аргументы в схеме, используем их, иначе используем старый input
+            const inputToUse = (block.argumentScheme?.length ?? 0) > 0 ? argsInput : (tc.input || "");
+            
+            if (!inputToUse || !tc.expectedOutput) {
+              setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
+              return;
+            }
+
+            // Добавляем определения классов для объектов
+            const objectClasses = generateObjectClasses(block.argumentScheme ?? [], lang);
+            const codeWithClasses = objectClasses 
+              ? `${currentCode}\n\n${objectClasses}` 
+              : currentCode;
+
+            // Для JS/Python передаём предварительно отформатированные аргументы
+            const codeToRun = buildTestCode(
+              codeWithClasses,
+              "",
+              lang,
+              funcName,
+              inputToUse
+            );
+
+            const res = await CodeService.executeCode({
+              language: lang,
+              code: codeToRun,
+            });
+
+            if (res.error) {
+              setTestError(`Ошибка выполнения: ${res.error}`);
+              return;
+            }
+
+            const output = res.output || "";
+            const lines = output.split("\n");
+
+            let inLogs = false;
+            let inResult = false;
+            let currentLogs: string[] = [];
+            let currentResult: string[] = [];
+            let testLogs: string[] = [];
+            const testNum = i + 1;
+
+            for (const line of lines) {
+              if (line.includes("===LOGS_START===")) {
+                inLogs = true;
+                currentLogs = [];
+                continue;
+              }
+              if (line.includes("===LOGS_END===")) {
+                inLogs = false;
+                if (currentLogs.length > 0) {
+                  testLogs.push(`📋 Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`);
+                  testLogs.push(currentLogs.join("\n"));
+                  testLogs.push("");
+                }
+                continue;
+              }
+              if (line.includes("===RESULT_START===")) {
+                inResult = true;
+                currentResult = [];
+                continue;
+              }
+              if (line.includes("===RESULT_END===")) {
+                inResult = false;
+                if (currentResult.length > 0) {
+                  const actual = currentResult.join("\n").trim();
+                  const expected = tc.expectedOutput.trim();
 
                   let actualParsed: any;
                   let expectedParsed: any;

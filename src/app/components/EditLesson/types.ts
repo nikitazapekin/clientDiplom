@@ -70,6 +70,7 @@ export interface CodeConstraint {
 export type ArgumentType = 
   | "int" 
   | "string" 
+  | "number"
   | "boolean" 
   | "double" 
   | "float" 
