@@ -590,7 +590,7 @@ const getDefaultStarterCode = (
     .join(", ");
 
   const retTypeStr = getReturnTypeString(returnType, language);
-  const returnValue = getDefaultReturnValue(returnType);
+  const returnValue = getDefaultReturnValue(returnType, language);
 
   switch (language) {
     case "csharp":
@@ -688,7 +688,10 @@ const getReturnTypeString = (type_: ArgumentType, language: CodeLanguage): strin
   return getTypeString(type_, language);
 };
 
-const getDefaultReturnValue = (type_: ArgumentType): string => {
+const getDefaultReturnValue = (type_: ArgumentType, language?: CodeLanguage): string => {
+  const isPython = language === "python";
+  const isGo = language === "golang";
+
   switch (type_) {
     case "int":
     case "long":
@@ -701,23 +704,37 @@ const getDefaultReturnValue = (type_: ArgumentType): string => {
     case "array_float":
     case "array_long":
     case "array_char":
+      if (isPython) return "return None";
+      if (isGo) return "return 0";
       return "return null;";
     case "string":
+      if (isPython) return 'return ""';
+      if (isGo) return 'return ""';
       return 'return "";';
     case "boolean":
     case "array_boolean":
+      if (isPython) return "return False";
+      if (isGo) return "return false";
       return "return false;";
     case "char":
+      if (isPython) return 'return ""';
+      if (isGo) return "return ''";
       return "return 'a';";
     case "object":
     case "array":
     case "array_string":
     case "list":
     case "map":
+      if (isPython) return "return None";
+      if (isGo) return "return nil";
       return "return null;";
     case "void":
+      if (isPython) return "";
+      if (isGo) return "";
       return "";
     default:
+      if (isPython) return "return None";
+      if (isGo) return "return nil";
       return "return null;";
   }
 };
