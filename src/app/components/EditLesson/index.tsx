@@ -293,8 +293,7 @@ const buildCSharpTestSuite = (
   const testCasesCode = testCases
     .map((tc, index) => {
       const testNum = index + 1;
-      const args = parseArguments(tc.input);
-      const argsStr = formatArgumentsForCode(args);
+      const argsStr = tc.input || "";
 
       return `
         // Тест ${testNum}
@@ -351,39 +350,23 @@ const buildCSharpTestSuite = (
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 `;
 
-  // Проверяем, есть ли уже using директивы
-  if (userCode.includes("using System;")) {
-    // Заменяем существующие using или добавляем в начало
-    return (
-      usings +
-      "\n" +
-      userCode.replace(/^using.*;(\r\n|\r|\n)?/g, "") +
-      `
+  // Проверяем, есть ли уже using директивы - удаляем все существующие usings и добавляем свои
+  return (
+    usings +
+    "\n" +
+    userCode.replace(/^using.*;(\r\n|\r|\n)?/gm, "")
+  ) +
+  `
     
 public class Runner {
     public static void Main() {
 ${testCasesCode}
     }
-}`
-    );
-  } else {
-    // Добавляем using и класс Runner
-    return (
-      usings +
-      "\n" +
-      userCode +
-      `
-    
-public class Runner {
-    public static void Main() {
-${testCasesCode}
-    }
-}`
-    );
-  }
+}`;
 };
 
 // Улучшенная функция для Java с поддержкой нескольких тест-кейсов и логов
@@ -751,11 +734,14 @@ const generateObjectClasses = (args: ArgumentSchema[], language: CodeLanguage): 
       if (arg.objectFields) {
         // Regular object
         className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-        fields = arg.objectFields.map((f) => `        private ${getTypeString(f.type, language)} ${f.name};`).join("\n");
+        // Для C# нужны public поля для object initializer
+        const accessModifier = language === "csharp" ? "public" : "private";
+        fields = arg.objectFields.map((f) => `        ${accessModifier} ${getTypeString(f.type, language)} ${f.name};`).join("\n");
       } else if (arg.arrayElementObjectFields) {
         // Array element object
         className = arg.arrayElementClassName || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-        fields = arg.arrayElementObjectFields.map((f) => `        private ${getTypeString(f.type, language)} ${f.name};`).join("\n");
+        const accessModifier = language === "csharp" ? "public" : "private";
+        fields = arg.arrayElementObjectFields.map((f) => `        ${accessModifier} ${getTypeString(f.type, language)} ${f.name};`).join("\n");
       } else {
         className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
         fields = "";
@@ -3071,23 +3057,34 @@ const formatArgsForJavaOrCSharp = (
 ): string => {
   if (!testCaseArgs || !argumentScheme) return "";
   
+  const cleanValue = (val: string) => {
+    // Убираем кавычки если они есть
+    if ((val.startsWith('"') && val.endsWith('"')) || 
+        (val.startsWith("'") && val.endsWith("'"))) {
+      return val.slice(1, -1);
+    }
+    return val;
+  };
+  
   const args = testCaseArgs.map((arg, idx) => {
     const scheme = argumentScheme[idx];
-    if (!scheme) return null; // Skip args that don't have corresponding scheme entry
+    if (!scheme) return null;
+    
+    const cleanVal = cleanValue(arg.value);
     
     if (scheme.type === "string") {
-      return `"${arg.value}"`;
+      return `"${cleanVal}"`;
     }
     if (scheme.type === "char") {
-      return `'${arg.value}'`;
+      return `'${cleanVal}'`;
     }
     if (scheme.type === "boolean") {
-      return arg.value.toLowerCase() === "true" ? "true" : "false";
+      return cleanVal.toLowerCase() === "true" ? "true" : "false";
     }
     if (scheme.type === "object" && scheme.objectFields) {
       const objValues = arg.objectValues ?? {};
       const fields = scheme.objectFields.map(f => {
-        const val = objValues[f.name] ?? "";
+        const val = cleanValue(objValues[f.name] ?? "");
         if (f.type === "string") {
           return `"${val}"`;
         } else if (f.type === "boolean") {
@@ -3105,22 +3102,9 @@ const formatArgsForJavaOrCSharp = (
         const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
         return `new ${className}(${fields.join(", ")})`;
       } else if (language === "csharp") {
+        // Для C# используем конструктор вместо object initializer для поддержки private полей
         const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
-        const csharpFields = scheme.objectFields.map(f => {
-          const val = objValues[f.name] ?? "";
-          if (f.type === "string") {
-            return `${f.name} = "${val}"`;
-          } else if (f.type === "boolean") {
-            return `${f.name} = ${val.toLowerCase() === "true" ? "true" : "false"}`;
-          } else if (f.type === "double" || f.type === "float") {
-            return `${f.name} = ${val}`;
-          } else if (f.type === "char") {
-            return `${f.name} = '${val}'`;
-          } else {
-            return `${f.name} = ${val}`;
-          }
-        });
-        return `new ${className} { ${csharpFields.join(", ")} }`;
+        return `new ${className}(${fields.join(", ")})`;
       }
       return `{${fields.join(", ")}}`;
     }
@@ -3131,7 +3115,7 @@ const formatArgsForJavaOrCSharp = (
         const elements = Object.entries(arrayObjValues).map(([key, val]) => {
           const objFields = scheme.arrayElementObjectFields!;
           const fields = objFields.map(f => {
-            const fieldVal = (val as unknown as Record<string, string>)?.[f.name] ?? "";
+            const fieldVal = cleanValue((val as unknown as Record<string, string>)?.[f.name] ?? "");
             if (f.type === "string") {
               return `"${fieldVal}"`;
             } else if (f.type === "boolean") {
@@ -3150,17 +3134,18 @@ const formatArgsForJavaOrCSharp = (
           if (language === "java") {
             return `new ${elemClassName}(${fields.join(", ")})`;
           }
+          // Для C# используем конструктор
           const csharpFields = objFields.map(f => {
-            const fieldVal = (val as unknown as Record<string, string>)?.[f.name] ?? "";
+            const fieldVal = cleanValue((val as unknown as Record<string, string>)?.[f.name] ?? "");
             if (f.type === "string") {
-              return `${f.name} = "${fieldVal}"`;
+              return `"${fieldVal}"`;
             } else if (f.type === "boolean") {
-              return `${f.name} = ${fieldVal.toLowerCase() === "true" ? "true" : "false"}`;
+              return fieldVal.toLowerCase() === "true" ? "true" : "false";
             } else {
-              return `${f.name} = ${fieldVal}`;
+              return fieldVal;
             }
           });
-          return `new ${elemClassName} { ${csharpFields.join(", ")} }`;
+          return `new ${elemClassName}(${csharpFields.join(", ")})`;
         });
         const arrClassName = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
         return `new ${arrClassName}[] { ${elements.join(", ")} }`;
