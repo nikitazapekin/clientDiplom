@@ -79,6 +79,13 @@ export type ArgumentType =
   | "short"
   | "object"
   | "array"
+  | "array_int"
+  | "array_string"
+  | "array_double"
+  | "array_float"
+  | "array_long"
+  | "array_boolean"
+  | "array_char"
   | "list"
   | "map"
   | "void";

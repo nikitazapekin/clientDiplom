@@ -661,6 +661,13 @@ const getTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
     short: { javascript: "", python: "int", csharp: "short", java: "short", golang: "int16", cpp: "short" },
     object: { javascript: "", python: "", csharp: "object", java: "Object", golang: "interface{}", cpp: "object" },
     array: { javascript: "", python: "list", csharp: "object", java: "int[]", golang: "[]int", cpp: "vector" },
+    array_int: { javascript: "", python: "list", csharp: "int[]", java: "int[]", golang: "[]int", cpp: "vector" },
+    array_string: { javascript: "", python: "list", csharp: "string[]", java: "String[]", golang: "[]string", cpp: "vector" },
+    array_double: { javascript: "", python: "list", csharp: "double[]", java: "double[]", golang: "[]float64", cpp: "vector" },
+    array_float: { javascript: "", python: "list", csharp: "float[]", java: "float[]", golang: "[]float32", cpp: "vector" },
+    array_long: { javascript: "", python: "list", csharp: "long[]", java: "long[]", golang: "[]int64", cpp: "vector" },
+    array_boolean: { javascript: "", python: "list", csharp: "bool[]", java: "boolean[]", golang: "[]bool", cpp: "vector" },
+    array_char: { javascript: "", python: "list", csharp: "char[]", java: "char[]", golang: "[]rune", cpp: "vector" },
     list: { javascript: "", python: "list", csharp: "List<object>", java: "List<Object>", golang: "[]interface{}", cpp: "vector" },
     map: { javascript: "Object", python: "dict", csharp: "Dictionary<string, object>", java: "Map<String, Object>", golang: "map[string]interface{}", cpp: "map" },
     void: { javascript: "void", python: "None", csharp: "void", java: "void", golang: "", cpp: "void" },
@@ -674,9 +681,6 @@ const getReturnTypeString = (type_: ArgumentType, language: CodeLanguage): strin
   }
   if (type_ === "object") {
     return language === "java" ? "Object" : language === "golang" ? "interface{}" : "object";
-  }
-  if (type_ === "array") {
-    return language === "java" ? "int[]" : language === "golang" ? "[]int" : "object";
   }
   if (type_ === "list") {
     return language === "csharp" ? "List<object>" : language === "java" ? "List<Object>" : language === "golang" ? "[]interface{}" : "object";
@@ -692,15 +696,22 @@ const getDefaultReturnValue = (type_: ArgumentType): string => {
     case "byte":
     case "double":
     case "float":
-      return "return 0;";
+    case "array_int":
+    case "array_double":
+    case "array_float":
+    case "array_long":
+    case "array_char":
+      return "return null;";
     case "string":
       return 'return "";';
     case "boolean":
+    case "array_boolean":
       return "return false;";
     case "char":
       return "return 'a';";
     case "object":
     case "array":
+    case "array_string":
     case "list":
     case "map":
       return "return null;";
@@ -2321,7 +2332,13 @@ function BlockEditor({
       { value: "long", label: "long" },
       { value: "char", label: "char" },
       { value: "object", label: "object (объект)" },
-      { value: "array", label: "array (массив)" },
+      { value: "array_int", label: "int[] (массив int)" },
+      { value: "array_string", label: "string[] (массив строк)" },
+      { value: "array_double", label: "double[] (массив double)" },
+      { value: "array_float", label: "float[] (массив float)" },
+      { value: "array_long", label: "long[] (массив long)" },
+      { value: "array_boolean", label: "boolean[] (массив boolean)" },
+      { value: "array_char", label: "char[] (массив char)" },
       { value: "list", label: "list (список)" },
     ];
 
@@ -2351,7 +2368,13 @@ function BlockEditor({
       { value: "float", label: "float" },
       { value: "long", label: "long" },
       { value: "object", label: "Object" },
-      { value: "array", label: "int[] / array" },
+      { value: "array_int", label: "int[]" },
+      { value: "array_string", label: "string[]" },
+      { value: "array_double", label: "double[]" },
+      { value: "array_float", label: "float[]" },
+      { value: "array_long", label: "long[]" },
+      { value: "array_boolean", label: "boolean[]" },
+      { value: "array_char", label: "char[]" },
       { value: "list", label: "List" },
       { value: "void", label: "void (ничего)" },
     ];
@@ -3107,6 +3130,44 @@ const formatArgsForJavaOrCSharp = (
         return `new ${className}(${fields.join(", ")})`;
       }
       return `{${fields.join(", ")}}`;
+    }
+    // Handle typed arrays (array_int, array_string, etc.)
+    if (scheme.type && scheme.type.startsWith("array_")) {
+      const elementType = scheme.type.replace("array_", "");
+      const typeToUse = elementType === "string" ? "String" : elementType;
+      
+      // Parse JSON array from value
+      if (arg.value && arg.value.trim().startsWith("[")) {
+        try {
+          const arr = JSON.parse(arg.value);
+          if (Array.isArray(arr)) {
+            const formatted = arr.map((item: any) => {
+              if (elementType === "string") return `"${item}"`;
+              if (elementType === "boolean") return item ? "true" : "false";
+              return String(item);
+            });
+            if (language === "java") {
+              return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
+            }
+            return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
+          }
+        } catch {
+          // Not valid JSON
+        }
+      }
+      // For object values in test cases
+      if (arg.objectValues && Object.keys(arg.objectValues).length > 0) {
+        const elements = Object.values(arg.objectValues).map((val: any) => {
+          if (elementType === "string") return `"${val}"`;
+          if (elementType === "boolean") return val.toLowerCase() === "true" ? "true" : "false";
+          return String(val);
+        });
+        if (language === "java") {
+          return `new ${typeToUse}[] { ${elements.join(", ")} }`;
+        }
+        return `new ${typeToUse}[] { ${elements.join(", ")} }`;
+      }
+      return `new ${typeToUse}[0]`;
     }
     if (scheme.type === "array" || scheme.type === "list") {
       const arrayElementType = scheme.arrayElementType ?? "int";
