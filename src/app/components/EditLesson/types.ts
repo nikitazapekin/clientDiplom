@@ -67,6 +67,62 @@ export interface CodeConstraint {
   value: number | string[] | boolean;
 }
 
+export type ArgumentType = 
+  | "int" 
+  | "string" 
+  | "boolean" 
+  | "double" 
+  | "float" 
+  | "long" 
+  | "char" 
+  | "byte" 
+  | "short"
+  | "object"
+  | "array"
+  | "list"
+  | "map"
+  | "void";
+
+export interface ObjectField {
+  name: string;
+  type: ArgumentType;
+  value: string;
+}
+
+export interface FunctionArgument {
+  name: string;
+  type: ArgumentType;
+  value: string;
+  objectFields?: ObjectField[];
+}
+
+export interface ArgumentSchema {
+  name: string;
+  type: ArgumentType;
+  className?: string;  // Custom class name for object types
+  arrayElementType?: ArgumentType;
+  arrayElementClassName?: string;  // Custom class name for array element objects
+  objectFields?: ObjectField[];
+  arrayElementObjectFields?: ObjectField[];
+}
+
+export interface LanguageSpecificArg {
+  index: number;
+  name: string;
+  type: ArgumentType;
+}
+
+export interface ArgumentScheme {
+  arguments: ArgumentSchema[];
+  defaultLanguage: CodeLanguage;
+}
+
+export interface TestCaseArgument {
+  index: number;
+  value: string;
+  objectValues?: Record<string, string>;
+}
+
 export interface CodeTaskBlock {
   id: string;
   order: number;
@@ -74,10 +130,12 @@ export interface CodeTaskBlock {
   description?: string;
   language: CodeLanguage;
   startCode?: string;
-  testCases?: Array<{ input: string; expectedOutput: string }>;
+  testCases?: Array<{ input: string; expectedOutput: string; args?: TestCaseArgument[] }>;
   constraints?: CodeConstraint[];
   runnable: boolean;
   expectedOutput?: string;
+  argumentScheme?: ArgumentSchema[];
+  returnType?: ArgumentType;
 }
 
 export interface TheoryQuestionBlock {

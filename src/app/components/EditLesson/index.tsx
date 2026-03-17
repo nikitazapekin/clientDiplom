@@ -20,6 +20,10 @@ import type {
   TableBlock,
   TextBlock,
   TheoryQuestionBlock,
+  ArgumentSchema,
+  ArgumentType,
+  ObjectField,
+  TestCaseArgument,
 } from "./types";
 
 import type { CodeLanguage } from "@/app/http/codeService";
@@ -479,8 +483,7 @@ const buildJavaTestSuite = (
   const testCasesCode = testCases
     .map((tc, index) => {
       const testNum = index + 1;
-      const args = parseArguments(tc.input);
-      const argsStr = formatArgumentsForCode(args);
+      const argsStr = tc.input;
 
       return `
         // Тест ${testNum}
@@ -551,8 +554,29 @@ ${testCasesCode}
     );
   } else {
     // Добавляем main метод в конец
-    const codeWithoutLastBrace = userCode.trim().replace(/\}\s*$/, "");
-    return `${codeWithoutLastBrace}
+    // Удаляем только последнюю закрывающую скобку Main класса (перед возможными дополнительными классами)
+    const trimmedCode = userCode.trim();
+    
+    // Ищем позицию последней } которая закрывает класс Main
+    // Для этого ищем структуру: class Main { ... }
+    const mainClassEnd = trimmedCode.lastIndexOf('}');
+    
+    let codeWithoutMainBrace: string;
+    if (mainClassEnd > 0) {
+      // Проверяем что после этой } есть еще код (классы)
+      const afterBrace = trimmedCode.substring(mainClassEnd + 1).trim();
+      if (afterBrace.length > 0) {
+        // Есть дополнительные классы после Main - удаляем только последнюю скобку Main
+        codeWithoutMainBrace = trimmedCode.substring(0, mainClassEnd);
+      } else {
+        // Нет дополнительных классов - просто удаляем последнюю скобку
+        codeWithoutMainBrace = trimmedCode.replace(/\}\s*$/, "");
+      }
+    } else {
+      codeWithoutMainBrace = trimmedCode.replace(/\}\s*$/, "");
+    }
+    
+    return `${codeWithoutMainBrace}
 
     public static void main(String[] args) {
 ${testCasesCode}
@@ -561,64 +585,223 @@ ${testCasesCode}
   }
 };
 
-const getDefaultStarterCode = (language: CodeLanguage): string => {
+const getDefaultStarterCode = (
+  language: CodeLanguage,
+  args: ArgumentSchema[] = [],
+  returnType: ArgumentType = "int"
+): string => {
+  const argsStr = args
+    .map((arg) => {
+      let typeStr: string;
+      if (arg.type === "array") {
+        typeStr = getArrayTypeString(arg, language);
+      } else if (arg.type === "list") {
+        typeStr = getListTypeString(arg, language);
+      } else if (arg.type === "object" && arg.className) {
+        // Use custom class name for object types
+        typeStr = arg.className;
+      } else {
+        typeStr = getTypeString(arg.type, language);
+      }
+      return `${typeStr} ${arg.name}`;
+    })
+    .join(", ");
+
+  const retTypeStr = getReturnTypeString(returnType, language);
+  const returnValue = getDefaultReturnValue(returnType);
+
   switch (language) {
     case "csharp":
       return `using System;
 
 public class Program
 {
-    public static int YourFunction(int n, int z)
+    public static ${retTypeStr} YourFunction(${argsStr})
     {
         // Ваш код здесь
-        Console.WriteLine("HELLO", n, z);
-        if(n == 3 && z == 6) {
-            return new int[] { 1, 2, 3, 5 };
-        }
-        return 6;
+        Console.WriteLine("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""});
+        ${returnValue}
     }
 }`;
     case "java":
       return `public class Main {
-    public static Object yourFunction(int n, int z) {
+    public static ${retTypeStr} yourFunction(${argsStr}) {
         // Ваш код здесь
-        System.out.println("HELLO " + n + " " + z);
-        if(n == 3 && z == 6) {
-            return new int[]{1, 2, 3, 5};
-        }
-        return 6;
+        System.out.println("HELLO"${args.length > 0 ? ` + " " + ${args.map((a) => a.name).join(' + " " + ')}` : ""});
+        ${returnValue}
     }
 }`;
     case "python":
-      return `def your_function(n, z):
+      const pythonArgs = args.map((a) => a.name).join(", ");
+      return `def your_function(${pythonArgs}):
     # Ваш код здесь
-    print("HELLO", n, z)
-    if n == 3 and z == 6:
-        return [1, 2, 3, 5]
-    return 6`;
+    print("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""})
+    ${returnValue}`;
     case "golang":
+      const goArgsStr = args
+        .map((arg) => {
+          const typeStr = getTypeString(arg.type, "golang");
+          return `${arg.name} ${typeStr}`;
+        })
+        .join(", ");
+      const goRetStr = getReturnTypeString(returnType, "golang");
+
       return `package main
 
 import "fmt"
 
-func yourFunction(n int, z int) interface{} {
+func yourFunction(${goArgsStr}) ${goRetStr} {
     // Ваш код здесь
-    fmt.Println("HELLO", n, z)
-    if n == 3 && z == 6 {
-        return []int{1, 2, 3, 5}
-    }
-    return 6
+    fmt.Println("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""})
+    ${returnValue}
 }`;
     default:
-      return `function yourFunction(n, z) {
+      const jsArgs = args.map((a) => a.name).join(", ");
+      return `function yourFunction(${jsArgs}) {
     // Ваш код здесь
-    console.log("HELLO", n, z);
-    if(n == 3 && z == 6) {
-        return [1, 2, 3, 5];
-    }
-    return 6;
+    console.log("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""});
+    ${returnValue}
 }`;
   }
+};
+
+const getTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
+  const typeMap: Record<ArgumentType, Record<CodeLanguage, string>> = {
+    int: { javascript: "", python: "int", csharp: "int", java: "int", golang: "int", cpp: "int" },
+    string: { javascript: "", python: "str", csharp: "string", java: "String", golang: "string", cpp: "string" },
+    boolean: { javascript: "", python: "bool", csharp: "bool", java: "boolean", golang: "bool", cpp: "bool" },
+    double: { javascript: "", python: "float", csharp: "double", java: "double", golang: "float64", cpp: "double" },
+    float: { javascript: "", python: "float", csharp: "float", java: "float", golang: "float32", cpp: "float" },
+    long: { javascript: "", python: "int", csharp: "long", java: "long", golang: "int64", cpp: "long" },
+    char: { javascript: "", python: "str", csharp: "char", java: "char", golang: "rune", cpp: "char" },
+    byte: { javascript: "", python: "bytes", csharp: "byte", java: "byte", golang: "byte", cpp: "byte" },
+    short: { javascript: "", python: "int", csharp: "short", java: "short", golang: "int16", cpp: "short" },
+    object: { javascript: "", python: "", csharp: "object", java: "Object", golang: "interface{}", cpp: "object" },
+    array: { javascript: "", python: "list", csharp: "object", java: "int[]", golang: "[]int", cpp: "vector" },
+    list: { javascript: "", python: "list", csharp: "List<object>", java: "List<Object>", golang: "[]interface{}", cpp: "vector" },
+    map: { javascript: "Object", python: "dict", csharp: "Dictionary<string, object>", java: "Map<String, Object>", golang: "map[string]interface{}", cpp: "map" },
+    void: { javascript: "void", python: "None", csharp: "void", java: "void", golang: "", cpp: "void" },
+  };
+  return typeMap[type_]?.[language] ?? type_;
+};
+
+const getReturnTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
+  if (type_ === "void") {
+    return language === "java" || language === "csharp" || language === "cpp" ? "void" : "";
+  }
+  if (type_ === "object") {
+    return language === "java" ? "Object" : language === "golang" ? "interface{}" : "object";
+  }
+  if (type_ === "array") {
+    return language === "java" ? "int[]" : language === "golang" ? "[]int" : "object";
+  }
+  if (type_ === "list") {
+    return language === "csharp" ? "List<object>" : language === "java" ? "List<Object>" : language === "golang" ? "[]interface{}" : "object";
+  }
+  return getTypeString(type_, language);
+};
+
+const getDefaultReturnValue = (type_: ArgumentType): string => {
+  switch (type_) {
+    case "int":
+    case "long":
+    case "short":
+    case "byte":
+    case "double":
+    case "float":
+      return "return 0;";
+    case "string":
+      return 'return "";';
+    case "boolean":
+      return "return false;";
+    case "char":
+      return "return 'a';";
+    case "object":
+    case "array":
+    case "list":
+    case "map":
+      return "return null;";
+    case "void":
+      return "";
+    default:
+      return "return null;";
+  }
+};
+
+const generateObjectClasses = (args: ArgumentSchema[], language: CodeLanguage): string => {
+  const objectArgs = args.filter((a) => a.type === "object" && a.objectFields);
+  
+  const arrayObjectArgs = args.filter(
+    (a) => (a.type === "array" || a.type === "list") && 
+           a.arrayElementType === "object" && 
+           a.arrayElementObjectFields
+  );
+  
+  const allClasses = [...objectArgs, ...arrayObjectArgs];
+  
+  if (allClasses.length === 0) return "";
+
+  return allClasses
+    .map((arg) => {
+      // Use custom class name if provided, otherwise capitalize the variable name
+      // For arrays, use arrayElementClassName if provided
+      let className: string;
+      let fields: string;
+      
+      if (arg.objectFields) {
+        // Regular object
+        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+        fields = arg.objectFields.map((f) => `        private ${getTypeString(f.type, language)} ${f.name};`).join("\n");
+      } else if (arg.arrayElementObjectFields) {
+        // Array element object
+        className = arg.arrayElementClassName || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+        fields = arg.arrayElementObjectFields.map((f) => `        private ${getTypeString(f.type, language)} ${f.name};`).join("\n");
+      } else {
+        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+        fields = "";
+      }
+      
+      const objectFields = arg.objectFields ?? arg.arrayElementObjectFields ?? [];
+      
+      // Generate constructor with parameters
+      const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
+      const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
+      const constructor = objectFields.length > 0 ? `
+    public ${className}(${constructorParams}) {
+        ${constructorBody}
+    }` : "";
+      
+      const gettersSetters = objectFields
+        .map((f) => {
+          const fieldName = f.name;
+          const fieldType = getTypeString(f.type, language);
+          return `
+    public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
+        return ${fieldName};
+    }
+    public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
+        this.${fieldName} = ${fieldName};
+    }`;
+        })
+        .join("");
+
+      if (language === "java") {
+        return `    class ${className} {
+${fields}
+${constructor}
+${gettersSetters}
+    }`;
+      }
+      if (language === "csharp") {
+        return `public class ${className} {
+${fields.replace(/        /g, "    ")}
+${constructor.replace(/        /g, "    ")}
+${gettersSetters}
+}`;
+      }
+      return "";
+    })
+    .join("\n\n");
 };
 
 const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
@@ -630,6 +813,8 @@ const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
   startCode: getDefaultStarterCode("javascript"),
   testCases: [],
   constraints: [],
+  argumentScheme: [],
+  returnType: "int",
 });
 
 const createTheoryQuestionBlock = (order: number): TheoryQuestionBlock => ({
@@ -1876,14 +2061,49 @@ function BlockEditor({
   }
 
   if (block.type === "codeTask") {
+    const typedLanguages: CodeLanguage[] = ["java", "csharp", "golang", "cpp"];
+    const isTypedLanguage = typedLanguages.includes(block.language);
+    const isObjectOrientedLang = block.language === "java" || block.language === "csharp";
+
     const addTestCase = () => {
-      const testCases = [...(block.testCases ?? []), { input: "", expectedOutput: "" }];
+      const testCases = [...(block.testCases ?? []), { input: "", expectedOutput: "", args: [] }];
       updateBlock(slideIndex, block.id, { testCases });
     };
-    const updateTestCase = (i: number, field: "input" | "expectedOutput", value: string) => {
+    const updateTestCaseInput = (i: number, value: string) => {
       const testCases = [...(block.testCases ?? [])];
-      if (!testCases[i]) testCases[i] = { input: "", expectedOutput: "" };
-      testCases[i][field] = value;
+      if (!testCases[i]) testCases[i] = { input: "", expectedOutput: "", args: [] };
+      testCases[i].input = value;
+      updateBlock(slideIndex, block.id, { testCases });
+    };
+    const updateTestCaseExpected = (i: number, value: string) => {
+      const testCases = [...(block.testCases ?? [])];
+      if (!testCases[i]) testCases[i] = { input: "", expectedOutput: "", args: [] };
+      testCases[i].expectedOutput = value;
+      updateBlock(slideIndex, block.id, { testCases });
+    };
+    const updateTestCaseArgValue = (testCaseIndex: number, argIndex: number, value: string) => {
+      const testCases = [...(block.testCases ?? [])];
+      if (!testCases[testCaseIndex]) testCases[testCaseIndex] = { input: "", expectedOutput: "", args: [] };
+      if (!testCases[testCaseIndex].args) testCases[testCaseIndex].args = [];
+      
+      if (!testCases[testCaseIndex].args![argIndex]) {
+        testCases[testCaseIndex].args![argIndex] = { index: argIndex, value: "", objectValues: {} };
+      }
+      testCases[testCaseIndex].args![argIndex].value = value;
+      updateBlock(slideIndex, block.id, { testCases });
+    };
+    const updateTestCaseArgObjectValue = (testCaseIndex: number, argIndex: number, fieldName: string, value: string) => {
+      const testCases = [...(block.testCases ?? [])];
+      if (!testCases[testCaseIndex]) testCases[testCaseIndex] = { input: "", expectedOutput: "", args: [] };
+      if (!testCases[testCaseIndex].args) testCases[testCaseIndex].args = [];
+      
+      if (!testCases[testCaseIndex].args![argIndex]) {
+        testCases[testCaseIndex].args![argIndex] = { index: argIndex, value: "", objectValues: {} };
+      }
+      if (!testCases[testCaseIndex].args![argIndex].objectValues) {
+        testCases[testCaseIndex].args![argIndex].objectValues = {};
+      }
+      testCases[testCaseIndex].args![argIndex].objectValues![fieldName] = value;
       updateBlock(slideIndex, block.id, { testCases });
     };
     const deleteTestCase = (i: number) => {
@@ -1914,6 +2134,255 @@ function BlockEditor({
       updateBlock(slideIndex, block.id, { constraints });
     };
 
+    const updateArgSchemeType = (i: number, newType: ArgumentType) => {
+      const scheme = [...(block.argumentScheme ?? [])];
+      if (!scheme[i]) {
+        scheme[i] = { name: `arg${i + 1}`, type: "int" };
+      }
+      scheme[i].type = newType;
+      if (newType === "object") {
+        scheme[i].objectFields = scheme[i].objectFields ?? [
+          { name: "field1", type: "string", value: "" }
+        ];
+      } else {
+        delete scheme[i].objectFields;
+      }
+      updateBlock(slideIndex, block.id, {
+        argumentScheme: scheme,
+        startCode: getDefaultStarterCode(block.language ?? "javascript", scheme, block.returnType ?? "int"),
+      });
+    };
+
+    const updateArgSchemeName = (i: number, name: string) => {
+      const scheme = [...(block.argumentScheme ?? [])];
+      if (!scheme[i]) {
+        scheme[i] = { name: `arg${i + 1}`, type: "int" };
+      }
+      scheme[i].name = name;
+      updateBlock(slideIndex, block.id, {
+        argumentScheme: scheme,
+        startCode: getDefaultStarterCode(block.language ?? "javascript", scheme, block.returnType ?? "int"),
+      });
+    };
+
+    const setArgSchemeCount = (count: number) => {
+      const currentScheme = block.argumentScheme ?? [];
+      let newScheme = [...currentScheme];
+      
+      while (newScheme.length < count) {
+        newScheme.push({ name: `arg${newScheme.length + 1}`, type: "int" });
+      }
+      while (newScheme.length > count) {
+        newScheme.pop();
+      }
+      
+      updateBlock(slideIndex, block.id, {
+        argumentScheme: newScheme,
+        startCode: getDefaultStarterCode(block.language ?? "javascript", newScheme, block.returnType ?? "int"),
+      });
+    };
+
+    const updateObjectFieldType = (argIndex: number, fieldIndex: number, fieldType: ArgumentType) => {
+      const scheme = [...(block.argumentScheme ?? [])];
+      if (scheme[argIndex]?.objectFields?.[fieldIndex]) {
+        scheme[argIndex].objectFields![fieldIndex].type = fieldType;
+        updateBlock(slideIndex, block.id, {
+          argumentScheme: scheme,
+          startCode: getDefaultStarterCode(block.language ?? "javascript", scheme, block.returnType ?? "int"),
+        });
+      }
+    };
+
+    const addObjectFieldToScheme = (argIndex: number) => {
+      const scheme = [...(block.argumentScheme ?? [])];
+      if (scheme[argIndex]) {
+        if (!scheme[argIndex].objectFields) scheme[argIndex].objectFields = [];
+        scheme[argIndex].objectFields!.push({ name: `field${scheme[argIndex].objectFields!.length + 1}`, type: "string", value: "" });
+        updateBlock(slideIndex, block.id, {
+          argumentScheme: scheme,
+          startCode: getDefaultStarterCode(block.language ?? "javascript", scheme, block.returnType ?? "int"),
+        });
+      }
+    };
+
+    const deleteObjectFieldFromScheme = (argIndex: number, fieldIndex: number) => {
+      const scheme = [...(block.argumentScheme ?? [])];
+      if (scheme[argIndex]?.objectFields) {
+        scheme[argIndex].objectFields!.splice(fieldIndex, 1);
+        updateBlock(slideIndex, block.id, {
+          argumentScheme: scheme,
+          startCode: getDefaultStarterCode(block.language ?? "javascript", scheme, block.returnType ?? "int"),
+        });
+      }
+    };
+
+    const updateArrayElementType = (argIndex: number, elementType: ArgumentType) => {
+      const scheme = [...(block.argumentScheme ?? [])];
+      if (scheme[argIndex]) {
+        scheme[argIndex].arrayElementType = elementType;
+        if (elementType === "object") {
+          scheme[argIndex].arrayElementObjectFields = scheme[argIndex].arrayElementObjectFields ?? [
+            { name: "field1", type: "string", value: "" }
+          ];
+        } else {
+          delete scheme[argIndex].arrayElementObjectFields;
+        }
+        updateBlock(slideIndex, block.id, {
+          argumentScheme: scheme,
+          startCode: getDefaultStarterCode(block.language ?? "javascript", scheme, block.returnType ?? "int"),
+        });
+      }
+    };
+
+    const addArrayElementObjectField = (argIndex: number) => {
+      const scheme = [...(block.argumentScheme ?? [])];
+      if (scheme[argIndex]?.arrayElementObjectFields) {
+        scheme[argIndex].arrayElementObjectFields!.push({ 
+          name: `field${scheme[argIndex].arrayElementObjectFields!.length + 1}`, 
+          type: "string", 
+          value: "" 
+        });
+        updateBlock(slideIndex, block.id, {
+          argumentScheme: scheme,
+          startCode: getDefaultStarterCode(block.language ?? "javascript", scheme, block.returnType ?? "int"),
+        });
+      }
+    };
+
+    const updateArrayElementObjectField = (argIndex: number, fieldIndex: number, fieldName: string, fieldType: ArgumentType) => {
+      const scheme = [...(block.argumentScheme ?? [])];
+      if (scheme[argIndex]?.arrayElementObjectFields?.[fieldIndex]) {
+        scheme[argIndex].arrayElementObjectFields![fieldIndex].name = fieldName;
+        scheme[argIndex].arrayElementObjectFields![fieldIndex].type = fieldType;
+        updateBlock(slideIndex, block.id, {
+          argumentScheme: scheme,
+          startCode: getDefaultStarterCode(block.language ?? "javascript", scheme, block.returnType ?? "int"),
+        });
+      }
+    };
+
+    const getTypeStringForLang = (type: ArgumentType): string => {
+      return getTypeString(type, block.language ?? "javascript");
+    };
+
+    const formatValueForLanguage = (arg: ArgumentSchema, value: string): string => {
+      if (!value.trim()) return "";
+      
+      const lang = block.language ?? "javascript";
+      
+      if (arg.type === "string") {
+        return `"${value}"`;
+      }
+      if (arg.type === "char") {
+        return `'${value}'`;
+      }
+      if (arg.type === "boolean") {
+        return value.toLowerCase() === "true" ? "true" : "false";
+      }
+      if (arg.type === "object" && arg.objectFields) {
+        const objValues = (block.testCases ?? []).flatMap(tc => tc.args ?? []).find(a => a.index === block.argumentScheme?.indexOf(arg))?.objectValues ?? {};
+        const fields = arg.objectFields.map(f => {
+          const val = objValues[f.name] ?? f.value ?? "";
+          const fieldTypeStr = getTypeString(f.type, lang);
+          if (f.type === "string") {
+            return `${f.name} = "${val}"`;
+          } else if (f.type === "boolean") {
+            return `${f.name} = ${val.toLowerCase() === "true" ? "true" : "false"}`;
+          } else if (f.type === "double" || f.type === "float") {
+            return `${f.name} = ${val}`;
+          } else {
+            return `${f.name} = ${val}`;
+          }
+        }).join(", ");
+        
+        if (lang === "java") {
+          return `new ${arg.name.charAt(0).toUpperCase() + arg.name.slice(1)}(${fields})`;
+        } else if (lang === "csharp") {
+          return `new ${arg.name.charAt(0).toUpperCase() + arg.name.slice(1)} { ${fields} }`;
+        }
+        return `{${fields}}`;
+      }
+      if (arg.type === "array" || arg.type === "list") {
+        return value;
+      }
+      
+      return value;
+    };
+
+    const generateInputString = (testCaseIndex: number): string => {
+      const testCase = block.testCases?.[testCaseIndex];
+      if (!testCase?.args || !block.argumentScheme) return testCase?.input ?? "";
+      
+      const args = testCase.args.map((arg, idx) => {
+        const scheme = block.argumentScheme?.[idx];
+        if (!scheme) return arg.value;
+        
+        if (isObjectOrientedLang) {
+          return formatValueForLanguage(scheme, arg.value);
+        }
+        return arg.value;
+      }).filter(Boolean);
+      
+      return args.join(", ");
+    };
+
+    const typedArgumentTypes: { value: ArgumentType; label: string }[] = [
+      { value: "int", label: "int (целое число)" },
+      { value: "string", label: "string (строка)" },
+      { value: "boolean", label: "boolean (логический)" },
+      { value: "double", label: "double" },
+      { value: "float", label: "float" },
+      { value: "long", label: "long" },
+      { value: "char", label: "char" },
+      { value: "object", label: "object (объект)" },
+      { value: "array", label: "array (массив)" },
+      { value: "list", label: "list (список)" },
+    ];
+
+    const untypedArgumentTypes: { value: ArgumentType; label: string }[] = [
+      { value: "string", label: "string (строка)" },
+      { value: "boolean", label: "boolean (логический)" },
+      { value: "object", label: "object (объект)" },
+      { value: "array", label: "array (массив)" },
+      { value: "list", label: "list (список)" },
+    ];
+
+    const argumentTypes = isTypedLanguage ? typedArgumentTypes : untypedArgumentTypes;
+
+    const primitiveTypes: { value: ArgumentType; label: string }[] = [
+      { value: "int", label: "int" },
+      { value: "string", label: "string" },
+      { value: "boolean", label: "boolean" },
+      { value: "double", label: "double" },
+      { value: "float", label: "float" },
+    ];
+
+    const typedReturnTypes: { value: ArgumentType; label: string }[] = [
+      { value: "int", label: "int" },
+      { value: "string", label: "string" },
+      { value: "boolean", label: "boolean" },
+      { value: "double", label: "double" },
+      { value: "float", label: "float" },
+      { value: "long", label: "long" },
+      { value: "object", label: "Object" },
+      { value: "array", label: "int[] / array" },
+      { value: "list", label: "List" },
+      { value: "void", label: "void (ничего)" },
+    ];
+
+    const untypedReturnTypes: { value: ArgumentType; label: string }[] = [
+      { value: "string", label: "string" },
+      { value: "boolean", label: "boolean" },
+      { value: "object", label: "Object" },
+      { value: "array", label: "array" },
+      { value: "list", label: "list" },
+      { value: "void", label: "void (ничего)" },
+    ];
+
+    const returnTypes = isTypedLanguage ? typedReturnTypes : untypedReturnTypes;
+
+    const currentArgCount = block.argumentScheme?.length ?? 0;
+
     return (
       <div className={styles.blockEditor}>
         <label>Описание задачи</label>
@@ -1932,7 +2401,7 @@ function BlockEditor({
               const newLang = e.target.value as CodeLanguage;
               updateBlock(slideIndex, block.id, {
                 language: newLang,
-                startCode: getDefaultStarterCode(newLang),
+                startCode: getDefaultStarterCode(newLang, block.argumentScheme ?? [], block.returnType ?? "int"),
               });
             }}
           >
@@ -1957,6 +2426,234 @@ function BlockEditor({
         </div>
         {block.runnable ? (
           <>
+            {isTypedLanguage && (
+              <div className={styles.form__wrapper}>
+                <span>Тип возвращаемого значения:</span>
+                <select
+                  value={block.returnType ?? "int"}
+                  onChange={(e) => {
+                    const newReturnType = e.target.value as ArgumentType;
+                    updateBlock(slideIndex, block.id, {
+                      returnType: newReturnType,
+                      startCode: getDefaultStarterCode(block.language ?? "javascript", block.argumentScheme ?? [], newReturnType),
+                    });
+                  }}
+                >
+                  {returnTypes.map((rt) => (
+                    <option key={rt.value} value={rt.value}>
+                      {rt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h4>Схема аргументов</h4>
+              </div>
+              <div className={styles.form__wrapper}>
+                <span>Количество аргументов:</span>
+                <select
+                  value={currentArgCount}
+                  onChange={(e) => setArgSchemeCount(Number(e.target.value))}
+                >
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {(block.argumentScheme ?? []).map((arg, i) => (
+                <div key={i} className={styles.argumentRow}>
+                  <div className={styles.argumentHeader}>
+                    <span>Аргумент #{i + 1}</span>
+                  </div>
+                  <div className={styles.argumentContent}>
+                    <input
+                      value={arg.name}
+                      onChange={(e) => updateArgSchemeName(i, e.target.value)}
+                      placeholder="Имя переменной"
+                      className={styles.argumentName}
+                    />
+                    <select
+                      value={arg.type}
+                      onChange={(e) => updateArgSchemeType(i, e.target.value as ArgumentType)}
+                      className={styles.argumentType}
+                    >
+                      {argumentTypes.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                      {arg.type === "object" && (
+                    <div className={styles.objectFields}>
+                      <div className={styles.objectFieldsHeader}>
+                        <span>Имя класса:</span>
+                        <input
+                          value={arg.className ?? ""}
+                          onChange={(e) => {
+                            const scheme = [...(block.argumentScheme ?? [])];
+                            if (scheme[i]) {
+                              scheme[i].className = e.target.value;
+                              const newStartCode = getDefaultStarterCode(
+                                block.language ?? "javascript",
+                                scheme,
+                                block.returnType ?? "int"
+                              );
+                              updateBlock(slideIndex, block.id, { 
+                                argumentScheme: scheme,
+                                startCode: newStartCode
+                              });
+                            }
+                          }}
+                          placeholder="Person"
+                          style={{ marginLeft: "8px", width: "120px" }}
+                        />
+                      </div>
+                      <div className={styles.objectFieldsHeader} style={{ marginTop: "8px" }}>
+                        <span>Поля объекта:</span>
+                        <Button
+                          color="#6a0f6e"
+                          width="auto"
+                          textColor="#fff"
+                          text="+ Добавить поле"
+                          onClick={() => addObjectFieldToScheme(i)}
+                        />
+                      </div>
+                      {(arg.objectFields ?? []).map((field, fieldIdx) => (
+                        <div key={fieldIdx} className={styles.objectFieldRow}>
+                          <input
+                            value={field.name}
+                            onChange={(e) => {
+                              const scheme = [...(block.argumentScheme ?? [])];
+                              if (scheme[i]?.objectFields?.[fieldIdx]) {
+                                scheme[i].objectFields![fieldIdx].name = e.target.value;
+                                updateBlock(slideIndex, block.id, { argumentScheme: scheme });
+                              }
+                            }}
+                            placeholder="Имя поля"
+                            style={{marginRight: "8px", width: "100px" }}
+                          />
+                          <select
+                            value={field.type}
+                            onChange={(e) => updateObjectFieldType(i, fieldIdx, e.target.value as ArgumentType)}
+                            className={styles.objectFieldType}
+                          >
+                            {primitiveTypes.map((t) => (
+                              <option key={t.value} value={t.value}>
+                                {t.label}
+                              </option>
+                            ))}
+                          </select>
+                          <button className={styles.deleteButton} onClick={() => deleteObjectFieldFromScheme(i, fieldIdx)}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {(arg.type === "array" || arg.type === "list") && (
+                    <div className={styles.objectFields}>
+                      <div className={styles.objectFieldsHeader}>
+                        <span>Тип элементов массива:</span>
+                        <select
+                          value={arg.arrayElementType ?? "int"}
+                          onChange={(e) => updateArrayElementType(i, e.target.value as ArgumentType)}
+                          className={styles.objectFieldType}
+                          style={{ marginLeft: "8px" }}
+                        >
+                          {isTypedLanguage ? (
+                            <>
+                              <option value="int">int</option>
+                              <option value="string">string</option>
+                              <option value="boolean">boolean</option>
+                              <option value="double">double</option>
+                              <option value="float">float</option>
+                              <option value="object">object (свой объект класс)</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="string">string</option>
+                              <option value="boolean">boolean</option>
+                              <option value="object">object</option>
+                            </>
+                          )}
+                        </select>
+                      </div>
+                      {arg.arrayElementType === "object" && (
+                        <div className={styles.arrayElementFields}>
+                          <div style={{ marginTop: "8px", paddingLeft: "16px" }}>
+                            <span>Имя класса элемента:</span>
+                            <input
+                              value={arg.arrayElementClassName ?? ""}
+                              onChange={(e) => {
+                                const scheme = [...(block.argumentScheme ?? [])];
+                                if (scheme[i]) {
+                                  scheme[i].arrayElementClassName = e.target.value;
+                                  const newStartCode = getDefaultStarterCode(
+                                    block.language ?? "javascript",
+                                    scheme,
+                                    block.returnType ?? "int"
+                                  );
+                                  updateBlock(slideIndex, block.id, { 
+                                    argumentScheme: scheme,
+                                    startCode: newStartCode
+                                  });
+                                }
+                              }}
+                              placeholder="Person"
+                              style={{ marginLeft: "8px", width: "120px" }}
+                            />
+                          </div>
+                          <div style={{ marginTop: "8px", paddingLeft: "16px" }}>
+                            <span>Поля элемента объекта:</span>
+                            <Button
+                              color="#6a0f6e"
+                              width="auto"
+                              textColor="#fff"
+                              text="+ Добавить поле"
+                              onClick={() => addArrayElementObjectField(i)}
+                            />
+                          </div>
+                          {(arg.arrayElementObjectFields ?? []).map((field, fieldIdx) => (
+                            <div key={fieldIdx} className={styles.objectFieldRow} style={{ marginTop: "4px" }}>
+                              <input
+                                value={field.name}
+                                onChange={(e) => updateArrayElementObjectField(i, fieldIdx, e.target.value, field.type)}
+                                placeholder="Имя поля"
+                                className={styles.objectFieldName}
+                                style={{ marginRight: "4px" }}
+                              />
+                              <select
+                                value={field.type}
+                                onChange={(e) => updateArrayElementObjectField(i, fieldIdx, field.name, e.target.value as ArgumentType)}
+                                className={styles.objectFieldType}
+                              >
+                                {primitiveTypes.map((t) => (
+                                  <option key={t.value} value={t.value}>
+                                    {t.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <button className={styles.deleteButton} onClick={() => {
+                                const scheme = [...(block.argumentScheme ?? [])];
+                                if (scheme[i]?.arrayElementObjectFields) {
+                                  scheme[i].arrayElementObjectFields!.splice(fieldIdx, 1);
+                                  updateBlock(slideIndex, block.id, { argumentScheme: scheme });
+                                }
+                              }}>✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
             <label>
               Стартовый код
               {(block.language === "csharp" || block.language === "java") && (
@@ -1993,14 +2690,53 @@ function BlockEditor({
                       ✕
                     </button>
                   </div>
-                  <input
-                    value={tc.input}
-                    onChange={(e) => updateTestCase(i, "input", e.target.value)}
-                    placeholder="Входные данные: 1, 'test', {hi: 'hi'}"
-                  />
+                  
+                  {isObjectOrientedLang ? (
+                    <div className={styles.testCaseArgs}>
+                      <span style={{fontWeight: "bold", marginBottom: "8px", display: "block"}}>Значения аргументов:</span>
+                      {(block.argumentScheme ?? []).map((arg, argIdx) => (
+                        <div key={argIdx} className={styles.testCaseArgRow}>
+                          <span style={{minWidth: "80px"}}>{arg.name} ({getTypeStringForLang(arg.type)}):</span>
+                          
+                          {arg.type === "object" && arg.objectFields ? (
+                            <div className={styles.testCaseObjectFields}>
+                              {arg.objectFields.map((field, fieldIdx) => (
+                                <div key={fieldIdx} className={styles.testCaseObjectFieldRow}>
+                                  <span style={{marginRight: "4px"}}>{field.name}:</span>
+                                  <input
+                                    value={tc.args?.[argIdx]?.objectValues?.[field.name] ?? ""}
+                                    onChange={(e) => updateTestCaseArgObjectValue(i, argIdx, field.name, e.target.value)}
+                                    placeholder={`значение ${field.type}`}
+                                    className={styles.objectFieldValue}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <input
+                              value={tc.args?.[argIdx]?.value ?? ""}
+                              onChange={(e) => updateTestCaseArgValue(i, argIdx, e.target.value)}
+                              placeholder={`значение ${arg.type}`}
+                              className={styles.argumentValue}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.simpleArgsInput}>
+                      <span style={{fontWeight: "bold", marginBottom: "4px", display: "block"}}>Входные данные:</span>
+                      <input
+                        value={tc.input ?? ""}
+                        onChange={(e) => updateTestCaseInput(i, e.target.value)}
+                        placeholder="1, 'test', [1,2,3], true"
+                      />
+                    </div>
+                  )}
+                  
                   <input
                     value={tc.expectedOutput}
-                    onChange={(e) => updateTestCase(i, "expectedOutput", e.target.value)}
+                    onChange={(e) => updateTestCaseExpected(i, e.target.value)}
                     placeholder="Ожидаемый возврат"
                   />
                 </div>
@@ -2326,6 +3062,286 @@ function PreviewBlockStatic({ block }: { block: SlideBlock }) {
 
   return null;
 }
+
+// Функция для преобразования аргументов тест-кейса в строку для Java/C#
+const formatArgsForJavaOrCSharp = (
+  testCaseArgs: TestCaseArgument[] | undefined,
+  argumentScheme: ArgumentSchema[],
+  language: CodeLanguage
+): string => {
+  if (!testCaseArgs || !argumentScheme) return "";
+  
+  const args = testCaseArgs.map((arg, idx) => {
+    const scheme = argumentScheme[idx];
+    if (!scheme) return null; // Skip args that don't have corresponding scheme entry
+    
+    if (scheme.type === "string") {
+      return `"${arg.value}"`;
+    }
+    if (scheme.type === "char") {
+      return `'${arg.value}'`;
+    }
+    if (scheme.type === "boolean") {
+      return arg.value.toLowerCase() === "true" ? "true" : "false";
+    }
+    if (scheme.type === "object" && scheme.objectFields) {
+      const objValues = arg.objectValues ?? {};
+      const fields = scheme.objectFields.map(f => {
+        const val = objValues[f.name] ?? "";
+        if (f.type === "string") {
+          return `"${val}"`;
+        } else if (f.type === "boolean") {
+          return val.toLowerCase() === "true" ? "true" : "false";
+        } else if (f.type === "double" || f.type === "float") {
+          return val;
+        } else if (f.type === "char") {
+          return `'${val}'`;
+        } else {
+          return val;
+        }
+      });
+      
+      if (language === "java") {
+        const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+        return `new ${className}(${fields.join(", ")})`;
+      } else if (language === "csharp") {
+        const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+        const csharpFields = scheme.objectFields.map(f => {
+          const val = objValues[f.name] ?? "";
+          if (f.type === "string") {
+            return `${f.name} = "${val}"`;
+          } else if (f.type === "boolean") {
+            return `${f.name} = ${val.toLowerCase() === "true" ? "true" : "false"}`;
+          } else if (f.type === "double" || f.type === "float") {
+            return `${f.name} = ${val}`;
+          } else if (f.type === "char") {
+            return `${f.name} = '${val}'`;
+          } else {
+            return `${f.name} = ${val}`;
+          }
+        });
+        return `new ${className} { ${csharpFields.join(", ")} }`;
+      }
+      return `{${fields.join(", ")}}`;
+    }
+    if (scheme.type === "array" || scheme.type === "list") {
+      const arrayElementType = scheme.arrayElementType ?? "int";
+      if (scheme.arrayElementObjectFields) {
+        const arrayObjValues = arg.objectValues ?? {};
+        const elements = Object.entries(arrayObjValues).map(([key, val]) => {
+          const objFields = scheme.arrayElementObjectFields!;
+          const fields = objFields.map(f => {
+            const fieldVal = (val as unknown as Record<string, string>)?.[f.name] ?? "";
+            if (f.type === "string") {
+              return `"${fieldVal}"`;
+            } else if (f.type === "boolean") {
+              return fieldVal.toLowerCase() === "true" ? "true" : "false";
+            } else if (f.type === "double" || f.type === "float") {
+              return fieldVal;
+            } else if (f.type === "char") {
+              return `'${fieldVal}'`;
+            } else {
+              return fieldVal;
+            }
+          });
+          
+          const elemClassName = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+          
+          if (language === "java") {
+            return `new ${elemClassName}(${fields.join(", ")})`;
+          }
+          const csharpFields = objFields.map(f => {
+            const fieldVal = (val as unknown as Record<string, string>)?.[f.name] ?? "";
+            if (f.type === "string") {
+              return `${f.name} = "${fieldVal}"`;
+            } else if (f.type === "boolean") {
+              return `${f.name} = ${fieldVal.toLowerCase() === "true" ? "true" : "false"}`;
+            } else {
+              return `${f.name} = ${fieldVal}`;
+            }
+          });
+          return `new ${elemClassName} { ${csharpFields.join(", ")} }`;
+        });
+        const arrClassName = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+        return `new ${arrClassName}[] { ${elements.join(", ")} }`;
+      }
+      
+      // Handle primitive arrays
+      if (arg.value && arg.value.trim().startsWith("[")) {
+        // If it's already a JSON array, parse and format it
+        try {
+          const arr = JSON.parse(arg.value);
+          if (Array.isArray(arr)) {
+            const formatted = arr.map(item => {
+              if (arrayElementType === "string") return `"${item}"`;
+              if (arrayElementType === "boolean") return item ? "true" : "false";
+              return String(item);
+            });
+            return `new ${getTypeString(arrayElementType, language)}[] { ${formatted.join(", ")} }`;
+          }
+        } catch {
+          // Not valid JSON, fall through
+        }
+      }
+      
+      // For simple values or if parsing failed, use default array
+      return arg.value;
+    }
+    
+    // Handle object type without fields - convert JSON to Map
+    if (scheme.type === "object" && !scheme.objectFields) {
+      if (arg.value && arg.value.trim().startsWith("{")) {
+        try {
+          const obj = JSON.parse(arg.value);
+          if (typeof obj === "object" && obj !== null) {
+            if (language === "java") {
+              const entries = Object.entries(obj).map(([k, v]) => {
+                const val = typeof v === "string" ? `"${v}"` : String(v);
+                return `"${k}", ${val}`;
+              }).join(", ");
+              return `new java.util.HashMap<>() {{ put(${entries}); }}`;
+            }
+          }
+        } catch {
+          // Not valid JSON, fall through
+        }
+      }
+    }
+    
+    // Handle map type
+    if (scheme.type === "map") {
+      if (arg.value && arg.value.trim().startsWith("{")) {
+        try {
+          const obj = JSON.parse(arg.value);
+          if (typeof obj === "object" && obj !== null) {
+            if (language === "java") {
+              const entries = Object.entries(obj).map(([k, v]) => {
+                const val = typeof v === "string" ? `"${v}"` : String(v);
+                return `"${k}", ${val}`;
+              }).join(", ");
+              return `new java.util.HashMap<>() {{ put(${entries}); }}`;
+            }
+          }
+        } catch {
+          // Not valid JSON
+        }
+      }
+    }
+    
+    return arg.value;
+  }).filter(Boolean);
+  
+  return args.join(", ");
+};
+
+// Функция для получения входных данных для отображения
+const getDisplayInput = (
+  testCase: { input?: string; args?: TestCaseArgument[] } | undefined,
+  argumentScheme: ArgumentSchema[] | undefined,
+  language: CodeLanguage | undefined
+): string => {
+  if (!testCase) return "";
+  
+  // Если есть args и это Java/C#, используем форматированный вывод
+  if (testCase.args && testCase.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
+    if (language === "java" || language === "csharp") {
+      return formatArgsForJavaOrCSharp(testCase.args, argumentScheme, language);
+    }
+  }
+  
+  // Иначе возвращаем input как есть
+  return testCase.input ?? "";
+};
+
+const generateObjectClassesForPreview = (args: ArgumentSchema[], language: CodeLanguage): string => {
+  const objectArgs = args.filter((a) => a.type === "object" && a.objectFields);
+  if (objectArgs.length === 0) return "";
+
+  return objectArgs
+    .map((arg) => {
+      const className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+      const fields = arg.objectFields
+        ?.map((f) => `    private ${getTypeString(f.type, language)} ${f.name};`)
+        .join("\n");
+      
+      // Generate constructor with parameters
+      const objectFields = arg.objectFields ?? [];
+      const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
+      const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
+      const constructor = objectFields.length > 0 ? `
+    public ${className}(${constructorParams}) {
+        ${constructorBody}
+    }` : "";
+      
+      const gettersSetters = objectFields
+        ?.map((f) => {
+          const fieldName = f.name;
+          const fieldType = getTypeString(f.type, language);
+          return `
+    public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
+        return ${fieldName};
+    }
+    public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
+        this.${fieldName} = ${fieldName};
+    }`;
+        })
+        .join("");
+
+      if (language === "java") {
+        return `class ${className} {
+${fields}
+${constructor}
+${gettersSetters}
+}`;
+      }
+      if (language === "csharp") {
+        return `public class ${className} {
+${fields}
+${constructor}
+${gettersSetters}
+}`;
+      }
+      return "";
+    })
+    .join("\n\n");
+};
+
+const getArrayTypeString = (scheme: ArgumentSchema, language: CodeLanguage): string => {
+  const elementType = scheme.arrayElementType ?? "int";
+  
+  if (scheme.arrayElementObjectFields && scheme.arrayElementObjectFields.length > 0) {
+    const className = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+    if (language === "java") {
+      return `${className}[]`;
+    }
+    if (language === "csharp") {
+      return `${className}[]`;
+    }
+  }
+  
+  if (language === "java") {
+    return `${getTypeString(elementType, "java")}[]`;
+  }
+  if (language === "csharp") {
+    return `${getTypeString(elementType, "csharp")}[]`;
+  }
+  if (language === "golang") {
+    return `[]${getTypeString(elementType, "golang")}`;
+  }
+  return "array";
+};
+
+const getListTypeString = (scheme: ArgumentSchema, language: CodeLanguage): string => {
+  const elementType = scheme.arrayElementType ?? "int";
+  
+  if (language === "java") {
+    return `List<${getTypeString(elementType, "java")}>`;
+  }
+  if (language === "csharp") {
+    return `List<${getTypeString(elementType, "csharp")}>`;
+  }
+  return "List";
+};
 
 const extractFunctionName = (code: string, lang: CodeLanguage): string | null => {
   if (!code) return null;
@@ -3028,8 +4044,23 @@ function PreviewCodeTask({
 
         // Специальная обработка для Java
         if (block.language === "java") {
-          // Собираем все логи из всех тестов
-          const codeToRun = buildJavaTestSuite(currentCode, block.testCases, funcName);
+          // Преобразуем тест-кейсы в новый формат с аргументами
+          const formattedTestCases = (block.testCases ?? []).map(tc => {
+            const argsInput = formatArgsForJavaOrCSharp(tc.args, block.argumentScheme ?? [], "java");
+            return {
+              input: argsInput || tc.input || "",
+              expectedOutput: tc.expectedOutput
+            };
+          });
+          
+          // Сначала оборачиваем код с тестами, потом добавляем классы
+          const codeWithTests = buildJavaTestSuite(currentCode, formattedTestCases, funcName);
+          
+          // Добавляем определения классов для объектов в аргументах ПОСЛЕ всего кода
+          const objectClasses = generateObjectClasses(block.argumentScheme ?? [], "java");
+          const codeToRun = objectClasses 
+            ? `${codeWithTests}\n\n${objectClasses}` 
+            : codeWithTests;
 
           console.log("Java code to run:", codeToRun); // Для отладки
 
@@ -3069,7 +4100,7 @@ function PreviewCodeTask({
               if (line.includes(`===LOGS_END_${testNum}===`)) {
                 inLogs = false;
                 if (currentLogs.length > 0) {
-                  testLogs.push(`📋 Логи теста #${testNum} (вход: ${block.testCases[i].input}):`);
+                  testLogs.push(`📋 Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`);
                   testLogs.push(currentLogs.join("\n"));
                   testLogs.push("");
                 }
@@ -3111,7 +4142,7 @@ function PreviewCodeTask({
                   const passed = compareOutputs(actualParsed, expectedParsed);
 
                   results.push({
-                    input: block.testCases[i].input,
+                    input: getDisplayInput(block.testCases[i], block.argumentScheme, block.language),
                     expected,
                     actual,
                     passed,
@@ -3133,8 +4164,23 @@ function PreviewCodeTask({
             }
           }
         } else if (block.language === "csharp") {
-          // Собираем все логи из всех тестов
-          const codeToRun = buildCSharpTestSuite(currentCode, block.testCases, funcName);
+          // Преобразуем тест-кейсы в новый формат с аргументами
+          const formattedTestCases = (block.testCases ?? []).map(tc => {
+            const argsInput = formatArgsForJavaOrCSharp(tc.args, block.argumentScheme ?? [], "csharp");
+            return {
+              input: argsInput || tc.input || "",
+              expectedOutput: tc.expectedOutput
+            };
+          });
+          
+          // Сначала оборачиваем код с тестами, потом добавляем классы
+          const codeWithTests = buildCSharpTestSuite(currentCode, formattedTestCases, funcName);
+          
+          // Добавляем определения классов для объектов в аргументах ПОСЛЕ всего кода
+          const objectClasses = generateObjectClasses(block.argumentScheme ?? [], "csharp");
+          const codeToRun = objectClasses 
+            ? `${codeWithTests}\n\n${objectClasses}` 
+            : codeWithTests;
 
           console.log("C# code to run:", codeToRun); // Для отладки
 
@@ -3172,7 +4218,7 @@ function PreviewCodeTask({
               if (line.includes(`===LOGS_END_${testNum}===`)) {
                 inLogs = false;
                 if (currentLogs.length > 0) {
-                  testLogs.push(`📋 Логи теста #${testNum} (вход: ${block.testCases[i].input}):`);
+                  testLogs.push(`📋 Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`);
                   testLogs.push(currentLogs.join("\n"));
                   testLogs.push("");
                 }
@@ -3209,7 +4255,7 @@ function PreviewCodeTask({
                   const passed = compareOutputs(actualParsed, expectedParsed);
 
                   results.push({
-                    input: block.testCases[i].input,
+                    input: getDisplayInput(block.testCases[i], block.argumentScheme, block.language),
                     expected,
                     actual,
                     passed,
@@ -3402,6 +4448,17 @@ function PreviewCodeTask({
   return (
     <div className={styles.codeTask}>
       <p className={styles.taskDescription}>{block.description}</p>
+
+      {(block.language === "java" || block.language === "csharp") && 
+       block.argumentScheme && 
+       block.argumentScheme.some(a => a.type === "object" && a.objectFields) && (
+        <div className={styles.objectDescriptions}>
+          <h4>Описание классов:</h4>
+          <pre className={styles.objectClassCode}>
+            {generateObjectClassesForPreview(block.argumentScheme, block.language)}
+          </pre>
+        </div>
+      )}
 
       <StableCodeEditor
         value={displayCode}

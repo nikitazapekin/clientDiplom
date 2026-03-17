@@ -27,6 +27,29 @@
   width: 100%;
 }
 
+.objectDescriptions {
+  margin-bottom: px($spacing-md);
+  padding: px($spacing-sm);
+  background: $color-grayLight;
+  border-radius: px($radius-small);
+  
+  h4 {
+    margin: 0 0 px($spacing-xs) 0;
+    font-size: 14px;
+    color: $color-dark;
+  }
+}
+
+.objectClassCode {
+  background: $color-white;
+  padding: px($spacing-sm);
+  border-radius: px($radius-small);
+  font-size: 12px;
+  overflow-x: auto;
+  margin: 0;
+  border: 1px solid $color-gray;
+}
+
 .form {
   // background-color: $color-darkLight;
 
@@ -289,8 +312,46 @@ height: 100%;
 
 .testCase {
   display: flex;
+  flex-direction: column;
   gap: px($spacing-xs);
   margin-top: px($spacing-xs);
+  padding: px($spacing-sm);
+  background: $color-grayLight;
+  border-radius: px($radius-small);
+}
+
+.testCaseArgs {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-xs);
+  margin-bottom: px($spacing-xs);
+}
+
+.testCaseArgRow {
+  display: flex;
+  align-items: center;
+  gap: px($spacing-xs);
+  flex-wrap: wrap;
+}
+
+.testCaseObjectFields {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-xs);
+  margin-left: px($spacing-lg);
+  padding: px($spacing-xs);
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: px($radius-small);
+}
+
+.testCaseObjectFieldRow {
+  display: flex;
+  align-items: center;
+  gap: px($spacing-xs);
+}
+
+.simpleArgsInput {
+  margin-bottom: px($spacing-xs);
 }
 
 .previewTop {
@@ -655,4 +716,111 @@ height: 100%;
   justify-content: space-between;
   font-size: 14px;
   color: #666;
+}
+
+.argumentRow {
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.argumentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.argumentContent {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.argumentName {
+  flex: 1;
+  min-width: 120px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.argumentType {
+  flex: 1;
+  min-width: 150px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.argumentValue {
+  flex: 1;
+  min-width: 120px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.objectFields {
+  margin-top: 12px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.objectFieldsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.objectFieldRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.objectFieldName {
+  flex: 1;
+  min-width: 100px;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.objectFieldType {
+  flex: 1;
+  min-width: 100px;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.objectFieldValue {
+  flex: 1;
+  min-width: 80px;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.deleteButton {
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  
+  &:hover {
+    background: #d32f2f;
+  }
 }
