@@ -1025,21 +1025,25 @@ function ResultsModal({
         starCount = 3;
       }
 
-      // Запускаем анимацию звезд
-      setStars(starCount);
+      // Запускаем анимацию звезд с задержкой
+      setStars(0);
+      setAnimatingStars([]);
+      setShowStars(false);
 
-      // Анимируем падение звезд
-      const animateStars = async () => {
-        setShowStars(true);
+      setTimeout(() => {
+        setStars(starCount);
+        
+        const animateStars = async () => {
+          setShowStars(true);
 
-        for (let i = 0; i < starCount; i++) {
-          setAnimatingStars((prev) => [...prev, i]);
-          // Ждем окончания анимации текущей звезды
-          await new Promise((resolve) => setTimeout(resolve, 800));
-        }
-      };
+          for (let i = 0; i < starCount; i++) {
+            setAnimatingStars((prev) => [...prev, i]);
+            await new Promise((resolve) => setTimeout(resolve, 600));
+          }
+        };
 
-      animateStars();
+        animateStars();
+      }, 300);
     }
   }, [
     isOpen,
@@ -1154,6 +1158,7 @@ export default function EditLesson() {
   const [currentSources, setCurrentSources] = useState<{ url: string; note?: string }[]>([]);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [testResults, setTestResults] = useState<{ [slideId: string]: any }>({});
+  const testResultsRef = useRef<{ [slideId: string]: any }>({});
 
   const [lessonResults, setLessonResults] = useState<{
     results: any[];
@@ -1417,10 +1422,12 @@ export default function EditLesson() {
     let passedTestCasesCount = 0;
     let allConstraintsPassed = true;
 
+    const currentTestResults = testResultsRef.current;
+
     testSlides.forEach((slide) => {
       const slideAnswer = testAnswer[slide.id];
       const slideError = testError[slide.id];
-      const slideTestResult = testResults[slide.id];
+      const slideTestResult = currentTestResults[slide.id];
 
       let slidePassed = false;
       let slideTestCasesPassed = 0;
@@ -1475,12 +1482,44 @@ export default function EditLesson() {
     });
 
     setShowResultsModal(true);
-  }, [slides, testAnswer, testError, testResults]);
+  }, [slides, testAnswer, testError]);
 
   const handleLessonComplete = useCallback(() => {
+    const testSlides = slides.filter((s) => s.type === "test");
+    const currentTestResults = testResultsRef.current;
+    
+    let allTasksSolved = true;
+    const unsolvedTasks: string[] = [];
+
+    for (const slide of testSlides) {
+      const slideTestResult = currentTestResults[slide.id];
+      const codeTasks = slide.blocks.filter((b) => b.type === "codeTask") as CodeTaskBlock[];
+      const theoryQuestions = slide.blocks.filter(
+        (b) => b.type === "theoryQuestion"
+      ) as TheoryQuestionBlock[];
+
+      if (codeTasks.length > 0) {
+        if (!slideTestResult || !slideTestResult.allPassed) {
+          allTasksSolved = false;
+          unsolvedTasks.push(slide.title);
+        }
+      } else if (theoryQuestions.length > 0) {
+        const answer = testAnswer[slide.id];
+        const theoryPassed = theoryQuestions.every((q) => typeof answer === "number" && answer === q.correctIndex);
+        if (!theoryPassed) {
+          allTasksSolved = false;
+          unsolvedTasks.push(slide.title);
+        }
+      }
+    }
+
+    if (!allTasksSolved) {
+      alert(`Не все задания выполнены!\n\nНе выполнены: ${unsolvedTasks.join(", ")}`);
+      return;
+    }
+
     calculateResults();
-    setPreviewMode(false);
-  }, [calculateResults]);
+  }, [calculateResults, slides, testAnswer]);
 
   const saveLesson = useCallback(async () => {
     if (!lessonId) {
@@ -1635,9 +1674,13 @@ export default function EditLesson() {
                   testError={testError[currentSlide.id]}
                   setTestError={(v) => setTestError((prev) => ({ ...prev, [currentSlide.id]: v }))}
                   onCorrect={goNext}
-                  onResults={(results) =>
-                    setTestResults((prev) => ({ ...prev, [currentSlide.id]: results }))
-                  }
+                  onResults={(results) => {
+                    setTestResults((prev) => {
+                      const newResults = { ...prev, [currentSlide.id]: results };
+                      testResultsRef.current = newResults;
+                      return newResults;
+                    });
+                  }}
                 />
               ))}
             </div>
@@ -1667,6 +1710,20 @@ export default function EditLesson() {
           isOpen={sourceModalOpen}
           onClose={() => setSourceModalOpen(false)}
           sources={currentSources}
+        />
+        <ResultsModal
+          isOpen={showResultsModal}
+          onClose={() => {
+            setShowResultsModal(false);
+            setPreviewMode(false);
+          }}
+          results={lessonResults.results}
+          totalTasks={lessonResults.totalTasks}
+          completedTasks={lessonResults.completedTasks}
+          totalTestCases={lessonResults.totalTestCases}
+          passedTestCases={lessonResults.passedTestCases}
+          constraintsPassed={lessonResults.constraintsPassed}
+          slides={slides}
         />
       </section>
     );
@@ -1900,18 +1957,6 @@ export default function EditLesson() {
           />
         </div>
       </div>
-
-      <ResultsModal
-        isOpen={showResultsModal}
-        onClose={() => setShowResultsModal(false)}
-        results={lessonResults.results}
-        totalTasks={lessonResults.totalTasks}
-        completedTasks={lessonResults.completedTasks}
-        totalTestCases={lessonResults.totalTestCases}
-        passedTestCases={lessonResults.passedTestCases}
-        constraintsPassed={lessonResults.constraintsPassed}
-        slides={slides}
-      />
     </section>
   );
 }
@@ -3980,20 +4025,29 @@ function PreviewCodeTask({
   const [testResults, setTestResults] = useState<any[] | null>(null);
   const [constraintResults, setConstraintResults] = useState<ConstraintResult[] | null>(null);
   const [executionTime, setExecutionTime] = useState<number | null>(null);
+  const localCodeRef = useRef<string>("");
 
-  // Получаем актуальный код для отображения
+  useEffect(() => {
+    if (!localCodeRef.current && typeof testAnswer === "string" && testAnswer) {
+      localCodeRef.current = testAnswer;
+    }
+  }, [testAnswer]);
+
   const getCurrentCode = useCallback(() => {
+    if (localCodeRef.current) {
+      return localCodeRef.current;
+    }
     return typeof testAnswer === "string" && testAnswer !== ""
       ? testAnswer
       : (block.startCode ?? getDefaultStarterCode(block.language ?? "javascript"));
   }, [testAnswer, block.startCode, block.language]);
 
-  // Отображаемый код (без main метода)
   const displayCode = stripMainMethod(getCurrentCode(), block.language ?? "javascript");
 
   // Обработчик изменения кода
   const handleCodeChange = useCallback(
     (code: string) => {
+      localCodeRef.current = code;
       setTestAnswer(code);
       setTestError("");
       setConsoleOutput(null);

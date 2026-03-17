@@ -574,7 +574,7 @@ height: 100%;
 
 .starsContainer {
   position: relative;
-  height: 100px;
+  height: 120px;
   margin: 20px 0;
   overflow: hidden;
   background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
@@ -583,10 +583,10 @@ height: 100%;
 
 .starWrapper {
   position: absolute;
-  top: -50px;
+  top: -80px;
   font-size: 48px;
   transform: translateX(-50%);
-  transition: all 0.3s ease;
+  opacity: 0;
   
   &.starFalling {
     animation: starFall 0.8s ease-out forwards;
@@ -594,7 +594,6 @@ height: 100%;
   
   &.starVisible {
     opacity: 1;
-    transform: translateY(20px) translateX(-50%);
   }
   
   &.starHidden {
@@ -605,7 +604,6 @@ height: 100%;
 .star {
   color: #4a4a4a;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
   
   &.starFilled {
     color: #ffd700;
@@ -616,22 +614,21 @@ height: 100%;
 
 @keyframes starFall {
   0% {
-    top: -50px;
+    top: -80px;
     opacity: 0;
-    transform: translateX(-50%) rotate(0deg);
+    transform: translateX(-50%) rotate(0deg) scale(0.5);
   }
-  20% {
+  10% {
     opacity: 1;
-    transform: translateX(-50%) rotate(10deg);
   }
   80% {
     opacity: 1;
-    transform: translateY(60px) translateX(-50%) rotate(-5deg);
+    transform: translateX(-50%) rotate(-10deg) scale(1.1);
   }
   100% {
-    top: 20px;
+    top: 36px;
     opacity: 1;
-    transform: translateY(20px) translateX(-50%) rotate(0deg);
+    transform: translateX(-50%) rotate(0deg) scale(1);
   }
 }
 
