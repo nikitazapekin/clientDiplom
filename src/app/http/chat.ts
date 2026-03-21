@@ -1,4 +1,6 @@
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
+
 import $api from './api';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
@@ -39,18 +41,38 @@ export interface User {
   fullName: string;
 }
 
+interface SocketMessageResponse {
+  success: boolean;
+  message?: Message;
+  error?: string;
+}
+
+interface SocketStatusResponse {
+  success: boolean;
+  error?: string;
+}
+
 class ChatService {
   private socket: Socket | null = null;
   private currentUserId: string | null = null;
 
   connect(userId: string) {
-    if (this.socket?.connected) return;
+    if (this.currentUserId === userId && this.socket) {
+      if (!this.socket.connected) {
+        this.socket.connect();
+      }
+
+      return;
+    }
+
+    this.disconnect();
 
     this.currentUserId = userId;
     this.socket = io(BASE_URL, {
       query: { userId },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       withCredentials: true,
+      reconnection: true,
     });
 
     this.socket.on('connect', () => {
@@ -61,8 +83,8 @@ class ChatService {
       console.log('Disconnected from chat server');
     });
 
-    this.socket.on('error', (error) => {
-      console.error('Socket error:', error);
+    this.socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
     });
   }
 
@@ -75,34 +97,38 @@ class ChatService {
   }
 
   onNewMessage(callback: (message: Message) => void) {
-    if (!this.socket) return;
-    
+    if (!this.socket) {
+      return () => undefined;
+    }
+
     this.socket.on('newMessage', callback);
-    
+
     return () => {
       this.socket?.off('newMessage', callback);
     };
   }
 
   onMessagesRead(callback: (data: { senderId: string; receiverId: string }) => void) {
-    if (!this.socket) return;
-    
+    if (!this.socket) {
+      return () => undefined;
+    }
+
     this.socket.on('messagesRead', callback);
-    
+
     return () => {
       this.socket?.off('messagesRead', callback);
     };
   }
 
-  sendMessage(receiverId: string, content: string): Promise<any> {
+  sendMessage(receiverId: string, content: string): Promise<Message> {
     if (!this.socket || !this.currentUserId) {
       throw new Error('Not connected to chat server');
     }
 
     return new Promise((resolve, reject) => {
-      this.socket!.emit('sendMessage', { receiverId, content, senderId: this.currentUserId }, (response: any) => {
-        if (response.success) {
-          resolve(response);
+      this.socket!.emit('sendMessage', { receiverId, content, senderId: this.currentUserId }, (response: SocketMessageResponse) => {
+        if (response.success && response.message) {
+          resolve(response.message);
         } else {
           reject(new Error(response.error || 'Failed to send message'));
         }
@@ -112,23 +138,23 @@ class ChatService {
 
   joinConversation(userId1: string, userId2: string) {
     if (!this.socket) return;
-    
+
     this.socket.emit('joinConversation', { userId1, userId2 });
   }
 
   leaveConversation(userId1: string, userId2: string) {
     if (!this.socket) return;
-    
+
     this.socket.emit('leaveConversation', { userId1, userId2 });
   }
 
-  markAsRead(senderId: string, receiverId: string): Promise<any> {
+  markAsRead(senderId: string, receiverId: string): Promise<SocketStatusResponse> {
     if (!this.socket) {
       throw new Error('Not connected to chat server');
     }
 
     return new Promise((resolve, reject) => {
-      this.socket!.emit('markAsRead', { senderId, receiverId }, (response: any) => {
+      this.socket!.emit('markAsRead', { senderId, receiverId }, (response: SocketStatusResponse) => {
         if (response.success) {
           resolve(response);
         } else {
@@ -142,17 +168,29 @@ class ChatService {
     const response = await $api.get(`/chat/messages/${userId1}/${userId2}`, {
       params: { limit, offset },
     });
-    
+
     return response.data.data;
   }
 
+  async getConversations(userId: string): Promise<Conversation[]> {
+    const response = await $api.get(`/chat/conversations/${userId}`);
+
+    return response.data.data ?? [];
+  }
+
   async markMessagesAsRead(senderId: string, receiverId: string): Promise<void> {
+    if (this.socket) {
+      await this.markAsRead(senderId, receiverId);
+
+      return;
+    }
+
     await $api.post(`/chat/mark-read/${senderId}/${receiverId}`);
   }
 
   async getUnreadCount(): Promise<number> {
     const response = await $api.get('/chat/unread-count');
-    
+
     return response.data.data.count;
   }
 
@@ -160,21 +198,46 @@ class ChatService {
     const response = await $api.get('/users/search', {
       params: { q: query },
     });
-    
+
     return response.data.data;
   }
 
   async getUserProfile(userId: string): Promise<User> {
-    const response = await $api.get(`/users/profile/${userId}`);
-    
-    return response.data.data;
+    try {
+      const response = await $api.get(`/users/profile/${userId}`);
+      const profile = response.data.data ?? response.data;
+
+      return {
+        id: profile.id,
+        clientId: profile.clientId,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        middleName: profile.middleName,
+        email: profile.email,
+        fullName: profile.fullName,
+      };
+    } catch {
+      const response = await $api.get(`/profile/client/${userId}/full`);
+      const profile = response.data.data ?? response.data;
+
+      return {
+        id: profile.auditoryId ?? profile.id,
+        clientId: profile.clientId,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        middleName: profile.middleName,
+        email: profile.email,
+        fullName:
+          profile.fullName ?? `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim(),
+      };
+    }
   }
 
   async getMultipleProfiles(userIds: string[]): Promise<Record<string, { firstName: string; lastName: string; fullName: string }>> {
     const response = await $api.get('/users/profiles', {
       params: { ids: userIds.join(',') },
     });
-    
+
     return response.data.data;
   }
 

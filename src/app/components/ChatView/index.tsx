@@ -1,55 +1,119 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
-import chatService, { Message } from "@/app/http/chat";
+import { useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+
 import styles from "./index.module.scss";
+
+import type { Message, User } from "@/app/http/chat";
+import chatService from "@/app/http/chat";
+
+type ParticipantInfo = Pick<User, "firstName" | "lastName">;
 
 const ChatView = () => {
   const router = useRouter();
   const params = useParams();
   const receiverId = params.userId as string;
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const [senderInfo, setSenderInfo] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [participantInfo, setParticipantInfo] = useState<any>(null);
+  const [participantInfo, setParticipantInfo] = useState<ParticipantInfo | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const currentUserId = localStorage.getItem("userId");
-  
   useEffect(() => {
-    if (!currentUserId || !receiverId) return;
+    const userId = window.localStorage.getItem("userId");
 
-    loadMessages();
-    loadParticipantInfo();
+    setCurrentUserId(userId);
 
-    chatService.connect(currentUserId);
-    chatService.joinConversation(currentUserId, receiverId);
+    if (userId) {
+      chatService.connect(userId);
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
-    const unsubscribe = chatService.onNewMessage((message) => {
-      if (
-        (message.senderId === currentUserId && message.receiverId === receiverId) ||
-        (message.senderId === receiverId && message.receiverId === currentUserId)
-      ) {
-        setMessages((prev) => [...prev, message]);
+  useEffect(() => {
+    if (!currentUserId || !receiverId) {
+      return;
+    }
+
+    let isActive = true;
+
+    const isConversationMessage = (message: Message) =>
+      (message.senderId === currentUserId && message.receiverId === receiverId) ||
+      (message.senderId === receiverId && message.receiverId === currentUserId);
+
+    const syncConversation = async () => {
+      try {
+        setLoading(true);
+
+        const [loadedMessages, loadedParticipantInfo] = await Promise.all([
+          chatService.getConversationMessages(currentUserId, receiverId, 50, 0),
+          chatService.getUserProfile(receiverId),
+        ]);
+
+        if (!isActive) {
+          return;
+        }
+
+        setMessages(loadedMessages);
+        setParticipantInfo({
+          firstName: loadedParticipantInfo.firstName ?? "",
+          lastName: loadedParticipantInfo.lastName ?? "",
+        });
+
+        await chatService.markMessagesAsRead(receiverId, currentUserId);
+      } catch (error) {
+        console.error("Failed to load chat data:", error);
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
       }
+    };
+
+    chatService.joinConversation(currentUserId, receiverId);
+    void syncConversation();
+
+    const unsubscribeMessage = chatService.onNewMessage((message) => {
+      if (!isConversationMessage(message) || !isActive) {
+        return;
+      }
+
+      if (message.receiverId === currentUserId) {
+        void chatService.markMessagesAsRead(message.senderId, currentUserId);
+      }
+
+      setMessages((prev) => {
+        if (prev.some((existingMessage) => existingMessage.id === message.id)) {
+          return prev;
+        }
+
+        return [...prev, message];
+      });
     });
 
-    chatService.onMessagesRead(({ senderId, receiverId }) => {
-      if (senderId === currentUserId && receiverId === receiverId) {
+    const unsubscribeRead = chatService.onMessagesRead(
+      ({ senderId, receiverId: readReceiverId }) => {
+        if (!isActive || senderId !== currentUserId || readReceiverId !== receiverId) {
+          return;
+        }
+
         setMessages((prev) =>
           prev.map((msg) => ({
             ...msg,
-            read: true,
+            read: msg.senderId === currentUserId ? true : msg.read,
           })),
         );
       }
-    });
+    );
 
     return () => {
-      unsubscribe();
+      isActive = false;
+      unsubscribeMessage();
+      unsubscribeRead();
       chatService.leaveConversation(currentUserId, receiverId);
     };
   }, [receiverId, currentUserId]);
@@ -58,50 +122,19 @@ const ChatView = () => {
     scrollToBottom();
   }, [messages]);
 
-  const loadMessages = async () => {
-    try {
-      setLoading(true);
-      if (!currentUserId || !receiverId) return;
-
-      const loadedMessages = await chatService.getConversationMessages(
-        currentUserId,
-        receiverId,
-        50,
-        0,
-      );
-
-      setMessages(loadedMessages);
-
-      if (currentUserId) {
-        await chatService.markMessagesAsRead(receiverId, currentUserId);
-      }
-    } catch (error) {
-      console.error("Failed to load messages:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadParticipantInfo = async () => {
-    try {
-      const info = await chatService.getUserProfile(receiverId);
-      setParticipantInfo(info);
-    } catch (error) {
-      console.error("Failed to load participant info:", error);
-    }
-  };
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!newMessage.trim() || !currentUserId || !receiverId) return;
+
+    const content = newMessage.trim();
+
+    if (!content || !currentUserId || !receiverId) return;
 
     try {
-      await chatService.sendMessage(receiverId, newMessage.trim());
+      await chatService.sendMessage(receiverId, content);
       setNewMessage("");
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -111,6 +144,7 @@ const ChatView = () => {
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
+
     return date.toLocaleTimeString("ru-RU", {
       hour: "2-digit",
       minute: "2-digit",
@@ -120,18 +154,19 @@ const ChatView = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
-    
+
     if (date.toDateString() === today.toDateString()) {
       return "Сегодня";
     }
-    
+
     const yesterday = new Date(today);
+
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     if (date.toDateString() === yesterday.toDateString()) {
       return "Вчера";
     }
-    
+
     return date.toLocaleDateString("ru-RU", {
       day: "2-digit",
       month: "2-digit",
@@ -141,12 +176,19 @@ const ChatView = () => {
 
   const renderDateSeparator = (index: number) => {
     if (index === 0) return true;
-    
+
     const current = new Date(messages[index].createdAt);
     const previous = new Date(messages[index - 1].createdAt);
-    
+
     return current.toDateString() !== previous.toDateString();
   };
+
+  const participantInitials = participantInfo
+    ? `${participantInfo.firstName?.[0] ?? ""}${participantInfo.lastName?.[0] ?? ""}` || "?"
+    : "?";
+  const participantName = participantInfo
+    ? `${participantInfo.firstName ?? ""} ${participantInfo.lastName ?? ""}`.trim() || "Без имени"
+    : "Загрузка...";
 
   return (
     <div className={styles.chatView}>
@@ -159,15 +201,11 @@ const ChatView = () => {
         </button>
         <div className={styles.chatView__participant}>
           <div className={styles.chatView__avatar}>
-            {participantInfo
-              ? `${participantInfo.firstName[0]}${participantInfo.lastName[0]}`
-              : "?"}
+            {participantInitials}
           </div>
           <div className={styles.chatView__info}>
             <div className={styles.chatView__name}>
-              {participantInfo
-                ? `${participantInfo.firstName} ${participantInfo.lastName}`
-                : "Загрузка..."}
+              {participantName}
             </div>
           </div>
         </div>
