@@ -1,0 +1,213 @@
+.container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #1a1a1a;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tab {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #666;
+  position: relative;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #1a1a1a;
+  }
+
+  &_active {
+    color: #1a1a1a;
+    font-weight: 600;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #1a1a1a;
+    }
+  }
+}
+
+.content {
+  min-height: 400px;
+}
+
+.announcements,
+.updates {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+
+  &__title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: #1a1a1a;
+  }
+
+  &__version {
+    display: inline-block;
+    background: #e0e0e0;
+    color: #666;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  &__content {
+    color: #666;
+    line-height: 1.6;
+    margin: 0 0 16px 0;
+  }
+
+  &__meta {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  &__author {
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  &__date {
+    color: #999;
+    font-size: 14px;
+  }
+}
+
+.structure {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.tree {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.treeNode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  margin-bottom: 4px;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+
+  &_admin {
+    background-color: #e3f2fd;
+    font-weight: 600;
+
+    &:hover {
+      background-color: #bbdefb;
+    }
+  }
+
+  &_course {
+    background-color: #f3e5f5;
+
+    &:hover {
+      background-color: #e1bee7;
+    }
+  }
+
+  &_student {
+    background-color: #e8f5e9;
+    font-size: 14px;
+
+    &:hover {
+      background-color: #c8e6c9;
+    }
+  }
+
+  &__icon {
+    font-size: 16px;
+    min-width: 20px;
+  }
+
+  &__name {
+    flex: 1;
+    color: #1a1a1a;
+  }
+
+  &__email {
+    color: #666;
+    font-size: 14px;
+  }
+
+  &__badge {
+    background: #ff9800;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+  }
+}
+
+.empty {
+  text-align: center;
+  color: #999;
+  padding: 40px;
+  font-size: 16px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  font-size: 18px;
+  color: #666;
+}
+
+.error {
+  background: #ffebee;
+  color: #c62828;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+}

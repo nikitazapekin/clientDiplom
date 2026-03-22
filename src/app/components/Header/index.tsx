@@ -75,7 +75,7 @@ const Header = () => {
                 ))}
 
             <li className={styles.header__item}>
-              <div className={styles.header__logout}>Выход</div>
+              <div className={styles.header__logout} onClick={() => handleNavigation("/login")}>Выход</div>
             </li>
           </ul>
         </nav>
