@@ -109,11 +109,13 @@ const formatArgsForJavaOrCSharp = (
         (val.startsWith("'") && val.endsWith("'"))) {
       return val.slice(1, -1);
     }
+
     return val;
   };
 
   const args = testCaseArgs.map((arg, idx) => {
     const scheme = argumentScheme[idx];
+
     if (!scheme) return null;
 
     const cleanVal = cleanValue(arg.value);
@@ -121,16 +123,20 @@ const formatArgsForJavaOrCSharp = (
     if (scheme.type === "string") {
       return `"${cleanVal}"`;
     }
+
     if (scheme.type === "char") {
       return `'${cleanVal}'`;
     }
+
     if (scheme.type === "boolean") {
       return cleanVal.toLowerCase() === "true" ? "true" : "false";
     }
+
     if (scheme.type === "object" && scheme.objectFields) {
       const objValues = arg.objectValues ?? {};
       const fields = scheme.objectFields.map(f => {
         const val = cleanValue(objValues[f.name] ?? "");
+
         if (f.type === "string") {
           return `"${val}"`;
         } else if (f.type === "boolean") {
@@ -146,13 +152,17 @@ const formatArgsForJavaOrCSharp = (
 
       if (language === "java") {
         const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+
         return `new ${className}(${fields.join(", ")})`;
       } else if (language === "csharp") {
         const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+
         return `new ${className}(${fields.join(", ")})`;
       }
+
       return `{${fields.join(", ")}}`;
     }
+
     if (scheme.type && scheme.type.startsWith("array_")) {
       const elementType = scheme.type.replace("array_", "");
       const typeToUse = elementType === "string" ? "String" : elementType;
@@ -160,34 +170,47 @@ const formatArgsForJavaOrCSharp = (
       if (arg.value && arg.value.trim().startsWith("[")) {
         try {
           const arr = JSON.parse(arg.value);
+
           if (Array.isArray(arr)) {
             const formatted = arr.map((item: any) => {
               if (elementType === "string") return `"${item}"`;
+
               if (elementType === "boolean") return item ? "true" : "false";
+
               return String(item);
             });
+
             if (language === "java") {
               return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
             }
+
             return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
           }
         } catch {}
       }
+
       if (arg.objectValues && Object.keys(arg.objectValues).length > 0) {
         const elements = Object.values(arg.objectValues).map((val: any) => {
           if (elementType === "string") return `"${val}"`;
+
           if (elementType === "boolean") return val.toLowerCase() === "true" ? "true" : "false";
+
           return String(val);
         });
+
         if (language === "java") {
           return `new ${typeToUse}[] { ${elements.join(", ")} }`;
         }
+
         return `new ${typeToUse}[] { ${elements.join(", ")} }`;
       }
+
       return `new ${typeToUse}[0]`;
     }
+
     if (scheme.type === "array" || scheme.type === "list") {
       const arrayElementType = scheme.arrayElementType ?? "int";
+
       if (scheme.arrayElementObjectFields) {
         const arrayObjValues = arg.objectValues ?? {};
         const elements = Object.entries(arrayObjValues).map(([key, val]) => {
@@ -195,6 +218,7 @@ const formatArgsForJavaOrCSharp = (
           const valObj = typeof val === "object" ? val as Record<string, string> : {};
           const fields = objFields.map(f => {
             const fieldVal = cleanValue(valObj?.[f.name] ?? "");
+
             if (f.type === "string") {
               return `"${fieldVal}"`;
             } else if (f.type === "boolean") {
@@ -213,8 +237,10 @@ const formatArgsForJavaOrCSharp = (
           if (language === "java") {
             return `new ${elemClassName}(${fields.join(", ")})`;
           }
+
           const csharpFields = objFields.map(f => {
             const fieldVal = cleanValue(valObj?.[f.name] ?? "");
+
             if (f.type === "string") {
               return `"${fieldVal}"`;
             } else if (f.type === "boolean") {
@@ -223,25 +249,32 @@ const formatArgsForJavaOrCSharp = (
               return fieldVal;
             }
           });
+
           return `new ${elemClassName}(${csharpFields.join(", ")})`;
         });
         const arrClassName = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+
         return `new ${arrClassName}[] { ${elements.join(", ")} }`;
       }
 
       if (arg.value && arg.value.trim().startsWith("[")) {
         try {
           const arr = JSON.parse(arg.value);
+
           if (Array.isArray(arr)) {
             const formatted = arr.map(item => {
               if (arrayElementType === "string") return `"${item}"`;
+
               if (arrayElementType === "boolean") return item ? "true" : "false";
+
               return String(item);
             });
+
             return `new ${arrayElementType}[] { ${formatted.join(", ")} }`;
           }
         } catch {}
       }
+
       return `new ${arrayElementType}[0]`;
     }
 
@@ -261,14 +294,17 @@ const formatArgsForDynamicLang = (
 
   return testCaseArgs.map((arg, idx) => {
     const scheme = argumentScheme[idx];
+
     if (!scheme) return arg.value;
 
     if (scheme.type === "string") {
       return `"${arg.value}"`;
     }
+
     if (scheme.type === "object" && arg.objectValues) {
       return JSON.stringify(arg.objectValues);
     }
+
     if ((scheme.type === "array" || scheme.type === "list") && arg.value) {
       try {
         return JSON.stringify(JSON.parse(arg.value));
@@ -293,6 +329,7 @@ const getDisplayInput = (
     if (language === "java" || language === "csharp") {
       return formatArgsForJavaOrCSharp(testCase.args, argumentScheme, language);
     }
+
     if (language === "javascript" || language === "python") {
       return formatArgsForDynamicLang(testCase.args, argumentScheme, language);
     }
@@ -489,6 +526,7 @@ const buildJavaTestSuite = (
       } else if (tc.input) {
         // Иначе парсим input
         const args = parseArguments(tc.input);
+
         argsStr = formatArgumentsForCode(args);
       }
 
@@ -586,6 +624,7 @@ const buildCSharpTestSuite = (
       } else if (tc.input) {
         // Иначе парсим input
         const args = parseArguments(tc.input);
+
         argsStr = formatArgumentsForCode(args);
       }
 
@@ -748,6 +787,7 @@ const getTypeString = (type: string, language: string): string => {
     map: { javascript: "Object", python: "dict", csharp: "Dictionary<string, object>", java: "Map<String, Object>", golang: "map[string]interface{}", cpp: "map" },
     void: { javascript: "void", python: "None", csharp: "void", java: "void", golang: "", cpp: "void" },
   };
+
   return typeMap[type]?.[language] ?? type;
 };
 
@@ -793,6 +833,7 @@ const generateObjectClasses = (args: ArgumentSchema[], language: string): string
           .map((f) => {
             const fieldName = f.name;
             const fieldType = getTypeString(f.type, language);
+
             return `
     public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
         return ${fieldName};
@@ -802,6 +843,7 @@ const generateObjectClasses = (args: ArgumentSchema[], language: string): string
     }`;
           })
           .join("");
+
         return `    class ${className} {
 ${fields}
 ${constructor}
@@ -822,6 +864,7 @@ ${gettersSetters}
           .map((f) => {
             const fieldName = f.name;
             const fieldType = getTypeString(f.type, language);
+
             return `
     public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
         return ${fieldName};
@@ -831,9 +874,10 @@ ${gettersSetters}
     }`;
           })
           .join("");
+
         return `public class ${className} {
-${fields.replace(/        /g, "    ")}
-${constructor.replace(/        /g, "    ")}
+${fields.replace(/ {8}/g, "    ")}
+${constructor.replace(/ {8}/g, "    ")}
 ${gettersSetters}
 }`;
       }
