@@ -7,7 +7,7 @@ const Study = async () => {
 
   return (
     <>
-      <Courses initialCourses={courses} />;
+      <Courses initialCourses={courses} />
     </>
   );
 };
@@ -23,7 +23,3 @@ export default Study;
     
       <AdminCourses initialCourses={courses} />
       */
-
-
-
-      

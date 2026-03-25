@@ -1,69 +1,48 @@
- @use "../../styles/index.scss" as *;
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
 
 .courses {
   width: 100%;
-  height: 100%;
+  min-height: calc(100vh - #{px($spacing-bg * 2)});
+  box-sizing: border-box;
   display: flex;
-  align-items: flex-start;
   justify-content: center;
+  padding: px($spacing-xl) px($spacing-md) px($spacing-vg);
+  background-color: $color-grayLight;
+
   &__container {
-max-width: $container-md;
-width: 100%;
+    max-width: px($container-md);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-xl);
   }
 
-  &__title {
-    margin-top: px($spacing-lg);
+  &__grid {
+    display: grid;
+    gap: px($spacing-lg);
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  &__empty {
+    padding: px($spacing-bg);
+    border-radius: px($radius-large);
     text-align: center;
+    background-color: $color-white;
+    border: 1px solid $color-gray;
   }
-} 
 
+  &__emptyTitle {
+    margin: 0 0 px($spacing-sm);
+    color: $color-dark;
+    font-size: px($font-md);
+    line-height: 1.2;
+  }
 
-/*
-
- @use "../../styles/index.scss" as *;
-$color-white: #ffffff;
-$color-black: #000000;
- 
-$color-white: #ffffff;
-$color-black: #000000;
-
- 
-$color-white: #ffffff;
-$color-black: #000000;
-$color-green: #379c07;
-$color-orange: #e29f22;
-
-
-$color-grayLight:  #f0f0f0;
-$color-gray: #d8d8d8;
-$color-purple: #9f0fa7;
-$color-white: #fff;
-$color-darkLight: #303027;
-$color-dark: #222121;
-$color-red: #d80909;
-
-$container-sm: 1280;
-$container-md: 1400;
-$container-xs: 700;
-
- 
-$font-xs: 14;
-$font-sx: 20;
-$font-md: 24;
-$font-lg: 32;
-
-$radius-small: 4;
-$radius-medium: 8;
-$radius-large: 16;
-$radius-xlarge: 24;
-$radius-circle: 9999;
-
-$spacing-xs: 4;
-$spacing-sm: 8;
-$spacing-md: 16;
-$spacing-lg: 24;
-$spacing-xl: 32;
-$spacing-xxl: 48;
-$spacing-bg: 60;
-$spacing-vg: 80;
-*/
+  &__emptyText {
+    margin: 0;
+    color: rgba($color-dark, 0.72);
+    font-size: px($font-xs);
+    line-height: 1.6;
+  }
+}

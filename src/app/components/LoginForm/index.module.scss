@@ -1,5 +1,6 @@
 //@use '@styles/' as *;
-@use "../../styles/index.scss" as *;
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
 
 .form {
   background-color: $color-darkLight;

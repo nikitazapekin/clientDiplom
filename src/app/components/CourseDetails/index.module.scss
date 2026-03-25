@@ -1,4 +1,5 @@
-@use "../../styles/index.scss" as *;
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
 
 .courses {
   width: 100%;
@@ -135,7 +136,8 @@
 
 /*
 
- @use "../../styles/index.scss" as *;
+ @use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
 $color-white: #ffffff;
 $color-black: #000000;
  

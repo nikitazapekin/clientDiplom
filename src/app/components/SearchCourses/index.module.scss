@@ -1,93 +1,86 @@
-@use "../../styles/index.scss" as *;
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
+
 .search {
   width: 100%;
-  display: flex;
-  margin-top: px($spacing-lg);
-  margin-bottom: px($spacing-lg);
-  
-    column-gap: px($spacing-md);
+  display: grid;
+  gap: px($spacing-md);
+
+  @include breakpoint-md {
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.85fr);
+    align-items: center;
+  }
+
+  &__label {
+    @include visually-hidden;
+  }
+
   &__field {
     position: relative;
-    max-width: 300px;
-    width: 100%;
+    display: block;
   }
+
   &__iconSearch {
     position: absolute;
-    left: 0;
+    left: px($spacing-lg);
     top: 50%;
     transform: translateY(-50%);
     width: 16px;
     height: 16px;
+    opacity: 0.65;
+    pointer-events: none;
   }
+
   &__iconSort {
-      width: 16px;
+    width: 16px;
     height: 16px;
+    opacity: 0.75;
+    pointer-events: none;
   }
+
   &__input {
     width: 100%;
-    border: none;
+    min-height: 60px;
+    border: 1px solid $color-gray;
     outline: none;
-    padding-left: px($spacing-lg);
+    padding: 0 px($spacing-lg) 0 px($spacing-bg);
+    border-radius: px($radius-medium);
+    background-color: $color-white;
+    font-size: px($font-xs);
+    color: $color-dark;
+
+    &::placeholder {
+      color: rgba($color-dark, 0.48);
+    }
+
+    &:focus {
+      border-color: $color-purple;
+    }
   }
+
   &__wrapper {
-    display: flex;
-    column-gap: px($spacing-sm);
-    align-items: center;
+    display: block;
   }
+
+  &__sortWrapper {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    gap: px($spacing-sm);
+    border-radius: px($radius-medium);
+    padding: 0 px($spacing-lg);
+    border: 1px solid $color-gray;
+    background-color: $color-white;
+  }
+
   &__sort {
+    width: 100%;
+    min-height: 58px;
     border: none;
     outline: none;
+    background: transparent;
+    color: $color-dark;
+    font-size: px($font-xs);
+    cursor: pointer;
   }
 }
-
-/*
- 
- @use "../../styles/index.scss" as *;
-$color-white: #ffffff;
-$color-black: #000000;
- 
-$color-white: #ffffff;
-$color-black: #000000;
-
- 
-$color-white: #ffffff;
-$color-black: #000000;
-$color-green: #379c07;
-$color-orange: #e29f22;
-
-
-$color-grayLight:  #f0f0f0;
-$color-gray: #d8d8d8;
-$color-purple: #9f0fa7;
-$color-white: #fff;
-$color-darkLight: #303027;
-$color-dark: #222121;
-$color-red: #d80909;
-
-$container-sm: 1280;
-$container-md: 1400;
-$container-xs: 700;
-
- 
-$font-xs: 14;
-$font-sx: 20;
-$font-md: 24;
-$font-lg: 32;
-
-$radius-small: 4;
-$radius-medium: 8;
-$radius-large: 16;
-$radius-xlarge: 24;
-$radius-circle: 9999;
-
-$spacing-xs: 4;
-$spacing-sm: 8;
-$spacing-md: 16;
-$spacing-lg: 24;
-$spacing-xl: 32;
-$spacing-xxl: 48;
-$spacing-bg: 60;
-$spacing-vg: 80;
- 
-
-  */

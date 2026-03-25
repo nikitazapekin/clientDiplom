@@ -1,4 +1,5 @@
-@use "../../styles/index.scss" as *;
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
 
 .courses {
   width: 100%;
@@ -6,6 +7,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
+
   &__container {
     max-width: $container-md;
     width: 100%;
@@ -30,99 +32,43 @@
   }
 
   &__smiley {
-//    padding: px($spacing-sm);
     border-radius: 50%;
     border: 2px solid $color-purple;
     width: 80px;
     height: 80px;
-     font-size: px($font-lg);
-       display: flex;
-
+    font-size: px($font-lg);
+    display: flex;
     align-items: center;
     justify-content: center;
   }
 
   &__text {
-        text-align: center;
+    text-align: center;
     font-size: px($font-md);
   }
 
   &__round {
-      border-radius: 50%;
-   background-color:  $color-purple;
+    border-radius: 50%;
+    background-color: $color-purple;
     width: 15px;
     height: 15px;
     margin: 0 auto;
-
     margin-top: px($spacing-lg);
- margin-bottom: px($spacing-lg);
+    margin-bottom: px($spacing-lg);
   }
-
 
   &__cards {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center; 
-  gap: px($spacing-lg);
-   margin-bottom: px($spacing-lg);
-  margin-top: px($spacing-lg);
-   
-  & > * {
-    flex: 0 0 calc(33.333% - px($spacing-lg) * 2 / 3);
-    max-width: calc(33.333% - px($spacing-lg) * 2 / 3);
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: px($spacing-lg);
+    margin-top: px($spacing-lg);
+    margin-bottom: px($spacing-lg);
+
+    & > * {
+      flex: 0 0 calc(33.333% - px($spacing-lg) * 2 / 3);
+      max-width: calc(33.333% - px($spacing-lg) * 2 / 3);
+    }
   }
 }
-
-
-}
-
-/*
-
- @use "../../styles/index.scss" as *;
-$color-white: #ffffff;
-$color-black: #000000;
- 
-$color-white: #ffffff;
-$color-black: #000000;
-
- 
-$color-white: #ffffff;
-$color-black: #000000;
-$color-green: #379c07;
-$color-orange: #e29f22;
-
-
-$color-grayLight:  #f0f0f0;
-$color-gray: #d8d8d8;
-$color-purple: #9f0fa7;
-$color-white: #fff;
-$color-darkLight: #303027;
-$color-dark: #222121;
-$color-red: #d80909;
-
-$container-sm: 1280;
-$container-md: 1400;
-$container-xs: 700;
-
- 
-$font-xs: 14;
-$font-sx: 20;
-$font-md: 24;
-$font-lg: 32;
-
-$radius-small: 4;
-$radius-medium: 8;
-$radius-large: 16;
-$radius-xlarge: 24;
-$radius-circle: 9999;
-
-$spacing-xs: 4;
-$spacing-sm: 8;
-$spacing-md: 16;
-$spacing-lg: 24;
-$spacing-xl: 32;
-$spacing-xxl: 48;
-$spacing-bg: 60;
-$spacing-vg: 80;
-*/

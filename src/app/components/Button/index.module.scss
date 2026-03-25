@@ -1,4 +1,5 @@
-@use "../../styles/index.scss" as *;
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
 .button {
   padding: px($radius-medium);
   border-radius: px($radius-small);
