@@ -46,7 +46,7 @@ const LoginForm = () => {
       if (authResponse.role === "admin") {
         router.push("/admin/dashboard");
       } else {
-        router.push("/dashboard");
+        router.push("/homepage");
       }
 
       router.refresh();

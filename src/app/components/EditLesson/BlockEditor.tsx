@@ -10,7 +10,8 @@ import { LANGUAGES, StableCodeEditor } from "./editorShared";
 import {
   createEmptyFillTaskCase,
   extractFillTaskInputs,
-  getFillTaskCaseValue,
+  getFillTaskCaseOptionId,
+  normalizeFillTaskBlock,
   syncFillTaskTestCases,
 } from "./fillTaskUtils";
 import type {
@@ -32,6 +33,9 @@ const FILL_TASK_LANGUAGES: { value: FillCodeLanguage; label: string }[] = [
 
 const createFillTaskCaseId = () =>
   `fill_case_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+const createFillTaskOptionId = () =>
+  `fill_option_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
 export function BlockEditor({
   block,
@@ -1293,21 +1297,30 @@ export function BlockEditor({
   }
 
   if (block.type === "fillCodeTask") {
-    const inputIds = extractFillTaskInputs(block.templateCode ?? "");
-    const syncedTestCases = syncFillTaskTestCases(block.testCases, inputIds);
+    const normalizedBlock = normalizeFillTaskBlock(block);
+    const slotIds = extractFillTaskInputs(normalizedBlock.templateCode ?? "");
+    const syncedTestCases = syncFillTaskTestCases(
+      normalizedBlock.testCases,
+      slotIds,
+      normalizedBlock.options
+    );
 
     const updateTemplateCode = (templateCode: string) => {
-      const nextInputIds = extractFillTaskInputs(templateCode);
+      const nextSlotIds = extractFillTaskInputs(templateCode);
 
       updateBlock(slideIndex, block.id, {
         templateCode,
-        testCases: syncFillTaskTestCases(block.testCases, nextInputIds),
+        testCases: syncFillTaskTestCases(
+          normalizedBlock.testCases,
+          nextSlotIds,
+          normalizedBlock.options
+        ),
       });
     };
 
     const addTestCase = () => {
       updateBlock(slideIndex, block.id, {
-        testCases: [...syncedTestCases, createEmptyFillTaskCase(createFillTaskCaseId(), inputIds)],
+        testCases: [...syncedTestCases, createEmptyFillTaskCase(createFillTaskCaseId(), slotIds)],
       });
     };
 
@@ -1320,7 +1333,36 @@ export function BlockEditor({
       });
     };
 
-    const updateTestCaseValue = (testCaseIndex: number, inputId: string, value: string) => {
+    const addOption = () => {
+      const nextOptions = [...normalizedBlock.options, { id: createFillTaskOptionId(), value: "" }];
+
+      updateBlock(slideIndex, block.id, {
+        options: nextOptions,
+        testCases: syncFillTaskTestCases(normalizedBlock.testCases, slotIds, nextOptions),
+      });
+    };
+
+    const updateOptionValue = (optionId: string, value: string) => {
+      const nextOptions = normalizedBlock.options.map((option) =>
+        option.id === optionId ? { ...option, value } : option
+      );
+
+      updateBlock(slideIndex, block.id, {
+        options: nextOptions,
+        testCases: syncFillTaskTestCases(normalizedBlock.testCases, slotIds, nextOptions),
+      });
+    };
+
+    const deleteOption = (optionId: string) => {
+      const nextOptions = normalizedBlock.options.filter((option) => option.id !== optionId);
+
+      updateBlock(slideIndex, block.id, {
+        options: nextOptions,
+        testCases: syncFillTaskTestCases(normalizedBlock.testCases, slotIds, nextOptions),
+      });
+    };
+
+    const updateTestCaseValue = (testCaseIndex: number, slotId: string, optionId: string) => {
       const nextTestCases = syncedTestCases.map((testCase, currentIndex) => {
         if (currentIndex !== testCaseIndex) {
           return testCase;
@@ -1329,7 +1371,7 @@ export function BlockEditor({
         return {
           ...testCase,
           values: testCase.values.map((testValue) =>
-            testValue.inputId === inputId ? { ...testValue, value } : testValue
+            testValue.slotId === slotId ? { ...testValue, optionId: optionId || null } : testValue
           ),
         };
       });
@@ -1367,14 +1409,14 @@ export function BlockEditor({
         </div>
 
         <div className={styles.fillTaskHint}>
-          Используйте плейсхолдеры вида <code>[input]</code>, <code>[input1]</code>,
-          <code>[input2]</code>. Пользователь сможет менять только их.
+          Пишите любой код и отмечайте drop-зоны прямо в шаблоне через <code>[[slot-name]]</code>.
+          Например: <code>return [[value]];</code> или <code>const [[name]] = [[value]];</code>.
         </div>
 
         <label>Шаблон кода</label>
         <StableCodeEditor
           key={`${block.id}_fill_template`}
-          value={block.templateCode}
+          value={normalizedBlock.templateCode}
           onChange={updateTemplateCode}
           language={block.language}
           height={220}
@@ -1382,12 +1424,48 @@ export function BlockEditor({
 
         <div className={styles.fillTaskInfo}>
           <span>
-            Поля ввода:{" "}
-            {inputIds.length > 0
-              ? inputIds.map((inputId) => `[${inputId}]`).join(", ")
+            Слоты в коде:{" "}
+            {slotIds.length > 0
+              ? slotIds.map((slotId) => `[[${slotId}]]`).join(", ")
               : "не найдены"}
           </span>
-          <span>Решение считается верным, если совпадает хотя бы с одним вариантом ниже.</span>
+          <span>Пользователь сможет только перетаскивать варианты в белые поля внутри кода.</span>
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h4>Варианты для перетаскивания</h4>
+            <Button
+              color="#9F0FA7"
+              width="auto"
+              textColor="#fff"
+              text="+ Добавить вариант"
+              onClick={addOption}
+            />
+          </div>
+
+          {normalizedBlock.options.length === 0 && (
+            <p className={styles.fillTaskWarning}>
+              Добавьте хотя бы один вариант ответа, который пользователь сможет перетаскивать.
+            </p>
+          )}
+
+          <div className={styles.fillTaskOptionList}>
+            {normalizedBlock.options.map((option, optionIndex) => (
+              <div key={option.id} className={styles.fillTaskOptionRow}>
+                <span className={styles.fillTaskOptionBadge}>#{optionIndex + 1}</span>
+                <input
+                  className={styles.form__input}
+                  value={option.value}
+                  onChange={(e) => updateOptionValue(option.id, e.target.value)}
+                  placeholder="Например: a, b, +, var, return"
+                />
+                <button className={styles.deleteButton} onClick={() => deleteOption(option.id)}>
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className={styles.section}>
@@ -1399,26 +1477,33 @@ export function BlockEditor({
               textColor="#fff"
               text="+ Добавить вариант"
               onClick={addTestCase}
-              disabled={inputIds.length === 0}
+              disabled={slotIds.length === 0}
             />
           </div>
 
-          {inputIds.length === 0 && (
+          {slotIds.length === 0 && (
             <p className={styles.fillTaskWarning}>
-              Добавьте в код хотя бы один плейсхолдер, чтобы настроить проверку.
+              Добавьте в код хотя бы один слот вида <code>[[slot-name]]</code>, чтобы настроить
+              проверку.
             </p>
           )}
 
-          {inputIds.length > 0 && syncedTestCases.length === 0 && (
+          {slotIds.length > 0 && normalizedBlock.options.length === 0 && (
             <p className={styles.fillTaskWarning}>
-              Добавьте хотя бы один вариант проверки с ожидаемыми значениями.
+              Сначала задайте варианты ответа, затем настройте допустимые комбинации по слотам.
+            </p>
+          )}
+
+          {slotIds.length > 0 && syncedTestCases.length === 0 && (
+            <p className={styles.fillTaskWarning}>
+              Добавьте хотя бы один допустимый вариант заполнения слотов.
             </p>
           )}
 
           {syncedTestCases.map((testCase, testCaseIndex) => (
             <div key={testCase.id} className={styles.fillTaskCase}>
               <div className={styles.optionHeader}>
-                <span className={styles.optionTitle}>Вариант {testCaseIndex + 1}</span>
+                <span className={styles.optionTitle}>Комбинация {testCaseIndex + 1}</span>
                 <button
                   className={styles.deleteButton}
                   onClick={() => deleteTestCase(testCaseIndex)}
@@ -1428,15 +1513,21 @@ export function BlockEditor({
               </div>
 
               <div className={styles.fillTaskCaseInputs}>
-                {inputIds.map((inputId) => (
-                  <label key={inputId} className={styles.fillTaskCaseInput}>
-                    <span className={styles.fillTaskCaseLabel}>[{inputId}]</span>
-                    <input
+                {slotIds.map((slotId) => (
+                  <label key={slotId} className={styles.fillTaskCaseInput}>
+                    <span className={styles.fillTaskCaseLabel}>[[{slotId}]]</span>
+                    <select
                       className={styles.form__input}
-                      value={getFillTaskCaseValue(testCase, inputId)}
-                      onChange={(e) => updateTestCaseValue(testCaseIndex, inputId, e.target.value)}
-                      placeholder={`Ожидаемое значение для [${inputId}]`}
-                    />
+                      value={getFillTaskCaseOptionId(testCase, slotId) ?? ""}
+                      onChange={(e) => updateTestCaseValue(testCaseIndex, slotId, e.target.value)}
+                    >
+                      <option value="">Выберите вариант</option>
+                      {normalizedBlock.options.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.value || "(пустое значение)"}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 ))}
               </div>

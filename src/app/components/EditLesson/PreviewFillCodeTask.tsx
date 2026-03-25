@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 
 import Button from "../Button";
 
-import { StableCodeEditor } from "./editorShared";
+import { FillTaskCodeSlots } from "./FillTaskCodeSlots";
 import {
   extractFillTaskInputs,
-  syncFillTaskTestCases,
+  normalizeFillTaskBlock,
   validateFillTaskAnswers,
 } from "./fillTaskUtils";
 import styles from "./index.module.scss";
@@ -35,47 +35,50 @@ export function PreviewFillCodeTask({
   onResult,
 }: PreviewFillCodeTaskProps) {
   const [successMessage, setSuccessMessage] = useState("");
-  const inputIds = useMemo(
-    () => extractFillTaskInputs(block.templateCode ?? ""),
-    [block.templateCode]
-  );
-  const testCases = useMemo(
-    () => syncFillTaskTestCases(block.testCases, inputIds),
-    [block.testCases, inputIds]
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const normalizedBlock = useMemo(() => normalizeFillTaskBlock(block), [block]);
+  const slotIds = useMemo(
+    () => extractFillTaskInputs(normalizedBlock.templateCode ?? ""),
+    [normalizedBlock.templateCode]
   );
 
-  const updateAnswer = (inputId: string, value: string) => {
+  const updateAnswer = (slotId: string, optionId: string | null) => {
     setAnswers({
       ...answers,
-      [inputId]: value,
+      [slotId]: optionId ?? "",
     });
     setError("");
     setSuccessMessage("");
   };
 
   const handleCheck = () => {
-    if (inputIds.length === 0) {
+    if (slotIds.length === 0) {
       setSuccessMessage("");
-      setError("В задаче не найдено ни одного плейсхолдера вида [input].");
+      setError("В задаче не найдено ни одного слота вида [[slot-name]].");
 
       return;
     }
 
-    if (testCases.length === 0) {
+    if (normalizedBlock.testCases.length === 0) {
       setSuccessMessage("");
       setError("Для этой задачи не настроены варианты проверки.");
 
       return;
     }
 
-    if (inputIds.some((inputId) => (answers[inputId] ?? "").trim() === "")) {
+    if (slotIds.some((slotId) => (answers[slotId] ?? "").trim() === "")) {
       setSuccessMessage("");
-      setError("Заполните все поля ввода.");
+      setError("Заполните все белые поля, перетащив в них варианты.");
 
       return;
     }
 
-    const result = validateFillTaskAnswers(testCases, answers, inputIds);
+    const result = validateFillTaskAnswers(
+      normalizedBlock.testCases,
+      answers,
+      slotIds,
+      normalizedBlock.options
+    );
 
     onResult?.(result);
 
@@ -98,33 +101,44 @@ export function PreviewFillCodeTask({
       {block.description && <p className={styles.taskDescription}>{block.description}</p>}
 
       <div className={styles.fillTaskHint}>
-        Ниже показан неизменяемый шаблон кода. Введите значения для всех плейсхолдеров.
+        Код менять нельзя. Перетаскивайте варианты в белые поля внутри шаблона.
       </div>
 
-      <StableCodeEditor
-        value={block.templateCode}
-        onChange={() => {}}
-        language={block.language}
-        readOnly
-        height={220}
+      <FillTaskCodeSlots
+        templateCode={normalizedBlock.templateCode}
+        answers={answers}
+        options={normalizedBlock.options}
+        onAssign={updateAnswer}
+        selectedOptionId={selectedOptionId}
       />
 
       <div className={styles.fillTaskInfo}>
-        <span>Доступных вариантов ответа: {testCases.length}</span>
-        <span>Нужно совпасть хотя бы с одним из них.</span>
+        <span>Вариантов для перетаскивания: {normalizedBlock.options.length}</span>
+        <span>
+          Проверка пройдёт, если заполнение совпадёт хотя бы с одной допустимой комбинацией.
+        </span>
       </div>
 
-      <div className={styles.fillTaskCaseInputs}>
-        {inputIds.map((inputId) => (
-          <label key={inputId} className={styles.fillTaskCaseInput}>
-            <span className={styles.fillTaskCaseLabel}>[{inputId}]</span>
-            <input
-              className={styles.form__input}
-              value={answers[inputId] ?? ""}
-              onChange={(e) => updateAnswer(inputId, e.target.value)}
-              placeholder={`Введите значение для [${inputId}]`}
-            />
-          </label>
+      <div className={styles.fillTaskOptionBank}>
+        {normalizedBlock.options.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            draggable
+            className={`${styles.fillTaskOptionChip} ${
+              selectedOptionId === option.id ? styles.fillTaskOptionChipActive : ""
+            }`}
+            onDragStart={(event) => {
+              event.dataTransfer.setData("text/plain", option.id);
+              setSelectedOptionId(option.id);
+            }}
+            onDragEnd={() => setSelectedOptionId(null)}
+            onClick={() =>
+              setSelectedOptionId((current) => (current === option.id ? null : option.id))
+            }
+          >
+            {option.value || "(пустое значение)"}
+          </button>
         ))}
       </div>
 

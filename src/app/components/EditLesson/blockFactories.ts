@@ -71,29 +71,39 @@ export const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
 });
 
 export const createFillCodeTaskBlock = (order: number): FillCodeTaskBlock => {
-  const templateCode = `function sum(a, b) {\n  return [input1] + [input2];\n}\n\nsum(1, 2);`;
+  const templateCode = `const result = [[leftValue]] [[operator]] [[rightValue]];\nconsole.log(result);`;
   const inputIds = extractFillTaskInputs(templateCode);
+  const options = [
+    { id: genId(), value: "a" },
+    { id: genId(), value: "b" },
+    { id: genId(), value: "+" },
+    { id: genId(), value: "-" },
+  ];
 
   return {
     id: genId(),
     order,
     type: "fillCodeTask",
-    description: "Допишите пропуски так, чтобы код стал корректным.",
+    description:
+      "Соберите код из готовых вариантов. Помечайте места вставки как [[slot-name]] и задавайте допустимые комбинации ниже.",
     language: "javascript",
     templateCode,
+    options,
     testCases: [
       {
         ...createEmptyFillTaskCase(genId(), inputIds),
         values: [
-          { inputId: "input1", value: "a" },
-          { inputId: "input2", value: "b" },
+          { slotId: "leftValue", optionId: options[0].id },
+          { slotId: "operator", optionId: options[2].id },
+          { slotId: "rightValue", optionId: options[1].id },
         ],
       },
       {
         ...createEmptyFillTaskCase(genId(), inputIds),
         values: [
-          { inputId: "input1", value: "b" },
-          { inputId: "input2", value: "a" },
+          { slotId: "leftValue", optionId: options[1].id },
+          { slotId: "operator", optionId: options[2].id },
+          { slotId: "rightValue", optionId: options[0].id },
         ],
       },
     ],

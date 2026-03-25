@@ -18,7 +18,7 @@ import {
   genId,
 } from "./blockFactories";
 import { sortBlocks } from "./editorShared";
-import { extractFillTaskInputs, syncFillTaskTestCases } from "./fillTaskUtils";
+import { normalizeFillTaskBlock } from "./fillTaskUtils";
 import styles from "./index.module.scss";
 import { ResultsModal, SourceModal } from "./modals";
 import { PreviewBlock, PreviewBlockStatic } from "./PreviewBlocks";
@@ -100,14 +100,18 @@ export default function EditLesson() {
           title: slide.title,
           type: slide.type as SlideType,
           order: slide.orderIndex,
-          blocks: (slide.blocks || []) as unknown as SlideBlock[],
+          blocks: ((slide.blocks || []) as unknown as SlideBlock[]).map((block) =>
+            block.type === "fillCodeTask" ? normalizeFillTaskBlock(block) : block
+          ),
         })),
         ...data.tests.map((test) => ({
           id: test.id,
           title: test.title,
           type: "test" as const,
           order: test.orderIndex,
-          blocks: (test.blocks || []) as unknown as SlideBlock[],
+          blocks: ((test.blocks || []) as unknown as SlideBlock[]).map((block) =>
+            block.type === "fillCodeTask" ? normalizeFillTaskBlock(block) : block
+          ),
         })),
       ].sort((first, second) => first.order - second.order);
 
@@ -486,11 +490,7 @@ export default function EditLesson() {
               return rest;
             }
             if (block.type === "fillCodeTask") {
-              const inputIds = extractFillTaskInputs(block.templateCode);
-              return {
-                ...block,
-                testCases: syncFillTaskTestCases(block.testCases, inputIds),
-              };
+              return normalizeFillTaskBlock(block);
             }
             return block;
           }),
@@ -507,11 +507,7 @@ export default function EditLesson() {
               return rest;
             }
             if (block.type === "fillCodeTask") {
-              const inputIds = extractFillTaskInputs(block.templateCode);
-              return {
-                ...block,
-                testCases: syncFillTaskTestCases(block.testCases, inputIds),
-              };
+              return normalizeFillTaskBlock(block);
             }
             return block;
           }),

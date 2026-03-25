@@ -148,7 +148,13 @@ export interface CodeTaskBlock {
 }
 
 export interface FillCodeTaskCaseValue {
-  inputId: string;
+  slotId: string;
+  optionId: string | null;
+  value?: string;
+}
+
+export interface FillCodeTaskOption {
+  id: string;
   value: string;
 }
 
@@ -164,6 +170,7 @@ export interface FillCodeTaskBlock {
   description?: string;
   language: FillCodeLanguage;
   templateCode: string;
+  options: FillCodeTaskOption[];
   testCases: FillCodeTaskCase[];
 }
 

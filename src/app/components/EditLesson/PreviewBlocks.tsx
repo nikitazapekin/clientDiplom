@@ -1,6 +1,8 @@
 import Button from "../Button";
 
 import { StableCodeEditor } from "./editorShared";
+import { FillTaskCodeSlots } from "./FillTaskCodeSlots";
+import { normalizeFillTaskBlock } from "./fillTaskUtils";
 import styles from "./index.module.scss";
 import { PreviewCodeTask } from "./PreviewCodeTask";
 import { PreviewFillCodeTask } from "./PreviewFillCodeTask";
@@ -55,16 +57,16 @@ export function PreviewBlockStatic({ block }: { block: SlideBlock }) {
   if (block.type === "codeTask") return <p>Задача: {block.description || "—"}</p>;
 
   if (block.type === "fillCodeTask") {
+    const normalizedBlock = normalizeFillTaskBlock(block);
+
     return (
       <div className={styles.fillTaskStatic}>
         <p>Задача с дописыванием кода: {block.description || "—"}</p>
-        <StableCodeEditor
-          key={`${block.id}_preview_fill_static`}
-          value={block.templateCode || ""}
-          onChange={() => {}}
-          language={block.language}
+        <FillTaskCodeSlots
+          templateCode={normalizedBlock.templateCode || ""}
+          answers={{}}
+          options={normalizedBlock.options}
           readOnly
-          height={180}
         />
       </div>
     );

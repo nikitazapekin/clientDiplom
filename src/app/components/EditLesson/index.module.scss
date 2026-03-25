@@ -350,6 +350,68 @@
   width: 100%;
 }
 
+.fillTaskCodeSurface {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: px($spacing-md);
+  border-radius: px($radius-small);
+  background: #151922;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+}
+
+.fillTaskCodeLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 24px;
+}
+
+.fillTaskCodeText {
+  font-family: "Fira Code", "JetBrains Mono", monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d7e0f5;
+  white-space: pre-wrap;
+}
+
+.fillTaskSlot {
+  min-width: 72px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(17, 24, 39, 0.24);
+  background: #fff;
+  color: #111827;
+  font-family: "Fira Code", "JetBrains Mono", monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(159, 15, 167, 0.45);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 1;
+  }
+}
+
+.fillTaskSlotFilled {
+  border-style: solid;
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
 .fillTaskHint {
   padding: px($spacing-sm);
   border-radius: px($radius-small);
@@ -372,6 +434,65 @@
 .fillTaskWarning {
   color: $color-red;
   margin: 0;
+}
+
+.fillTaskOptionList {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-sm);
+}
+
+.fillTaskOptionRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: px($spacing-sm);
+  align-items: center;
+  padding: px($spacing-sm);
+  border-radius: px($radius-small);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.fillTaskOptionBadge {
+  min-width: 34px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(159, 15, 167, 0.12);
+  color: $color-purple;
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+}
+
+.fillTaskOptionBank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-sm);
+}
+
+.fillTaskOptionChip {
+  border: 1px solid rgba(159, 15, 167, 0.2);
+  background: linear-gradient(180deg, #ffffff 0%, #f6eff8 100%);
+  color: #111827;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-family: "Fira Code", "JetBrains Mono", monospace;
+  font-size: 14px;
+  cursor: grab;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(159, 15, 167, 0.45);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  }
+}
+
+.fillTaskOptionChipActive {
+  border-color: rgba(159, 15, 167, 0.65);
+  box-shadow: 0 0 0 3px rgba(159, 15, 167, 0.14);
 }
 
 .fillTaskCase {
