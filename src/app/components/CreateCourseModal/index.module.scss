@@ -25,6 +25,8 @@
     flex-direction: column;
     row-gap: px($spacing-lg);
     padding: px($spacing-lg);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
   }
 
   &__overlay {
@@ -64,7 +66,8 @@
   }
 
   &__input,
-  &__select {
+  &__select,
+  &__textarea {
     padding: px($spacing-sm) px($spacing-md);
     border: 1px solid $color-gray;
     border-radius: px($radius-medium);
@@ -81,6 +84,26 @@
   &__select {
     background-color: $color-white;
     cursor: pointer;
+  }
+
+  &__textarea {
+    resize: vertical;
+    min-height: 180px;
+    line-height: 1.5;
+    font-family: inherit;
+  }
+
+  &__helperText {
+    margin: 0;
+    color: rgba($color-dark, 0.72);
+    font-size: px(12);
+    line-height: 1.4;
+  }
+
+  &__counter {
+    color: rgba($color-dark, 0.56);
+    font-size: px(12);
+    align-self: flex-end;
   }
 
   &__tagContainer {
@@ -171,6 +194,30 @@
     height: auto;
     border-radius: px($radius-medium);
     border: 1px solid $color-gray;
+  }
+
+  &__fileName {
+    margin-top: px($spacing-xs);
+    color: rgba($color-dark, 0.72);
+    font-size: px(12);
+    word-break: break-word;
+  }
+
+  &__imageNote {
+    color: rgba($color-dark, 0.6);
+    font-size: px(12);
+    line-height: 1.4;
+  }
+
+  &__error {
+    width: 100%;
+    padding: px($spacing-sm) px($spacing-md);
+    border-radius: px($radius-medium);
+    background-color: rgba($color-red, 0.08);
+    border: 1px solid rgba($color-red, 0.18);
+    color: $color-red;
+    font-size: px($font-xs);
+    line-height: 1.4;
   }
 
   &__buttons {

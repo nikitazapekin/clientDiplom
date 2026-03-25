@@ -1,6 +1,7 @@
 import type {
   CourseListResponse,
   CourseResponse,
+  CourseStatsResponse,
   CourseStatus,
   CreateCourseRequest,
   UpdateCourseRequest,
@@ -56,6 +57,17 @@ export class CourseService {
     } catch (error: any) {
       console.error("Get course error:", error);
       throw new Error(error.response?.data?.message || "Failed to fetch course");
+    }
+  }
+
+  static async getCourseStats(id: string): Promise<CourseStatsResponse> {
+    try {
+      const response = await $api.get(`/courses/${id}/stats`);
+
+      return response.data.data ?? response.data;
+    } catch (error: any) {
+      console.error("Get course stats error:", error);
+      throw new Error(error.response?.data?.message || "Failed to fetch course stats");
     }
   }
 

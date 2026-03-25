@@ -21,12 +21,11 @@ const AdminCourses = ({ initialCourses }: CourseListResponse) => {
         <div className={styles.courses__container}>
           <CourseFilters handleOpen={handleOpen} />
 
-          {initialCourses.courses.map((itemm, index) => {
+          {initialCourses.courses.map((itemm) => {
             const item = {
               id: itemm.id,
               title: itemm.title,
               logo: itemm.logo,
-              lessonCount: 0,
               description: itemm.description,
               tags: itemm.tags,
             };

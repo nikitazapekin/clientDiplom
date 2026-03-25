@@ -29,7 +29,6 @@ const Courses = ({ initialCourses }: { initialCourses: CourseListResponse }) => 
             id: itemm.id,
             title: itemm.title,
             logo: itemm.logo,
-            lessonCount: 0,
             description: itemm.description,
             tags: itemm.tags,
           };
@@ -39,7 +38,6 @@ const Courses = ({ initialCourses }: { initialCourses: CourseListResponse }) => 
       </div>
     </div>
   );
-
 };
 
 export default Courses;

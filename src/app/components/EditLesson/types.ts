@@ -67,16 +67,16 @@ export interface CodeConstraint {
   value: number | string[] | boolean;
 }
 
-export type ArgumentType = 
-  | "int" 
-  | "string" 
+export type ArgumentType =
+  | "int"
+  | "string"
   | "number"
-  | "boolean" 
-  | "double" 
-  | "float" 
-  | "long" 
-  | "char" 
-  | "byte" 
+  | "boolean"
+  | "double"
+  | "float"
+  | "long"
+  | "char"
+  | "byte"
   | "short"
   | "object"
   | "array"
@@ -107,9 +107,9 @@ export interface FunctionArgument {
 export interface ArgumentSchema {
   name: string;
   type: ArgumentType;
-  className?: string;  // Custom class name for object types
+  className?: string; // Custom class name for object types
   arrayElementType?: ArgumentType;
-  arrayElementClassName?: string;  // Custom class name for array element objects
+  arrayElementClassName?: string; // Custom class name for array element objects
   objectFields?: ObjectField[];
   arrayElementObjectFields?: ObjectField[];
 }

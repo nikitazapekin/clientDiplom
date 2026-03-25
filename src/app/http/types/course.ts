@@ -1,6 +1,7 @@
 export interface CreateCourseRequest {
   title: string;
   description: string;
+  fullDescription: string;
   type: string;
   language: string;
   tags?: string[];
@@ -20,6 +21,7 @@ export interface CourseResponse {
   id: string;
   title: string;
   description: string;
+  fullDescription: string;
   type: string;
   language: string;
   tags: string[];
@@ -30,6 +32,11 @@ export interface CourseResponse {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+}
+
+export interface CourseStatsResponse {
+  lessonCount: number;
+  studentCount: number;
 }
 
 export type CourseStatus = "draft" | "published" | "archived";

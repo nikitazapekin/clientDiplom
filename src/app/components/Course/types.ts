@@ -3,7 +3,7 @@ export interface CourseItem {
     id: string;
     title: string;
     logo: string;
-    lessonCount: number;
+    lessonCount?: number;
     tags: string[];
     description: string;
   };

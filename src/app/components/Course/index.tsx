@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -8,6 +9,8 @@ import type { CourseItem } from "./types";
 
 import { getBaseUrl } from "@/app/http/api";
 import { AuthService } from "@/app/http/auth";
+import { CourseService } from "@/app/http/courses";
+import type { CourseStatsResponse } from "@/app/http/types/course";
 
 const getValidImageSrc = (logo: string): string | null => {
   if (!logo || typeof logo !== "string" || !logo.trim()) return null;
@@ -37,6 +40,37 @@ interface CourseProps {
 const Course = ({ item, isAdmin }: CourseProps) => {
   const router = useRouter();
   const imageSrc = getValidImageSrc(item.logo);
+  const [stats, setStats] = useState<CourseStatsResponse | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadCourseStats = async () => {
+      try {
+        const courseStats = await CourseService.getCourseStats(item.id);
+
+        if (isActive) {
+          setStats(courseStats);
+        }
+      } catch (error) {
+        console.error("Failed to load course stats:", error);
+
+        if (isActive) {
+          setStats({
+            lessonCount: item.lessonCount ?? 0,
+            studentCount: 0,
+          });
+        }
+      }
+    };
+
+    setStats(null);
+    void loadCourseStats();
+
+    return () => {
+      isActive = false;
+    };
+  }, [item.id, item.lessonCount]);
 
   const handleNavigate = () => {
     const userRole = AuthService.getCurrentUser().role;
@@ -70,13 +104,13 @@ const Course = ({ item, isAdmin }: CourseProps) => {
         <p className={styles.course__description}>{item.description}</p>
         <div className={styles.course__lesson}>
           <p className={styles.course__count}>
-            <b>Количество уроков:</b> {item.lessonCount}
+            <b>Количество уроков:</b> {stats?.lessonCount ?? "..."}
           </p>
         </div>
 
         <div className={styles.course__lesson}>
           <p className={styles.course__count}>
-            <b>Количество студентов:</b> {12123}
+            <b>Количество студентов:</b> {stats?.studentCount ?? "..."}
           </p>
         </div>
 

@@ -3,6 +3,7 @@ export interface CourseResponse {
     id: string;
     title: string;
     description: string;
+    fullDescription: string;
     type: string;
     language: string;
     tags: string[];

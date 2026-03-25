@@ -107,6 +107,32 @@
   }
 }
 
+.course {
+  &__details {
+    width: 100%;
+    max-width: $container-md;
+    padding: px($spacing-xl);
+    border-radius: px($radius-large);
+    background-color: $color-white;
+    box-shadow: 0 20px 60px rgba($color-black, 0.06);
+  }
+
+  &__subtitle {
+    margin-bottom: px($spacing-md);
+    font-size: px($font-lg);
+    font-weight: 700;
+    color: $color-dark;
+  }
+
+  &__detailedDescription {
+    margin: 0;
+    font-size: px($font-sx);
+    line-height: 1.75;
+    color: rgba($color-dark, 0.8);
+    white-space: pre-line;
+  }
+}
+
 /*
 
  @use "../../styles/index.scss" as *;

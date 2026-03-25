@@ -13,6 +13,8 @@ import { AuthService } from "@/app/http/auth";
 
 const CourseDetails = ({ course }: CourseResponse) => {
   const router = useRouter();
+  const detailedDescription = course.fullDescription?.trim() || course.description;
+
   const handleRedirect = () => {
     const userRole = AuthService.getCurrentUser().role;
     const isUserAdmin = userRole === "admin";
@@ -63,16 +65,7 @@ const CourseDetails = ({ course }: CourseResponse) => {
         <div className={styles.course__details}>
           <h2 className={styles.course__subtitle}>О курсе</h2>
 
-          <p className={styles.course__detailedDescription}>
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quia fugit expedita saepe
-            culpa mollitia, quidem minus eligendi provident blanditiis voluptatem? Perspiciatis
-            autem magni deserunt voluptatem assumenda ex et quidem doloribus. Lorem ipsum, dolor sit
-            amet consectetur adipisicing elit. Impedit illo id officia sint, iusto distinctio,
-            voluptatem velit vero tempore corporis perspiciatis ut voluptate maxime tenetur nam
-            possimus non tempora odio? Lorem ipsum dolor, sit amet consectetur adipisicing elit.
-            Similique maiores placeat voluptatibus facere velit. Ex tempore placeat ducimus quaerat
-            quis nesciunt fugit. Eligendi sapiente odit officiis illo reprehenderit quidem hic.
-          </p>
+          <p className={styles.course__detailedDescription}>{detailedDescription}</p>
         </div>
 
         <div className={styles.courses__certificate}>

@@ -16,7 +16,7 @@ interface Field {
   id: number;
   label: string;
   placeholder: string;
-  type: "input" | "select" | "add" | "image";
+  type: "input" | "textarea" | "select" | "add" | "image";
   name: string;
 }
 
@@ -27,17 +27,31 @@ interface Tag {
 
 const fields: Field[] = [
   { id: 1, label: "Название курса", placeholder: "Введите название", type: "input", name: "title" },
-  { id: 2, label: "Описание", placeholder: "Введите описание", type: "input", name: "description" },
-  { id: 3, label: "Тип курса", placeholder: "Выберите тип", type: "select", name: "type" },
   {
-    id: 4,
+    id: 2,
+    label: "Краткое описание",
+    placeholder: "Коротко опишите курс для карточки и списка курсов",
+    type: "input",
+    name: "description",
+  },
+  {
+    id: 3,
+    label: "Подробное описание курса",
+    placeholder:
+      "Расскажите, чему посвящён курс, для кого он подходит, какой результат получит студент, как устроено обучение и какие темы будут разобраны.",
+    type: "textarea",
+    name: "fullDescription",
+  },
+  { id: 4, label: "Тип курса", placeholder: "Выберите тип", type: "select", name: "type" },
+  {
+    id: 5,
     label: "Язык программирования",
     placeholder: "Выберите язык программирования",
     type: "select",
     name: "language",
   },
-  { id: 5, label: "Теги", placeholder: "Введите тег", type: "add", name: "tags" },
-  { id: 6, label: "Логотип", placeholder: "Выберите логотип", type: "image", name: "logo" },
+  { id: 6, label: "Теги", placeholder: "Введите тег", type: "add", name: "tags" },
+  { id: 7, label: "Логотип", placeholder: "Выберите логотип", type: "image", name: "logo" },
 ];
 
 const courseTypes = ["online", "offline", "hybrid"];
@@ -52,6 +66,7 @@ const CreateCourseModal = ({
   const [formData, setFormData] = useState<Record<string, string>>({
     title: "",
     description: "",
+    fullDescription: "",
     type: "online",
     language: "ru",
     logo: "",
@@ -142,6 +157,12 @@ const CreateCourseModal = ({
       return false;
     }
 
+    if (!formData.fullDescription.trim()) {
+      setError("Подробное описание курса обязательно");
+
+      return false;
+    }
+
     if (!formData.type) {
       setError("Тип курса обязателен");
 
@@ -173,6 +194,7 @@ const CreateCourseModal = ({
       const courseData = {
         title: formData.title,
         description: formData.description,
+        fullDescription: formData.fullDescription,
         type: formData.type,
         language: formData.language,
         tags: tags.map((tag) => tag.text),
@@ -187,12 +209,15 @@ const CreateCourseModal = ({
       setFormData({
         title: "",
         description: "",
+        fullDescription: "",
         type: "online",
         language: "ru",
         logo: "",
         status: "draft",
       });
       setTags([]);
+      setTagInput("");
+      setNextTagId(1);
       setImagePreview(null);
       setImageFile(null);
 
@@ -217,23 +242,33 @@ const CreateCourseModal = ({
         return (
           <div key={field.id} className={styles.modal__field}>
             <label className={styles.modal__label}>{field.label}</label>
-            {field.name === "description" ? (
-              <textarea
-                className={styles.modal__textarea}
-                placeholder={field.placeholder}
-                value={formData[field.name] || ""}
-                onChange={(e) => handleInputChange(field.name, e.target.value)}
-                rows={4}
-              />
-            ) : (
-              <input
-                type="text"
-                className={styles.modal__input}
-                placeholder={field.placeholder}
-                value={formData[field.name] || ""}
-                onChange={(e) => handleInputChange(field.name, e.target.value)}
-              />
-            )}
+            <input
+              type="text"
+              className={styles.modal__input}
+              placeholder={field.placeholder}
+              value={formData[field.name] || ""}
+              onChange={(e) => handleInputChange(field.name, e.target.value)}
+            />
+          </div>
+        );
+
+      case "textarea":
+        return (
+          <div key={field.id} className={styles.modal__field}>
+            <label className={styles.modal__label}>{field.label}</label>
+            <textarea
+              className={styles.modal__textarea}
+              placeholder={field.placeholder}
+              value={formData[field.name] || ""}
+              onChange={(e) => handleInputChange(field.name, e.target.value)}
+              rows={10}
+            />
+            <p className={styles.modal__helperText}>
+              Это описание будет показано на странице курса вместо текстовой заглушки.
+            </p>
+            <span className={styles.modal__counter}>
+              {(formData[field.name] || "").trim().length} символов
+            </span>
           </div>
         );
 
