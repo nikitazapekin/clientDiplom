@@ -10,6 +10,7 @@ export interface Slide {
 }
 
 export type CodeLanguage = "javascript" | "python" | "csharp" | "java" | "golang" | "cpp";
+export type FillCodeLanguage = "javascript" | "python" | "csharp" | "java";
 
 export interface TextBlock {
   id: string;
@@ -146,6 +147,26 @@ export interface CodeTaskBlock {
   returnType?: ArgumentType;
 }
 
+export interface FillCodeTaskCaseValue {
+  inputId: string;
+  value: string;
+}
+
+export interface FillCodeTaskCase {
+  id: string;
+  values: FillCodeTaskCaseValue[];
+}
+
+export interface FillCodeTaskBlock {
+  id: string;
+  order: number;
+  type: "fillCodeTask";
+  description?: string;
+  language: FillCodeLanguage;
+  templateCode: string;
+  testCases: FillCodeTaskCase[];
+}
+
 export interface TheoryQuestionBlock {
   id: string;
   order: number;
@@ -164,4 +185,5 @@ export type SlideBlock =
   | TableBlock
   | ImageBlock
   | CodeTaskBlock
+  | FillCodeTaskBlock
   | TheoryQuestionBlock;

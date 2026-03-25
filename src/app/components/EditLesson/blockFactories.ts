@@ -1,7 +1,9 @@
 import { getDefaultStarterCode } from "./codeUtils";
+import { createEmptyFillTaskCase, extractFillTaskInputs } from "./fillTaskUtils";
 import type {
   CodeExampleBlock,
   CodeTaskBlock,
+  FillCodeTaskBlock,
   ImageBlock,
   SourceBlock,
   TableBlock,
@@ -67,6 +69,36 @@ export const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
   argumentScheme: [],
   returnType: "int",
 });
+
+export const createFillCodeTaskBlock = (order: number): FillCodeTaskBlock => {
+  const templateCode = `function sum(a, b) {\n  return [input1] + [input2];\n}\n\nsum(1, 2);`;
+  const inputIds = extractFillTaskInputs(templateCode);
+
+  return {
+    id: genId(),
+    order,
+    type: "fillCodeTask",
+    description: "Допишите пропуски так, чтобы код стал корректным.",
+    language: "javascript",
+    templateCode,
+    testCases: [
+      {
+        ...createEmptyFillTaskCase(genId(), inputIds),
+        values: [
+          { inputId: "input1", value: "a" },
+          { inputId: "input2", value: "b" },
+        ],
+      },
+      {
+        ...createEmptyFillTaskCase(genId(), inputIds),
+        values: [
+          { inputId: "input1", value: "b" },
+          { inputId: "input2", value: "a" },
+        ],
+      },
+    ],
+  };
+};
 
 export const createTheoryQuestionBlock = (order: number): TheoryQuestionBlock => ({
   id: genId(),

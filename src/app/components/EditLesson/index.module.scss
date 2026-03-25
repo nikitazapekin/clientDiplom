@@ -343,6 +343,70 @@
   margin-bottom: px($spacing-xs);
 }
 
+.fillTaskStatic {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-sm);
+  width: 100%;
+}
+
+.fillTaskHint {
+  padding: px($spacing-sm);
+  border-radius: px($radius-small);
+  background: rgba(159, 15, 167, 0.08);
+  color: $color-dark;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.fillTaskInfo {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-xs);
+  padding: px($spacing-sm);
+  border-radius: px($radius-small);
+  background: $color-grayLight;
+  font-size: 14px;
+}
+
+.fillTaskWarning {
+  color: $color-red;
+  margin: 0;
+}
+
+.fillTaskCase {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-sm);
+  padding: px($spacing-sm);
+  border: 1px solid $color-gray;
+  border-radius: px($radius-small);
+  background: $color-white;
+}
+
+.fillTaskCaseInputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: px($spacing-sm);
+}
+
+.fillTaskCaseInput {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-xs);
+}
+
+.fillTaskCaseLabel {
+  font-weight: 600;
+  color: $color-purple;
+}
+
+.fillTaskSuccess {
+  margin: 0;
+  color: #1d7c35;
+  font-weight: 600;
+}
+
 .previewTop {
   display: flex;
   justify-content: space-between;

@@ -7,9 +7,31 @@ import Button from "../Button";
 import styles from "./index.module.scss";
 import { getDefaultStarterCode, getTypeString, stripMainMethod } from "./codeUtils";
 import { LANGUAGES, StableCodeEditor } from "./editorShared";
-import type { ArgumentSchema, ArgumentType, CodeConstraintType, SlideBlock } from "./types";
+import {
+  createEmptyFillTaskCase,
+  extractFillTaskInputs,
+  getFillTaskCaseValue,
+  syncFillTaskTestCases,
+} from "./fillTaskUtils";
+import type {
+  ArgumentSchema,
+  ArgumentType,
+  CodeConstraintType,
+  FillCodeLanguage,
+  SlideBlock,
+} from "./types";
 
 import type { CodeLanguage } from "@/app/http/codeService";
+
+const FILL_TASK_LANGUAGES: { value: FillCodeLanguage; label: string }[] = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "python", label: "Python" },
+  { value: "csharp", label: "C#" },
+  { value: "java", label: "Java" },
+];
+
+const createFillTaskCaseId = () =>
+  `fill_case_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
 export function BlockEditor({
   block,
@@ -1266,6 +1288,161 @@ export function BlockEditor({
             />
           </>
         )}
+      </div>
+    );
+  }
+
+  if (block.type === "fillCodeTask") {
+    const inputIds = extractFillTaskInputs(block.templateCode ?? "");
+    const syncedTestCases = syncFillTaskTestCases(block.testCases, inputIds);
+
+    const updateTemplateCode = (templateCode: string) => {
+      const nextInputIds = extractFillTaskInputs(templateCode);
+
+      updateBlock(slideIndex, block.id, {
+        templateCode,
+        testCases: syncFillTaskTestCases(block.testCases, nextInputIds),
+      });
+    };
+
+    const addTestCase = () => {
+      updateBlock(slideIndex, block.id, {
+        testCases: [...syncedTestCases, createEmptyFillTaskCase(createFillTaskCaseId(), inputIds)],
+      });
+    };
+
+    const deleteTestCase = (testCaseIndex: number) => {
+      const nextTestCases = [...syncedTestCases];
+      nextTestCases.splice(testCaseIndex, 1);
+
+      updateBlock(slideIndex, block.id, {
+        testCases: nextTestCases,
+      });
+    };
+
+    const updateTestCaseValue = (testCaseIndex: number, inputId: string, value: string) => {
+      const nextTestCases = syncedTestCases.map((testCase, currentIndex) => {
+        if (currentIndex !== testCaseIndex) {
+          return testCase;
+        }
+
+        return {
+          ...testCase,
+          values: testCase.values.map((testValue) =>
+            testValue.inputId === inputId ? { ...testValue, value } : testValue
+          ),
+        };
+      });
+
+      updateBlock(slideIndex, block.id, {
+        testCases: nextTestCases,
+      });
+    };
+
+    return (
+      <div className={styles.blockEditor}>
+        <label>Описание задачи</label>
+        <textarea
+          className={styles.form__textarea}
+          value={block.description ?? ""}
+          onChange={(e) => updateBlock(slideIndex, block.id, { description: e.target.value })}
+          placeholder="Например: допишите пропуски так, чтобы функция возвращала n"
+          rows={3}
+        />
+
+        <div className={styles.form__wrapper}>
+          <span>Язык программирования:</span>
+          <select
+            value={block.language}
+            onChange={(e) =>
+              updateBlock(slideIndex, block.id, { language: e.target.value as FillCodeLanguage })
+            }
+          >
+            {FILL_TASK_LANGUAGES.map((languageOption) => (
+              <option key={languageOption.value} value={languageOption.value}>
+                {languageOption.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.fillTaskHint}>
+          Используйте плейсхолдеры вида <code>[input]</code>, <code>[input1]</code>,
+          <code>[input2]</code>. Пользователь сможет менять только их.
+        </div>
+
+        <label>Шаблон кода</label>
+        <StableCodeEditor
+          key={`${block.id}_fill_template`}
+          value={block.templateCode}
+          onChange={updateTemplateCode}
+          language={block.language}
+          height={220}
+        />
+
+        <div className={styles.fillTaskInfo}>
+          <span>
+            Поля ввода:{" "}
+            {inputIds.length > 0
+              ? inputIds.map((inputId) => `[${inputId}]`).join(", ")
+              : "не найдены"}
+          </span>
+          <span>Решение считается верным, если совпадает хотя бы с одним вариантом ниже.</span>
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h4>Варианты проверки</h4>
+            <Button
+              color="#9F0FA7"
+              width="auto"
+              textColor="#fff"
+              text="+ Добавить вариант"
+              onClick={addTestCase}
+              disabled={inputIds.length === 0}
+            />
+          </div>
+
+          {inputIds.length === 0 && (
+            <p className={styles.fillTaskWarning}>
+              Добавьте в код хотя бы один плейсхолдер, чтобы настроить проверку.
+            </p>
+          )}
+
+          {inputIds.length > 0 && syncedTestCases.length === 0 && (
+            <p className={styles.fillTaskWarning}>
+              Добавьте хотя бы один вариант проверки с ожидаемыми значениями.
+            </p>
+          )}
+
+          {syncedTestCases.map((testCase, testCaseIndex) => (
+            <div key={testCase.id} className={styles.fillTaskCase}>
+              <div className={styles.optionHeader}>
+                <span className={styles.optionTitle}>Вариант {testCaseIndex + 1}</span>
+                <button
+                  className={styles.deleteButton}
+                  onClick={() => deleteTestCase(testCaseIndex)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className={styles.fillTaskCaseInputs}>
+                {inputIds.map((inputId) => (
+                  <label key={inputId} className={styles.fillTaskCaseInput}>
+                    <span className={styles.fillTaskCaseLabel}>[{inputId}]</span>
+                    <input
+                      className={styles.form__input}
+                      value={getFillTaskCaseValue(testCase, inputId)}
+                      onChange={(e) => updateTestCaseValue(testCaseIndex, inputId, e.target.value)}
+                      placeholder={`Ожидаемое значение для [${inputId}]`}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

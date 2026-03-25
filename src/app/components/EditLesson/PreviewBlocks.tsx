@@ -3,6 +3,7 @@ import Button from "../Button";
 import { StableCodeEditor } from "./editorShared";
 import styles from "./index.module.scss";
 import { PreviewCodeTask } from "./PreviewCodeTask";
+import { PreviewFillCodeTask } from "./PreviewFillCodeTask";
 import type { SlideBlock, TheoryQuestionBlock } from "./types";
 
 import type { CodeLanguage } from "@/app/http/codeService";
@@ -52,6 +53,22 @@ export function PreviewBlockStatic({ block }: { block: SlideBlock }) {
   }
 
   if (block.type === "codeTask") return <p>Задача: {block.description || "—"}</p>;
+
+  if (block.type === "fillCodeTask") {
+    return (
+      <div className={styles.fillTaskStatic}>
+        <p>Задача с дописыванием кода: {block.description || "—"}</p>
+        <StableCodeEditor
+          key={`${block.id}_preview_fill_static`}
+          value={block.templateCode || ""}
+          onChange={() => {}}
+          language={block.language}
+          readOnly
+          height={180}
+        />
+      </div>
+    );
+  }
 
   if (block.type === "theoryQuestion") return <p>Вопрос: {block.text || "—"}</p>;
 
@@ -121,10 +138,13 @@ export function PreviewBlock({
   codeRunLoading,
   testAnswer,
   setTestAnswer,
+  fillAnswers,
+  setFillAnswers,
   testError,
   setTestError,
   onCorrect,
   onResults,
+  onFillTaskResult,
 }: {
   block: SlideBlock;
   slideId: string;
@@ -133,10 +153,17 @@ export function PreviewBlock({
   codeRunLoading: boolean | undefined;
   testAnswer: string | number | undefined;
   setTestAnswer: (v: string | number) => void;
+  fillAnswers: Record<string, string>;
+  setFillAnswers: (values: Record<string, string>) => void;
   testError: string | undefined;
   setTestError: (v: string) => void;
   onCorrect: () => void;
   onResults?: (results: unknown) => void;
+  onFillTaskResult?: (result: {
+    passed: boolean;
+    matchedCaseIndex: number | null;
+    totalCases: number;
+  }) => void;
 }) {
   void slideId;
 
@@ -197,6 +224,20 @@ export function PreviewBlock({
         setTestError={setTestError}
         onCorrect={onCorrect}
         onResults={onResults}
+      />
+    );
+  }
+
+  if (block.type === "fillCodeTask") {
+    return (
+      <PreviewFillCodeTask
+        block={block}
+        answers={fillAnswers}
+        setAnswers={setFillAnswers}
+        error={testError}
+        setError={setTestError}
+        onCorrect={onCorrect}
+        onResult={onFillTaskResult}
       />
     );
   }

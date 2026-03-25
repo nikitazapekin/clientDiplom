@@ -9,6 +9,7 @@ import { BlockEditor } from "./BlockEditor";
 import {
   createCodeExampleBlock,
   createCodeTaskBlock,
+  createFillCodeTaskBlock,
   createImageBlock,
   createSourceBlock,
   createTableBlock,
@@ -17,11 +18,13 @@ import {
   genId,
 } from "./blockFactories";
 import { sortBlocks } from "./editorShared";
+import { extractFillTaskInputs, syncFillTaskTestCases } from "./fillTaskUtils";
 import styles from "./index.module.scss";
 import { ResultsModal, SourceModal } from "./modals";
 import { PreviewBlock, PreviewBlockStatic } from "./PreviewBlocks";
 import type {
   CodeTaskBlock,
+  FillCodeTaskBlock,
   Slide,
   SlideBlock,
   SlideType,
@@ -45,6 +48,13 @@ export default function EditLesson() {
   const [previewCurrentIndex, setPreviewCurrentIndex] = useState(0);
   const [testAnswer, setTestAnswer] = useState<Record<string, string | number>>({});
   const [testError, setTestError] = useState<Record<string, string>>({});
+  const [fillTaskAnswers, setFillTaskAnswers] = useState<Record<string, Record<string, string>>>(
+    {}
+  );
+  const [fillTaskErrors, setFillTaskErrors] = useState<Record<string, string>>({});
+  const [fillTaskResults, setFillTaskResults] = useState<
+    Record<string, { passed: boolean; matchedCaseIndex: number | null; totalCases: number }>
+  >({});
   const [codeRunOutput, setCodeRunOutput] = useState<Record<string, string>>({});
   const [codeRunLoading, setCodeRunLoading] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -191,6 +201,9 @@ export default function EditLesson() {
         case "codeTask":
           block = createCodeTaskBlock(order);
           break;
+        case "fillCodeTask":
+          block = createFillCodeTaskBlock(order);
+          break;
         case "theoryQuestion":
           block = createTheoryQuestionBlock(order);
           break;
@@ -322,11 +335,14 @@ export default function EditLesson() {
       const codeTasks = slide.blocks.filter(
         (block) => block.type === "codeTask"
       ) as CodeTaskBlock[];
+      const fillCodeTasks = slide.blocks.filter(
+        (block) => block.type === "fillCodeTask"
+      ) as FillCodeTaskBlock[];
       const theoryQuestions = slide.blocks.filter(
         (block) => block.type === "theoryQuestion"
       ) as TheoryQuestionBlock[];
 
-      let slidePassed = false;
+      let slidePassed = codeTasks.length + fillCodeTasks.length + theoryQuestions.length > 0;
       let slideTestCasesPassed = 0;
       let slideTestCasesTotal = 0;
       let slideConstraintsPassed = true;
@@ -336,16 +352,29 @@ export default function EditLesson() {
           slideTestCasesPassed = slideTestResult.passedTests || 0;
           slideTestCasesTotal = slideTestResult.totalTests || 0;
           slideConstraintsPassed = slideTestResult.constraintsPassed || false;
-          slidePassed = slideTestResult.allPassed || false;
+          slidePassed = slidePassed && (slideTestResult.allPassed || false);
+        } else {
+          slidePassed = false;
         }
-      } else if (theoryQuestions.length > 0) {
+      }
+
+      if (fillCodeTasks.length > 0) {
+        const fillPassedCount = fillCodeTasks.filter(
+          (task) => fillTaskResults[task.id]?.passed
+        ).length;
+        slideTestCasesTotal += fillCodeTasks.length;
+        slideTestCasesPassed += fillPassedCount;
+        slidePassed = slidePassed && fillPassedCount === fillCodeTasks.length;
+      }
+
+      if (theoryQuestions.length > 0) {
         const answer = testAnswer[slide.id];
         const theoryPassed = theoryQuestions.every(
           (question) => typeof answer === "number" && answer === question.correctIndex
         );
-        slidePassed = theoryPassed;
-        slideTestCasesTotal = theoryQuestions.length;
-        slideTestCasesPassed = theoryPassed ? theoryQuestions.length : 0;
+        slidePassed = slidePassed && theoryPassed;
+        slideTestCasesTotal += theoryQuestions.length;
+        slideTestCasesPassed += theoryPassed ? theoryQuestions.length : 0;
       }
 
       if (slidePassed) {
@@ -375,7 +404,7 @@ export default function EditLesson() {
       constraintsPassed,
     });
     setShowResultsModal(true);
-  }, [slides, testAnswer]);
+  }, [slides, testAnswer, fillTaskResults]);
 
   const handleLessonComplete = useCallback(() => {
     const testSlides = slides.filter((slide) => slide.type === "test");
@@ -389,24 +418,41 @@ export default function EditLesson() {
       const codeTasks = slide.blocks.filter(
         (block) => block.type === "codeTask"
       ) as CodeTaskBlock[];
+      const fillCodeTasks = slide.blocks.filter(
+        (block) => block.type === "fillCodeTask"
+      ) as FillCodeTaskBlock[];
       const theoryQuestions = slide.blocks.filter(
         (block) => block.type === "theoryQuestion"
       ) as TheoryQuestionBlock[];
 
+      let slideSolved = codeTasks.length + fillCodeTasks.length + theoryQuestions.length > 0;
+
       if (codeTasks.length > 0) {
         if (!slideTestResult || !slideTestResult.allPassed) {
-          allTasksSolved = false;
-          unsolvedTasks.push(slide.title);
+          slideSolved = false;
         }
-      } else if (theoryQuestions.length > 0) {
+      }
+
+      if (fillCodeTasks.length > 0) {
+        const allFillTasksSolved = fillCodeTasks.every((task) => fillTaskResults[task.id]?.passed);
+        if (!allFillTasksSolved) {
+          slideSolved = false;
+        }
+      }
+
+      if (theoryQuestions.length > 0) {
         const answer = testAnswer[slide.id];
         const theoryPassed = theoryQuestions.every(
           (question) => typeof answer === "number" && answer === question.correctIndex
         );
         if (!theoryPassed) {
-          allTasksSolved = false;
-          unsolvedTasks.push(slide.title);
+          slideSolved = false;
         }
+      }
+
+      if (!slideSolved) {
+        allTasksSolved = false;
+        unsolvedTasks.push(slide.title);
       }
     }
 
@@ -416,7 +462,7 @@ export default function EditLesson() {
     }
 
     calculateResults();
-  }, [calculateResults, slides, testAnswer]);
+  }, [calculateResults, slides, testAnswer, fillTaskResults]);
 
   const saveLesson = useCallback(async () => {
     if (!lessonId) {
@@ -439,6 +485,13 @@ export default function EditLesson() {
               const { file, ...rest } = block as any;
               return rest;
             }
+            if (block.type === "fillCodeTask") {
+              const inputIds = extractFillTaskInputs(block.templateCode);
+              return {
+                ...block,
+                testCases: syncFillTaskTestCases(block.testCases, inputIds),
+              };
+            }
             return block;
           }),
         }));
@@ -452,6 +505,13 @@ export default function EditLesson() {
             if (block.type === "image") {
               const { file, ...rest } = block as any;
               return rest;
+            }
+            if (block.type === "fillCodeTask") {
+              const inputIds = extractFillTaskInputs(block.templateCode);
+              return {
+                ...block,
+                testCases: syncFillTaskTestCases(block.testCases, inputIds),
+              };
             }
             return block;
           }),
@@ -569,10 +629,28 @@ export default function EditLesson() {
                   setTestAnswer={(value) =>
                     setTestAnswer((prev) => ({ ...prev, [currentSlide.id]: value }))
                   }
-                  testError={testError[currentSlide.id]}
-                  setTestError={(value) =>
-                    setTestError((prev) => ({ ...prev, [currentSlide.id]: value }))
+                  fillAnswers={fillTaskAnswers[block.id] ?? {}}
+                  setFillAnswers={(values) => {
+                    setFillTaskAnswers((prev) => ({ ...prev, [block.id]: values }));
+                    setFillTaskErrors((prev) => ({ ...prev, [block.id]: "" }));
+                    setFillTaskResults((prev) => {
+                      const next = { ...prev };
+                      delete next[block.id];
+                      return next;
+                    });
+                  }}
+                  testError={
+                    block.type === "fillCodeTask"
+                      ? fillTaskErrors[block.id]
+                      : testError[currentSlide.id]
                   }
+                  setTestError={(value) => {
+                    if (block.type === "fillCodeTask") {
+                      setFillTaskErrors((prev) => ({ ...prev, [block.id]: value }));
+                      return;
+                    }
+                    setTestError((prev) => ({ ...prev, [currentSlide.id]: value }));
+                  }}
                   onCorrect={goNext}
                   onResults={(results) => {
                     setTestResults((prev) => {
@@ -580,6 +658,12 @@ export default function EditLesson() {
                       testResultsRef.current = next;
                       return next;
                     });
+                  }}
+                  onFillTaskResult={(result) => {
+                    setFillTaskResults((prev) => ({
+                      ...prev,
+                      [block.id]: result,
+                    }));
                   }}
                 />
               ))}
@@ -767,6 +851,13 @@ export default function EditLesson() {
                     textColor="#fff"
                     text="Задача с кодом"
                     onClick={() => addBlock(selectedSlideIndex, "codeTask")}
+                  />
+                  <Button
+                    color="#9F0FA7"
+                    width="auto"
+                    textColor="#fff"
+                    text="Дописать код"
+                    onClick={() => addBlock(selectedSlideIndex, "fillCodeTask")}
                   />
                   <Button
                     color="#9F0FA7"
