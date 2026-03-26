@@ -5,7 +5,14 @@ import { useRef, type ChangeEvent } from "react";
 import Button from "../Button";
 
 import styles from "./index.module.scss";
-import { getDefaultStarterCode, getTypeString, stripMainMethod } from "./codeUtils";
+import {
+  buildExpectedObjectOutput,
+  getDefaultStarterCode,
+  getEffectiveReturnObjectMode,
+  getExpectedOutputFromTestCase,
+  getTypeString,
+  stripMainMethod,
+} from "./codeUtils";
 import { LANGUAGES, StableCodeEditor } from "./editorShared";
 import {
   createEmptyFillTaskCase,
@@ -19,7 +26,10 @@ import type {
   ArgumentType,
   CodeConstraintType,
   FillCodeLanguage,
+  ReturnObjectMode,
+  ReturnSchema,
   SlideBlock,
+  CodeTaskTestCase,
 } from "./types";
 
 import type { CodeLanguage } from "@/app/http/codeService";
@@ -235,6 +245,95 @@ export function BlockEditor({
     const typedLanguages: CodeLanguage[] = ["java", "csharp", "golang", "cpp"];
     const isTypedLanguage = typedLanguages.includes(block.language);
     const hasArgumentScheme = (block.argumentScheme?.length ?? 0) > 0;
+    const buildStarterCode = (
+      language: CodeLanguage = block.language ?? "javascript",
+      argumentScheme: ArgumentSchema[] = block.argumentScheme ?? [],
+      returnType: ArgumentType = block.returnType ?? "int",
+      returnSchema: ReturnSchema | undefined = block.returnSchema
+    ) => getDefaultStarterCode(language, argumentScheme, returnType, returnSchema);
+    const getReturnObjectMode = (
+      returnSchema: ReturnSchema | undefined = block.returnSchema
+    ): ReturnObjectMode => getEffectiveReturnObjectMode(returnSchema);
+
+    const syncTestCasesWithReturnSchema = (
+      testCases: CodeTaskTestCase[] | undefined,
+      returnType: ArgumentType,
+      returnSchema: ReturnSchema | undefined
+    ): CodeTaskTestCase[] => {
+      return (testCases ?? []).map((testCase) => {
+        if (returnType !== "object") {
+          return testCase;
+        }
+
+        return {
+          ...testCase,
+          expectedOutput: getExpectedOutputFromTestCase(testCase, returnType, returnSchema),
+        };
+      });
+    };
+
+    const updateReturnSchema = (nextReturnSchema: ReturnSchema) => {
+      const nextTestCases = syncTestCasesWithReturnSchema(
+        block.testCases,
+        block.returnType ?? "int",
+        nextReturnSchema
+      );
+
+      updateBlock(slideIndex, block.id, {
+        testCases: nextTestCases,
+        returnSchema: nextReturnSchema,
+        startCode: buildStarterCode(
+          block.language ?? "javascript",
+          block.argumentScheme ?? [],
+          block.returnType ?? "int",
+          nextReturnSchema
+        ),
+      });
+    };
+
+    const createDefaultObjectField = (index: number) => ({
+      name: `field${index + 1}`,
+      type: "string" as ArgumentType,
+      value: "",
+    });
+
+    const getValueExampleForType = (type: ArgumentType): string => {
+      switch (type) {
+        case "string":
+          return '"text"';
+        case "boolean":
+          return "true";
+        case "char":
+          return '"a"';
+        default:
+          return "1";
+      }
+    };
+
+    const getReturnOutputExample = (): string => {
+      if (block.returnType === "object" && block.returnSchema?.objectFields) {
+        const fields = block.returnSchema.objectFields
+          .map((field) => `"${field.name}": ${getValueExampleForType(field.type)}`)
+          .join(", ");
+        return `{${fields}}`;
+      }
+
+      if (block.returnType === "list") {
+        const elementType = block.returnSchema?.arrayElementType ?? "object";
+        if (elementType === "object" && block.returnSchema?.arrayElementObjectFields) {
+          const fields = block.returnSchema.arrayElementObjectFields
+            .map((field) => `"${field.name}": ${getValueExampleForType(field.type)}`)
+            .join(", ");
+          return `[{${fields}}]`;
+        }
+
+        if (elementType === "string") return '["text"]';
+        if (elementType === "boolean") return "[true]";
+        return "[1]";
+      }
+
+      return "Ожидаемый возврат";
+    };
 
     const addTestCase = () => {
       const testCases = [...(block.testCases ?? []), { input: "", expectedOutput: "", args: [] }];
@@ -252,6 +351,30 @@ export function BlockEditor({
       const testCases = [...(block.testCases ?? [])];
       if (!testCases[index]) testCases[index] = { input: "", expectedOutput: "", args: [] };
       testCases[index].expectedOutput = value;
+      updateBlock(slideIndex, block.id, { testCases });
+    };
+
+    const updateTestCaseExpectedObjectValue = (
+      testCaseIndex: number,
+      fieldName: string,
+      value: string
+    ) => {
+      const testCases = [...(block.testCases ?? [])];
+      if (!testCases[testCaseIndex]) {
+        testCases[testCaseIndex] = { input: "", expectedOutput: "", args: [] };
+      }
+
+      const expectedObjectValues = {
+        ...(testCases[testCaseIndex].expectedObjectValues ?? {}),
+        [fieldName]: value,
+      };
+
+      testCases[testCaseIndex] = {
+        ...testCases[testCaseIndex],
+        expectedObjectValues,
+        expectedOutput: buildExpectedObjectOutput(expectedObjectValues, block.returnSchema),
+      };
+
       updateBlock(slideIndex, block.id, { testCases });
     };
 
@@ -349,11 +472,7 @@ export function BlockEditor({
       }
       updateBlock(slideIndex, block.id, {
         argumentScheme: scheme,
-        startCode: getDefaultStarterCode(
-          block.language ?? "javascript",
-          scheme,
-          block.returnType ?? "int"
-        ),
+        startCode: buildStarterCode(block.language ?? "javascript", scheme),
       });
     };
 
@@ -365,11 +484,7 @@ export function BlockEditor({
       scheme[index].name = name;
       updateBlock(slideIndex, block.id, {
         argumentScheme: scheme,
-        startCode: getDefaultStarterCode(
-          block.language ?? "javascript",
-          scheme,
-          block.returnType ?? "int"
-        ),
+        startCode: buildStarterCode(block.language ?? "javascript", scheme),
       });
     };
 
@@ -387,11 +502,7 @@ export function BlockEditor({
 
       updateBlock(slideIndex, block.id, {
         argumentScheme: newScheme,
-        startCode: getDefaultStarterCode(
-          block.language ?? "javascript",
-          newScheme,
-          block.returnType ?? "int"
-        ),
+        startCode: buildStarterCode(block.language ?? "javascript", newScheme),
       });
     };
 
@@ -405,11 +516,7 @@ export function BlockEditor({
         scheme[argIndex].objectFields![fieldIndex].type = fieldType;
         updateBlock(slideIndex, block.id, {
           argumentScheme: scheme,
-          startCode: getDefaultStarterCode(
-            block.language ?? "javascript",
-            scheme,
-            block.returnType ?? "int"
-          ),
+          startCode: buildStarterCode(block.language ?? "javascript", scheme),
         });
       }
     };
@@ -427,11 +534,7 @@ export function BlockEditor({
         });
         updateBlock(slideIndex, block.id, {
           argumentScheme: scheme,
-          startCode: getDefaultStarterCode(
-            block.language ?? "javascript",
-            scheme,
-            block.returnType ?? "int"
-          ),
+          startCode: buildStarterCode(block.language ?? "javascript", scheme),
         });
       }
     };
@@ -442,11 +545,7 @@ export function BlockEditor({
         scheme[argIndex].objectFields!.splice(fieldIndex, 1);
         updateBlock(slideIndex, block.id, {
           argumentScheme: scheme,
-          startCode: getDefaultStarterCode(
-            block.language ?? "javascript",
-            scheme,
-            block.returnType ?? "int"
-          ),
+          startCode: buildStarterCode(block.language ?? "javascript", scheme),
         });
       }
     };
@@ -464,11 +563,7 @@ export function BlockEditor({
         }
         updateBlock(slideIndex, block.id, {
           argumentScheme: scheme,
-          startCode: getDefaultStarterCode(
-            block.language ?? "javascript",
-            scheme,
-            block.returnType ?? "int"
-          ),
+          startCode: buildStarterCode(block.language ?? "javascript", scheme),
         });
       }
     };
@@ -483,11 +578,7 @@ export function BlockEditor({
         });
         updateBlock(slideIndex, block.id, {
           argumentScheme: scheme,
-          startCode: getDefaultStarterCode(
-            block.language ?? "javascript",
-            scheme,
-            block.returnType ?? "int"
-          ),
+          startCode: buildStarterCode(block.language ?? "javascript", scheme),
         });
       }
     };
@@ -504,13 +595,80 @@ export function BlockEditor({
         scheme[argIndex].arrayElementObjectFields![fieldIndex].type = fieldType;
         updateBlock(slideIndex, block.id, {
           argumentScheme: scheme,
-          startCode: getDefaultStarterCode(
-            block.language ?? "javascript",
-            scheme,
-            block.returnType ?? "int"
-          ),
+          startCode: buildStarterCode(block.language ?? "javascript", scheme),
         });
       }
+    };
+
+    const updateReturnObjectFieldType = (fieldIndex: number, fieldType: ArgumentType) => {
+      const nextReturnSchema = { ...(block.returnSchema ?? {}) };
+      const fields = [...(nextReturnSchema.objectFields ?? [])];
+      if (fields[fieldIndex]) {
+        fields[fieldIndex] = { ...fields[fieldIndex], type: fieldType };
+        nextReturnSchema.objectFields = fields;
+        updateReturnSchema(nextReturnSchema);
+      }
+    };
+
+    const addReturnObjectField = () => {
+      const nextReturnSchema = { ...(block.returnSchema ?? {}) };
+      const fields = [...(nextReturnSchema.objectFields ?? [])];
+      fields.push(createDefaultObjectField(fields.length));
+      nextReturnSchema.objectFields = fields;
+      updateReturnSchema(nextReturnSchema);
+    };
+
+    const deleteReturnObjectField = (fieldIndex: number) => {
+      const nextReturnSchema = { ...(block.returnSchema ?? {}) };
+      const fields = [...(nextReturnSchema.objectFields ?? [])];
+      fields.splice(fieldIndex, 1);
+      nextReturnSchema.objectFields = fields;
+      updateReturnSchema(nextReturnSchema);
+    };
+
+    const updateReturnArrayElementType = (elementType: ArgumentType) => {
+      const nextReturnSchema = { ...(block.returnSchema ?? {}) };
+      nextReturnSchema.arrayElementType = elementType;
+
+      if (elementType === "object") {
+        nextReturnSchema.arrayElementObjectFields = nextReturnSchema.arrayElementObjectFields ?? [
+          createDefaultObjectField(0),
+        ];
+      } else {
+        delete nextReturnSchema.arrayElementObjectFields;
+      }
+
+      updateReturnSchema(nextReturnSchema);
+    };
+
+    const addReturnArrayElementObjectField = () => {
+      const nextReturnSchema = { ...(block.returnSchema ?? {}) };
+      const fields = [...(nextReturnSchema.arrayElementObjectFields ?? [])];
+      fields.push(createDefaultObjectField(fields.length));
+      nextReturnSchema.arrayElementObjectFields = fields;
+      updateReturnSchema(nextReturnSchema);
+    };
+
+    const updateReturnArrayElementObjectField = (
+      fieldIndex: number,
+      fieldName: string,
+      fieldType: ArgumentType
+    ) => {
+      const nextReturnSchema = { ...(block.returnSchema ?? {}) };
+      const fields = [...(nextReturnSchema.arrayElementObjectFields ?? [])];
+      if (fields[fieldIndex]) {
+        fields[fieldIndex] = { ...fields[fieldIndex], name: fieldName, type: fieldType };
+        nextReturnSchema.arrayElementObjectFields = fields;
+        updateReturnSchema(nextReturnSchema);
+      }
+    };
+
+    const deleteReturnArrayElementObjectField = (fieldIndex: number) => {
+      const nextReturnSchema = { ...(block.returnSchema ?? {}) };
+      const fields = [...(nextReturnSchema.arrayElementObjectFields ?? [])];
+      fields.splice(fieldIndex, 1);
+      nextReturnSchema.arrayElementObjectFields = fields;
+      updateReturnSchema(nextReturnSchema);
     };
 
     const getTypeStringForLang = (type: ArgumentType): string => {
@@ -670,10 +828,11 @@ export function BlockEditor({
               const newLanguage = e.target.value as CodeLanguage;
               updateBlock(slideIndex, block.id, {
                 language: newLanguage,
-                startCode: getDefaultStarterCode(
+                startCode: buildStarterCode(
                   newLanguage,
                   block.argumentScheme ?? [],
-                  block.returnType ?? "int"
+                  block.returnType ?? "int",
+                  block.returnSchema
                 ),
               });
             }}
@@ -708,12 +867,40 @@ export function BlockEditor({
                   value={block.returnType ?? "int"}
                   onChange={(e) => {
                     const newReturnType = e.target.value as ArgumentType;
+                    const nextReturnSchema = { ...(block.returnSchema ?? {}) };
+
+                    if (
+                      newReturnType === "object" &&
+                      !nextReturnSchema.objectFields &&
+                      !nextReturnSchema.className
+                    ) {
+                      nextReturnSchema.objectFields = [createDefaultObjectField(0)];
+                    }
+
+                    if (newReturnType === "object" && !nextReturnSchema.objectReturnMode) {
+                      nextReturnSchema.objectReturnMode = "generic";
+                    }
+
+                    if (newReturnType === "list" && !nextReturnSchema.arrayElementType) {
+                      nextReturnSchema.arrayElementType = "object";
+                      nextReturnSchema.arrayElementObjectFields = [createDefaultObjectField(0)];
+                    }
+
+                    const nextTestCases = syncTestCasesWithReturnSchema(
+                      block.testCases,
+                      newReturnType,
+                      nextReturnSchema
+                    );
+
                     updateBlock(slideIndex, block.id, {
+                      testCases: nextTestCases,
                       returnType: newReturnType,
-                      startCode: getDefaultStarterCode(
+                      returnSchema: nextReturnSchema,
+                      startCode: buildStarterCode(
                         block.language ?? "javascript",
                         block.argumentScheme ?? [],
-                        newReturnType
+                        newReturnType,
+                        nextReturnSchema
                       ),
                     });
                   }}
@@ -724,6 +911,207 @@ export function BlockEditor({
                     </option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {isTypedLanguage && block.returnType === "object" && (
+              <div className={styles.objectFields}>
+                <div className={styles.objectFieldsHeader}>
+                  <span>Режим возвращаемого объекта:</span>
+                  <select
+                    value={getReturnObjectMode()}
+                    onChange={(e) =>
+                      updateReturnSchema({
+                        ...(block.returnSchema ?? {}),
+                        objectReturnMode: e.target.value as ReturnObjectMode,
+                        objectFields: block.returnSchema?.objectFields ?? [
+                          createDefaultObjectField(0),
+                        ],
+                      })
+                    }
+                    className={styles.objectFieldType}
+                    style={{ marginLeft: "8px" }}
+                  >
+                    <option value="generic">Object, можно вернуть любой объект</option>
+                    <option value="concrete">Конкретный класс, вернуть его экземпляр</option>
+                  </select>
+                </div>
+                <div style={{ fontSize: "12px", color: "#666", marginTop: "6px" }}>
+                  {getReturnObjectMode() === "generic"
+                    ? "Сигнатура метода останется Object/object. Поля ниже нужны для схемы результата и сравнения по значениям."
+                    : "Сигнатура метода будет использовать имя класса ниже, и метод должен вернуть экземпляр этого класса."}
+                </div>
+                <div className={styles.objectFieldsHeader} style={{ marginTop: "8px" }}>
+                  <span>
+                    {getReturnObjectMode() === "generic"
+                      ? "Имя класса схемы результата (необязательно):"
+                      : "Класс возвращаемого объекта:"}
+                  </span>
+                  <input
+                    value={block.returnSchema?.className ?? ""}
+                    onChange={(e) =>
+                      updateReturnSchema({
+                        ...(block.returnSchema ?? {}),
+                        className: e.target.value,
+                        objectFields: block.returnSchema?.objectFields ?? [
+                          createDefaultObjectField(0),
+                        ],
+                      })
+                    }
+                    placeholder={getReturnObjectMode() === "generic" ? "Test1" : "Person"}
+                    style={{ marginLeft: "8px", width: "120px" }}
+                  />
+                </div>
+                <div className={styles.objectFieldsHeader} style={{ marginTop: "8px" }}>
+                  <span>
+                    {getReturnObjectMode() === "generic"
+                      ? "Поля ожидаемого объекта:"
+                      : "Поля возвращаемого объекта:"}
+                  </span>
+                  <Button
+                    color="#6a0f6e"
+                    width="auto"
+                    textColor="#fff"
+                    text="+ Добавить поле"
+                    onClick={addReturnObjectField}
+                  />
+                </div>
+                {(block.returnSchema?.objectFields ?? []).map((field, fieldIndex) => (
+                  <div key={fieldIndex} className={styles.objectFieldRow}>
+                    <input
+                      value={field.name}
+                      onChange={(e) => {
+                        const nextReturnSchema = { ...(block.returnSchema ?? {}) };
+                        const fields = [...(nextReturnSchema.objectFields ?? [])];
+                        if (fields[fieldIndex]) {
+                          fields[fieldIndex] = { ...fields[fieldIndex], name: e.target.value };
+                          nextReturnSchema.objectFields = fields;
+                          updateReturnSchema(nextReturnSchema);
+                        }
+                      }}
+                      placeholder="Имя поля"
+                      style={{ marginRight: "8px", width: "100px" }}
+                    />
+                    <select
+                      value={field.type}
+                      onChange={(e) =>
+                        updateReturnObjectFieldType(fieldIndex, e.target.value as ArgumentType)
+                      }
+                      className={styles.objectFieldType}
+                    >
+                      {primitiveTypes.map((typeOption) => (
+                        <option key={typeOption.value} value={typeOption.value}>
+                          {typeOption.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className={styles.deleteButton}
+                      onClick={() => deleteReturnObjectField(fieldIndex)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isTypedLanguage && block.returnType === "list" && (
+              <div className={styles.objectFields}>
+                <div className={styles.objectFieldsHeader}>
+                  <span>Тип элементов возвращаемого списка:</span>
+                  <select
+                    value={block.returnSchema?.arrayElementType ?? "object"}
+                    onChange={(e) => updateReturnArrayElementType(e.target.value as ArgumentType)}
+                    className={styles.objectFieldType}
+                    style={{ marginLeft: "8px" }}
+                  >
+                    <option value="int">int</option>
+                    <option value="string">string</option>
+                    <option value="boolean">boolean</option>
+                    <option value="double">double</option>
+                    <option value="float">float</option>
+                    <option value="object">object (свой объект класс)</option>
+                  </select>
+                </div>
+
+                {block.returnSchema?.arrayElementType === "object" && (
+                  <div className={styles.arrayElementFields}>
+                    <div style={{ marginTop: "8px", paddingLeft: "16px" }}>
+                      <span>Класс элемента результата:</span>
+                      <input
+                        value={block.returnSchema?.arrayElementClassName ?? ""}
+                        onChange={(e) =>
+                          updateReturnSchema({
+                            ...(block.returnSchema ?? {}),
+                            arrayElementType: "object",
+                            arrayElementClassName: e.target.value,
+                            arrayElementObjectFields: block.returnSchema
+                              ?.arrayElementObjectFields ?? [createDefaultObjectField(0)],
+                          })
+                        }
+                        placeholder="Person"
+                        style={{ marginLeft: "8px", width: "120px" }}
+                      />
+                    </div>
+                    <div style={{ marginTop: "8px", paddingLeft: "16px" }}>
+                      <span>Поля элемента результата:</span>
+                      <Button
+                        color="#6a0f6e"
+                        width="auto"
+                        textColor="#fff"
+                        text="+ Добавить поле"
+                        onClick={addReturnArrayElementObjectField}
+                      />
+                    </div>
+                    {(block.returnSchema?.arrayElementObjectFields ?? []).map(
+                      (field, fieldIndex) => (
+                        <div
+                          key={fieldIndex}
+                          className={styles.objectFieldRow}
+                          style={{ marginTop: "4px" }}
+                        >
+                          <input
+                            value={field.name}
+                            onChange={(e) =>
+                              updateReturnArrayElementObjectField(
+                                fieldIndex,
+                                e.target.value,
+                                field.type
+                              )
+                            }
+                            placeholder="Имя поля"
+                            className={styles.objectFieldName}
+                            style={{ marginRight: "4px" }}
+                          />
+                          <select
+                            value={field.type}
+                            onChange={(e) =>
+                              updateReturnArrayElementObjectField(
+                                fieldIndex,
+                                field.name,
+                                e.target.value as ArgumentType
+                              )
+                            }
+                            className={styles.objectFieldType}
+                          >
+                            {primitiveTypes.map((typeOption) => (
+                              <option key={typeOption.value} value={typeOption.value}>
+                                {typeOption.label}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            className={styles.deleteButton}
+                            onClick={() => deleteReturnArrayElementObjectField(fieldIndex)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -783,11 +1171,7 @@ export function BlockEditor({
                               scheme[argIndex].className = e.target.value;
                               updateBlock(slideIndex, block.id, {
                                 argumentScheme: scheme,
-                                startCode: getDefaultStarterCode(
-                                  block.language ?? "javascript",
-                                  scheme,
-                                  block.returnType ?? "int"
-                                ),
+                                startCode: buildStarterCode(block.language ?? "javascript", scheme),
                               });
                             }
                           }}
@@ -890,10 +1274,9 @@ export function BlockEditor({
                                   scheme[argIndex].arrayElementClassName = e.target.value;
                                   updateBlock(slideIndex, block.id, {
                                     argumentScheme: scheme,
-                                    startCode: getDefaultStarterCode(
+                                    startCode: buildStarterCode(
                                       block.language ?? "javascript",
-                                      scheme,
-                                      block.returnType ?? "int"
+                                      scheme
                                     ),
                                   });
                                 }
@@ -1082,11 +1465,55 @@ export function BlockEditor({
                     </div>
                   )}
 
-                  <input
-                    value={testCase.expectedOutput}
-                    onChange={(e) => updateTestCaseExpected(testCaseIndex, e.target.value)}
-                    placeholder="Ожидаемый возврат"
-                  />
+                  {isTypedLanguage &&
+                  block.returnType === "object" &&
+                  block.returnSchema?.objectFields ? (
+                    <div className={styles.testCaseArgs}>
+                      <span style={{ fontWeight: "bold", marginBottom: "8px", display: "block" }}>
+                        Ожидаемый объект:
+                      </span>
+                      {block.returnSchema.objectFields.map((field, fieldIndex) => (
+                        <div key={fieldIndex} className={styles.testCaseObjectFieldRow}>
+                          <span style={{ marginRight: "4px" }}>{field.name}:</span>
+                          <input
+                            value={testCase.expectedObjectValues?.[field.name] ?? ""}
+                            onChange={(e) =>
+                              updateTestCaseExpectedObjectValue(
+                                testCaseIndex,
+                                field.name,
+                                e.target.value
+                              )
+                            }
+                            placeholder={`значение ${field.type}`}
+                            className={styles.objectFieldValue}
+                          />
+                        </div>
+                      ))}
+                      <div style={{ fontSize: "12px", color: "#666", marginTop: "6px" }}>
+                        JSON результата:{" "}
+                        {getExpectedOutputFromTestCase(
+                          testCase,
+                          block.returnType,
+                          block.returnSchema
+                        ) || "не заполнен"}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        value={testCase.expectedOutput}
+                        onChange={(e) => updateTestCaseExpected(testCaseIndex, e.target.value)}
+                        placeholder={getReturnOutputExample()}
+                      />
+                      {isTypedLanguage &&
+                        (block.returnType === "object" || block.returnType === "list") && (
+                          <div style={{ fontSize: "12px", color: "#666", marginTop: "6px" }}>
+                            Ожидаемый результат задаётся в JSON. Можно указывать только те поля,
+                            которые нужно проверить.
+                          </div>
+                        )}
+                    </>
+                  )}
                 </div>
               ))}
             </div>

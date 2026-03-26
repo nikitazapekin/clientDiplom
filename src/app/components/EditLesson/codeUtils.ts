@@ -2,7 +2,16 @@
 
 import type { CodeLanguage } from "@/app/http/codeService";
 
-import type { ArgumentSchema, ArgumentType, CodeConstraintType, TestCaseArgument } from "./types";
+import type {
+  ArgumentSchema,
+  ArgumentType,
+  CodeTaskTestCase,
+  CodeConstraintType,
+  ObjectField,
+  ReturnObjectMode,
+  ReturnSchema,
+  TestCaseArgument,
+} from "./types";
 
 export const stripMainMethod = (code: string, language: CodeLanguage): string => {
   if (language === "java") {
@@ -26,8 +35,7 @@ export const addJavaMainMethod = (
 ): string => {
   if (!funcName) return code;
 
-  const mainMethod = `
-    public static void main(String[] args) {
+  const mainMethodBody = `
         java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
         java.io.PrintStream originalOut = System.out;
         System.setOut(new java.io.PrintStream(baos));
@@ -46,42 +54,18 @@ export const addJavaMainMethod = (
             }
             
             System.out.println("===RESULT_START===");
-            if (result == null) {
-                System.out.print("null");
-            } else if (result instanceof String) {
-                System.out.print("\\"" + result + "\\"");
-            } else if (result.getClass().isArray()) {
-                if (result instanceof int[]) {
-                    System.out.print(java.util.Arrays.toString((int[])result));
-                } else if (result instanceof Integer[]) {
-                    System.out.print(java.util.Arrays.toString((Integer[])result));
-                } else if (result instanceof String[]) {
-                    System.out.print(java.util.Arrays.toString((String[])result));
-                } else {
-                    System.out.print(java.util.Arrays.toString((Object[])result));
-                }
-            } else {
-                System.out.print(result);
-            }
+            System.out.print(__serializeJson(result));
             System.out.println("===RESULT_END===");
             
         } catch (Exception e) {
             System.setOut(originalOut);
             System.out.println("===RESULT_START===");
-            System.out.print("{\\"error\\":\\"" + e.getMessage() + "\\"}");
+            System.out.print("{\\"error\\":" + __serializeJson(e.getMessage()) + "}");
             System.out.println("===RESULT_END===");
         }
-    }`;
+`;
 
-  if (code.includes("public static void main")) {
-    return code.replace(
-      /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
-      mainMethod
-    );
-  }
-
-  const codeWithoutLastBrace = code.trim().replace(/\}\s*$/, "");
-  return `${codeWithoutLastBrace}\n${mainMethod}\n}`;
+  return injectJavaRunner(code, mainMethodBody);
 };
 
 export const parseArguments = (input: string): any[] => {
@@ -380,18 +364,122 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
   return typeMap[type_]?.[language] ?? type_;
 };
 
-export const getReturnTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
+const getDefaultClassName = (name: string | undefined, fallback: string): string => {
+  const trimmedName = name?.trim();
+  return trimmedName ? trimmedName : fallback;
+};
+
+const getJavaCollectionElementTypeString = (
+  type_: ArgumentType,
+  objectClassName?: string
+): string => {
+  if (type_ === "object") {
+    return objectClassName || "Object";
+  }
+
+  const boxedTypeMap: Partial<Record<ArgumentType, string>> = {
+    int: "Integer",
+    boolean: "Boolean",
+    double: "Double",
+    float: "Float",
+    long: "Long",
+    char: "Character",
+    byte: "Byte",
+    short: "Short",
+    string: "String",
+  };
+
+  return boxedTypeMap[type_] ?? getTypeString(type_, "java");
+};
+
+const getCollectionElementTypeString = (
+  type_: ArgumentType,
+  language: CodeLanguage,
+  objectClassName?: string
+): string => {
+  if (language === "java") {
+    return getJavaCollectionElementTypeString(type_, objectClassName);
+  }
+
+  if (type_ === "object" && objectClassName) {
+    return objectClassName;
+  }
+
+  return getTypeString(type_, language);
+};
+
+const getReturnClassName = (returnSchema?: ReturnSchema): string => {
+  return getDefaultClassName(returnSchema?.className, "Result");
+};
+
+const getReturnArrayElementClassName = (returnSchema?: ReturnSchema): string => {
+  return getDefaultClassName(returnSchema?.arrayElementClassName, "ResultItem");
+};
+
+export const getEffectiveReturnObjectMode = (returnSchema?: ReturnSchema): ReturnObjectMode => {
+  if (returnSchema?.objectReturnMode) {
+    return returnSchema.objectReturnMode;
+  }
+
+  if (returnSchema?.className || (returnSchema?.objectFields?.length ?? 0) > 0) {
+    return "concrete";
+  }
+
+  return "generic";
+};
+
+export const getReturnTypeString = (
+  type_: ArgumentType,
+  language: CodeLanguage,
+  returnSchema?: ReturnSchema,
+  preferSchemaClassName = false
+): string => {
   if (type_ === "void") {
     return language === "java" || language === "csharp" || language === "cpp" ? "void" : "";
   }
   if (type_ === "object") {
+    const objectReturnMode = getEffectiveReturnObjectMode(returnSchema);
+    if (
+      preferSchemaClassName &&
+      objectReturnMode === "concrete" &&
+      (language === "java" || language === "csharp") &&
+      (returnSchema?.className || returnSchema?.objectFields)
+    ) {
+      return getReturnClassName(returnSchema);
+    }
     return language === "java" ? "Object" : language === "golang" ? "interface{}" : "object";
   }
   if (type_ === "list") {
+    const elementType = returnSchema?.arrayElementType ?? "object";
+    const objectClassName =
+      elementType === "object" &&
+      (returnSchema?.arrayElementObjectFields || returnSchema?.arrayElementClassName)
+        ? getReturnArrayElementClassName(returnSchema)
+        : undefined;
+
+    if (elementType === "object") {
+      if (preferSchemaClassName && objectClassName) {
+        return language === "csharp"
+          ? `List<${objectClassName}>`
+          : language === "java"
+            ? `List<${objectClassName}>`
+            : language === "golang"
+              ? "[]interface{}"
+              : "object";
+      }
+      return language === "csharp"
+        ? "System.Collections.IEnumerable"
+        : language === "java"
+          ? "List<?>"
+          : language === "golang"
+            ? "[]interface{}"
+            : "object";
+    }
+
     return language === "csharp"
-      ? "List<object>"
+      ? `List<${getCollectionElementTypeString(elementType, "csharp", objectClassName)}>`
       : language === "java"
-        ? "List<Object>"
+        ? `List<${getCollectionElementTypeString(elementType, "java", objectClassName)}>`
         : language === "golang"
           ? "[]interface{}"
           : "object";
@@ -447,6 +535,69 @@ export const getDefaultReturnValue = (type_: ArgumentType, language?: CodeLangua
   }
 };
 
+const parseStructuredFieldValue = (rawValue: string, type_: ArgumentType): unknown => {
+  const trimmedValue = rawValue.trim();
+
+  if (trimmedValue === "null") return null;
+
+  switch (type_) {
+    case "string":
+    case "char":
+      return rawValue;
+    case "boolean":
+      return trimmedValue.toLowerCase() === "true";
+    case "int":
+    case "double":
+    case "float":
+    case "long":
+    case "short":
+    case "byte":
+    case "number":
+      return Number(trimmedValue);
+    default:
+      return rawValue;
+  }
+};
+
+export const buildExpectedObjectOutput = (
+  expectedObjectValues: Record<string, string> | undefined,
+  returnSchema?: ReturnSchema
+): string => {
+  if (!returnSchema?.objectFields || returnSchema.objectFields.length === 0) {
+    return "";
+  }
+
+  const values = expectedObjectValues ?? {};
+  const output: Record<string, unknown> = {};
+
+  returnSchema.objectFields.forEach((field) => {
+    const rawValue = values[field.name] ?? "";
+    if (rawValue.trim() === "") {
+      return;
+    }
+
+    output[field.name] = parseStructuredFieldValue(rawValue, field.type);
+  });
+
+  return Object.keys(output).length > 0 ? JSON.stringify(output) : "";
+};
+
+export const getExpectedOutputFromTestCase = (
+  testCase: CodeTaskTestCase,
+  returnType: ArgumentType | undefined,
+  returnSchema?: ReturnSchema
+): string => {
+  if (returnType === "object" && returnSchema?.objectFields) {
+    return (
+      buildExpectedObjectOutput(testCase.expectedObjectValues, returnSchema) ||
+      testCase.expectedOutput ||
+      ""
+    );
+  }
+
+  return testCase.expectedOutput ?? "";
+};
+
 export const getArrayTypeString = (scheme: ArgumentSchema, language: CodeLanguage): string => {
   const elementType = scheme.arrayElementType ?? "int";
 
@@ -472,12 +623,19 @@ export const getArrayTypeString = (scheme: ArgumentSchema, language: CodeLanguag
 
 export const getListTypeString = (scheme: ArgumentSchema, language: CodeLanguage): string => {
   const elementType = scheme.arrayElementType ?? "int";
+  const objectClassName =
+    elementType === "object" && scheme.arrayElementObjectFields
+      ? getDefaultClassName(
+          scheme.arrayElementClassName,
+          scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1)
+        )
+      : undefined;
 
   if (language === "java") {
-    return `List<${getTypeString(elementType, "java")}>`;
+    return `List<${getCollectionElementTypeString(elementType, "java", objectClassName)}>`;
   }
   if (language === "csharp") {
-    return `List<${getTypeString(elementType, "csharp")}>`;
+    return `List<${getCollectionElementTypeString(elementType, "csharp", objectClassName)}>`;
   }
   return "List";
 };
@@ -485,7 +643,8 @@ export const getListTypeString = (scheme: ArgumentSchema, language: CodeLanguage
 export const getDefaultStarterCode = (
   language: CodeLanguage,
   args: ArgumentSchema[] = [],
-  returnType: ArgumentType = "int"
+  returnType: ArgumentType = "int",
+  returnSchema?: ReturnSchema
 ): string => {
   const argsStr = args
     .map((arg) => {
@@ -503,12 +662,13 @@ export const getDefaultStarterCode = (
     })
     .join(", ");
 
-  const retTypeStr = getReturnTypeString(returnType, language);
+  const retTypeStr = getReturnTypeString(returnType, language, returnSchema, true);
   const returnValue = getDefaultReturnValue(returnType, language);
+  const hasListTypes = args.some((arg) => arg.type === "list") || returnType === "list";
 
   switch (language) {
     case "csharp":
-      return `using System;
+      return `${hasListTypes ? "using System.Collections.Generic;\n" : ""}using System;
 
 public class Program
 {
@@ -520,7 +680,7 @@ public class Program
     }
 }`;
     case "java":
-      return `public class Main {
+      return `${hasListTypes ? "import java.util.List;\n\n" : ""}public class Main {
     public static ${retTypeStr} yourFunction(${argsStr}) {
         // Ваш код здесь
         System.out.println("HELLO"${args.length > 0 ? ` + " " + ${args.map((a) => a.name).join(' + " " + ')}` : ""});
@@ -538,7 +698,7 @@ public class Program
       const goArgsStr = args
         .map((arg) => `${arg.name} ${getTypeString(arg.type, "golang")}`)
         .join(", ");
-      const goRetStr = getReturnTypeString(returnType, "golang");
+      const goRetStr = getReturnTypeString(returnType, "golang", returnSchema, true);
 
       return `package main
 
@@ -561,34 +721,73 @@ func yourFunction(${goArgsStr}) ${goRetStr} {
   }
 };
 
-export const generateObjectClasses = (args: ArgumentSchema[], language: CodeLanguage): string => {
-  const objectArgs = args.filter((a) => a.type === "object" && a.objectFields);
+type GeneratedClassSchema = {
+  className: string;
+  fields: ObjectField[];
+};
 
-  const arrayObjectArgs = args.filter(
-    (a) =>
-      (a.type === "array" || a.type === "list") &&
-      a.arrayElementType === "object" &&
-      a.arrayElementObjectFields
-  );
+const getGeneratedClassSchemas = (
+  args: ArgumentSchema[],
+  returnSchema?: ReturnSchema
+): GeneratedClassSchema[] => {
+  const classSchemas: GeneratedClassSchema[] = [];
+  const seenClassNames = new Set<string>();
 
-  const allClasses = [...objectArgs, ...arrayObjectArgs];
+  const pushClass = (className: string, fields?: ObjectField[]) => {
+    if (!fields) return;
+    if (seenClassNames.has(className)) return;
+    seenClassNames.add(className);
+    classSchemas.push({ className, fields });
+  };
+
+  args.forEach((arg) => {
+    if (arg.type === "object" && arg.objectFields) {
+      pushClass(
+        getDefaultClassName(arg.className, arg.name.charAt(0).toUpperCase() + arg.name.slice(1)),
+        arg.objectFields
+      );
+    }
+
+    if (
+      (arg.type === "array" || arg.type === "list") &&
+      arg.arrayElementType === "object" &&
+      arg.arrayElementObjectFields
+    ) {
+      pushClass(
+        getDefaultClassName(
+          arg.arrayElementClassName,
+          arg.name.charAt(0).toUpperCase() + arg.name.slice(1)
+        ),
+        arg.arrayElementObjectFields
+      );
+    }
+  });
+
+  if (
+    returnSchema?.objectFields &&
+    (getEffectiveReturnObjectMode(returnSchema) === "concrete" || returnSchema.className)
+  ) {
+    pushClass(getReturnClassName(returnSchema), returnSchema.objectFields);
+  }
+
+  if (returnSchema?.arrayElementType === "object" && returnSchema.arrayElementObjectFields) {
+    pushClass(getReturnArrayElementClassName(returnSchema), returnSchema.arrayElementObjectFields);
+  }
+
+  return classSchemas;
+};
+
+export const generateObjectClasses = (
+  args: ArgumentSchema[],
+  language: CodeLanguage,
+  returnSchema?: ReturnSchema
+): string => {
+  const allClasses = getGeneratedClassSchemas(args, returnSchema);
 
   if (allClasses.length === 0) return "";
 
   return allClasses
-    .map((arg) => {
-      let className: string;
-      const objectFields = arg.objectFields ?? arg.arrayElementObjectFields ?? [];
-
-      if (arg.objectFields) {
-        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-      } else if (arg.arrayElementObjectFields) {
-        className =
-          arg.arrayElementClassName || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-      } else {
-        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-      }
-
+    .map(({ className, fields: objectFields }) => {
       if (language === "java") {
         const accessModifier = "private";
         const fields = objectFields
@@ -697,6 +896,158 @@ class ${className}:
     .join("\n\n");
 };
 
+const buildJavaRunnerCode = (mainBody: string): string => {
+  return `
+    private static String __escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            switch (ch) {
+                case '\\\\':
+                    sb.append("\\\\\\\\");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\\n':
+                    sb.append("\\\\n");
+                    break;
+                case '\\r':
+                    sb.append("\\\\r");
+                    break;
+                case '\\t':
+                    sb.append("\\\\t");
+                    break;
+                case '\\b':
+                    sb.append("\\\\b");
+                    break;
+                case '\\f':
+                    sb.append("\\\\f");
+                    break;
+                default:
+                    sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static String __serializeJson(Object value) {
+        return __serializeJson(value, new java.util.IdentityHashMap<>());
+    }
+
+    private static String __serializeJson(Object value, java.util.IdentityHashMap<Object, Boolean> visited) {
+        if (value == null) {
+            return "null";
+        }
+        if (value instanceof String || value instanceof Character) {
+            return '"' + __escapeJson(String.valueOf(value)) + '"';
+        }
+        if (value instanceof Number || value instanceof Boolean) {
+            return String.valueOf(value);
+        }
+
+        Class<?> clazz = value.getClass();
+
+        if (clazz.isArray()) {
+            int length = java.lang.reflect.Array.getLength(value);
+            java.util.List<String> items = new java.util.ArrayList<>();
+            for (int i = 0; i < length; i++) {
+                items.add(__serializeJson(java.lang.reflect.Array.get(value, i), visited));
+            }
+            return "[" + String.join(", ", items) + "]";
+        }
+
+        if (value instanceof java.util.Collection<?>) {
+            java.util.List<String> items = new java.util.ArrayList<>();
+            for (Object item : (java.util.Collection<?>) value) {
+                items.add(__serializeJson(item, visited));
+            }
+            return "[" + String.join(", ", items) + "]";
+        }
+
+        if (value instanceof java.util.Map<?, ?>) {
+            java.util.Map<String, String> entries = new java.util.TreeMap<>();
+            for (java.util.Map.Entry<?, ?> entry : ((java.util.Map<?, ?>) value).entrySet()) {
+                String key = String.valueOf(entry.getKey());
+                entries.put(key, '"' + __escapeJson(key) + "\\":" + __serializeJson(entry.getValue(), visited));
+            }
+            return "{" + String.join(", ", entries.values()) + "}";
+        }
+
+        if (visited.containsKey(value)) {
+            return '"' + "<circular>" + '"';
+        }
+
+        visited.put(value, Boolean.TRUE);
+
+        java.util.List<java.lang.reflect.Field> fields = new java.util.ArrayList<>();
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            for (java.lang.reflect.Field field : current.getDeclaredFields()) {
+                int modifiers = field.getModifiers();
+                if (java.lang.reflect.Modifier.isStatic(modifiers) || field.isSynthetic()) {
+                    continue;
+                }
+                fields.add(field);
+            }
+            current = current.getSuperclass();
+        }
+
+        fields.sort(java.util.Comparator.comparing(java.lang.reflect.Field::getName));
+
+        java.util.List<String> serializedFields = new java.util.ArrayList<>();
+        for (java.lang.reflect.Field field : fields) {
+            try {
+                field.setAccessible(true);
+                serializedFields.add(
+                    '"' +
+                    __escapeJson(field.getName()) +
+                    "\\":" +
+                    __serializeJson(field.get(value), visited)
+                );
+            } catch (IllegalAccessException e) {
+                serializedFields.add(
+                    '"' +
+                    __escapeJson(field.getName()) +
+                    "\\":" +
+                    __serializeJson("<inaccessible>", visited)
+                );
+            }
+        }
+
+        visited.remove(value);
+        return "{" + String.join(", ", serializedFields) + "}";
+    }
+
+    public static void main(String[] args) {
+${mainBody}
+    }`;
+};
+
+const injectJavaRunner = (userCode: string, mainBody: string): string => {
+  const runnerCode = buildJavaRunnerCode(mainBody);
+
+  if (userCode.includes("public static void main")) {
+    return userCode.replace(
+      /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
+      runnerCode
+    );
+  }
+
+  const trimmedCode = userCode.trim();
+  const mainClassEnd = trimmedCode.lastIndexOf("}");
+  const codeWithoutMainBrace =
+    mainClassEnd > 0 ? trimmedCode.substring(0, mainClassEnd) : trimmedCode.replace(/\}\s*$/, "");
+
+  return `${codeWithoutMainBrace}
+${runnerCode}
+}`;
+};
+
 export const buildCSharpTestSuite = (
   userCode: string,
   testCases: { input: string; expectedOutput: string }[],
@@ -743,14 +1094,14 @@ export const buildCSharpTestSuite = (
                 }
                 
                 Console.WriteLine("===RESULT_START_" + ${testNum} + "===");
-                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result, jsonOptions));
                 Console.WriteLine("===RESULT_END_" + ${testNum} + "===");
                 
             } catch (Exception e) {
                 Console.SetOut(originalOut);
                 Console.SetError(originalError);
                 Console.WriteLine("===RESULT_START_" + ${testNum} + "===");
-                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { error = e.Message }));
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { error = e.Message }, jsonOptions));
                 Console.WriteLine("===RESULT_END_" + ${testNum} + "===");
             }
         }`;
@@ -773,6 +1124,7 @@ using System.Collections.Generic;
     
 public class Runner {
     public static void Main() {
+        var jsonOptions = new JsonSerializerOptions { IncludeFields = true };
 ${testCasesCode}
     }
 }`
@@ -812,53 +1164,20 @@ export const buildJavaTestSuiteWithLogs = (
                 }
                 
                 System.out.println("===RESULT_START_" + ${index + 1} + "===");
-                if (result == null) {
-                    System.out.print("null");
-                } else if (result instanceof String) {
-                    System.out.print("\\"");
-                    System.out.print(result);
-                    System.out.print("\\"");
-                } else if (result.getClass().isArray()) {
-                    if (result instanceof int[]) {
-                        System.out.print(java.util.Arrays.toString((int[])result));
-                    } else if (result instanceof Integer[]) {
-                        System.out.print(java.util.Arrays.toString((Integer[])result));
-                    } else if (result instanceof String[]) {
-                        System.out.print(java.util.Arrays.toString((String[])result));
-                    } else {
-                        System.out.print(java.util.Arrays.toString((Object[])result));
-                    }
-                } else {
-                    System.out.print(result);
-                }
+                System.out.print(__serializeJson(result));
                 System.out.println("===RESULT_END_" + ${index + 1} + "===");
                 
             } catch (Exception e) {
                 System.setOut(originalOut);
                 System.out.println("===RESULT_START_" + ${index + 1} + "===");
-                System.out.print("{\\"error\\":\\"" + e.getMessage() + "\\"}");
+                System.out.print("{\\"error\\":" + __serializeJson(e.getMessage()) + "}");
                 System.out.println("===RESULT_END_" + ${index + 1} + "===");
             }
         }`;
     })
     .join("\n");
 
-  if (userCode.includes("public static void main")) {
-    return userCode.replace(
-      /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
-      `public static void main(String[] args) {
-${testCasesCode}
-    }`
-    );
-  }
-
-  const codeWithoutLastBrace = userCode.trim().replace(/\}\s*$/, "");
-  return `${codeWithoutLastBrace}
-
-    public static void main(String[] args) {
-${testCasesCode}
-    }
-}`;
+  return injectJavaRunner(userCode, testCasesCode);
 };
 
 export const buildJavaTestSuite = (
@@ -897,32 +1216,14 @@ export const buildJavaTestSuite = (
                 }
                 
                 System.out.println("===RESULT_START_" + ${testNum} + "===");
-                if (result == null) {
-                    System.out.print("null");
-                } else if (result instanceof String) {
-                    System.out.print("\\"");
-                    System.out.print(result);
-                    System.out.print("\\"");
-                } else if (result.getClass().isArray()) {
-                    if (result instanceof int[]) {
-                        System.out.print(java.util.Arrays.toString((int[])result));
-                    } else if (result instanceof Integer[]) {
-                        System.out.print(java.util.Arrays.toString((Integer[])result));
-                    } else if (result instanceof String[]) {
-                        System.out.print(java.util.Arrays.toString((String[])result));
-                    } else {
-                        System.out.print(java.util.Arrays.toString((Object[])result));
-                    }
-                } else {
-                    System.out.print(result);
-                }
+                System.out.print(__serializeJson(result));
                 System.out.println();
                 System.out.println("===RESULT_END_" + ${testNum} + "===");
                 
             } catch (Exception e) {
                 System.setOut(originalOut);
                 System.out.println("===RESULT_START_" + ${testNum} + "===");
-                System.out.print("ERROR: " + e.getMessage());
+                System.out.print("{\\"error\\":" + __serializeJson(e.getMessage()) + "}");
                 System.out.println();
                 System.out.println("===RESULT_END_" + ${testNum} + "===");
             }
@@ -930,36 +1231,7 @@ export const buildJavaTestSuite = (
     })
     .join("\n");
 
-  if (userCode.includes("public static void main")) {
-    return userCode.replace(
-      /public\s+static\s+void\s+main\(String\[\]\s*args\)\s*\{[\s\S]*?\}/,
-      `public static void main(String[] args) {
-${testCasesCode}
-    }`
-    );
-  }
-
-  const trimmedCode = userCode.trim();
-  const mainClassEnd = trimmedCode.lastIndexOf("}");
-
-  let codeWithoutMainBrace: string;
-  if (mainClassEnd > 0) {
-    const afterBrace = trimmedCode.substring(mainClassEnd + 1).trim();
-    if (afterBrace.length > 0) {
-      codeWithoutMainBrace = trimmedCode.substring(0, mainClassEnd);
-    } else {
-      codeWithoutMainBrace = trimmedCode.replace(/\}\s*$/, "");
-    }
-  } else {
-    codeWithoutMainBrace = trimmedCode.replace(/\}\s*$/, "");
-  }
-
-  return `${codeWithoutMainBrace}
-
-    public static void main(String[] args) {
-${testCasesCode}
-    }
-}`;
+  return injectJavaRunner(userCode, testCasesCode);
 };
 
 export const formatArgsForJavaOrCSharp = (
@@ -1295,16 +1567,14 @@ export const getDisplayInput = (
 
 export const generateObjectClassesForPreview = (
   args: ArgumentSchema[],
-  language: CodeLanguage
+  language: CodeLanguage,
+  returnSchema?: ReturnSchema
 ): string => {
-  const objectArgs = args.filter((a) => a.type === "object" && a.objectFields);
+  const objectArgs = getGeneratedClassSchemas(args, returnSchema);
   if (objectArgs.length === 0) return "";
 
   return objectArgs
-    .map((arg) => {
-      const className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-      const objectFields = arg.objectFields ?? [];
-
+    .map(({ className, fields: objectFields }) => {
       if (language === "java") {
         const fields = objectFields
           .map((f) => `    private ${getTypeString(f.type, language)} ${f.name};`)
@@ -1343,7 +1613,7 @@ ${gettersSetters}
       }
       if (language === "csharp") {
         const fields = objectFields
-          .map((f) => `    private ${getTypeString(f.type, language)} ${f.name};`)
+          .map((f) => `    public ${getTypeString(f.type, language)} ${f.name};`)
           .join("\n");
         const constructorParams = objectFields
           .map((f) => `${getTypeString(f.type, language)} ${f.name}`)
@@ -1700,11 +1970,11 @@ export const compareOutputs = (actual: any, expected: any): boolean => {
 
   if (Array.isArray(actual) && Array.isArray(expected)) {
     if (actual.length !== expected.length) return false;
-    return actual.every((item, index) => JSON.stringify(item) === JSON.stringify(expected[index]));
+    return actual.every((item, index) => compareOutputs(item, expected[index]));
   }
 
   if (typeof actual === "object" && typeof expected === "object") {
-    return JSON.stringify(actual) === JSON.stringify(expected);
+    return Object.entries(expected).every(([key, value]) => compareOutputs(actual[key], value));
   }
 
   return String(actual).trim() === String(expected).trim();

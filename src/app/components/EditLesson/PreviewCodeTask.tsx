@@ -20,6 +20,7 @@ import {
   generateObjectClassesForPreview,
   getDefaultStarterCode,
   getDisplayInput,
+  getExpectedOutputFromTestCase,
   stripMainMethod,
 } from "./codeUtils";
 import type { CodeTaskBlock } from "./types";
@@ -49,6 +50,13 @@ export function PreviewCodeTask({
   const [constraintResults, setConstraintResults] = useState<ConstraintResult[] | null>(null);
   const [executionTime, setExecutionTime] = useState<number | null>(null);
   const localCodeRef = useRef<string>("");
+  const activeReturnSchema =
+    block.returnType === "object" || block.returnType === "list" ? block.returnSchema : undefined;
+  const getExpectedOutputValue = useCallback(
+    (testCase: NonNullable<CodeTaskBlock["testCases"]>[number]) =>
+      getExpectedOutputFromTestCase(testCase, block.returnType, activeReturnSchema),
+    [block.returnType, activeReturnSchema]
+  );
 
   useEffect(() => {
     if (!localCodeRef.current && typeof testAnswer === "string" && testAnswer) {
@@ -62,8 +70,21 @@ export function PreviewCodeTask({
     }
     return typeof testAnswer === "string" && testAnswer !== ""
       ? testAnswer
-      : (block.startCode ?? getDefaultStarterCode(block.language ?? "javascript"));
-  }, [testAnswer, block.startCode, block.language]);
+      : (block.startCode ??
+          getDefaultStarterCode(
+            block.language ?? "javascript",
+            block.argumentScheme ?? [],
+            block.returnType ?? "int",
+            activeReturnSchema
+          ));
+  }, [
+    testAnswer,
+    block.startCode,
+    block.language,
+    block.argumentScheme,
+    block.returnType,
+    activeReturnSchema,
+  ]);
 
   const displayCode = stripMainMethod(getCurrentCode(), block.language ?? "javascript");
 
@@ -88,9 +109,17 @@ export function PreviewCodeTask({
       const funcName = extractFunctionName(currentCode, block.language ?? "javascript");
 
       let codeToRun = currentCode;
+      const objectClasses = generateObjectClasses(
+        block.argumentScheme ?? [],
+        block.language ?? "javascript",
+        activeReturnSchema
+      );
 
       if (block.language === "java" && funcName) {
         codeToRun = addJavaMainMethod(currentCode, funcName, "5");
+        if (objectClasses) {
+          codeToRun = `${codeToRun}\n\n${objectClasses}`;
+        }
       }
 
       const res = await CodeService.executeCode({
@@ -422,12 +451,16 @@ export function PreviewCodeTask({
             );
             return {
               input: argsInput || tc.input || "",
-              expectedOutput: tc.expectedOutput,
+              expectedOutput: getExpectedOutputValue(tc),
             };
           });
 
           const codeWithTests = buildJavaTestSuite(currentCode, formattedTestCases, funcName);
-          const objectClasses = generateObjectClasses(block.argumentScheme ?? [], "java");
+          const objectClasses = generateObjectClasses(
+            block.argumentScheme ?? [],
+            "java",
+            activeReturnSchema
+          );
           const codeToRun = objectClasses ? `${codeWithTests}\n\n${objectClasses}` : codeWithTests;
 
           console.log("Java code to run:", codeToRun);
@@ -484,7 +517,7 @@ export function PreviewCodeTask({
                 inResult = false;
                 if (currentResult.length > 0) {
                   const actual = currentResult.join("\n").trim();
-                  const expected = block.testCases[i].expectedOutput.trim();
+                  const expected = getExpectedOutputValue(block.testCases[i]).trim();
 
                   let actualParsed: any;
                   let expectedParsed: any;
@@ -537,12 +570,16 @@ export function PreviewCodeTask({
             );
             return {
               input: argsInput || tc.input || "",
-              expectedOutput: tc.expectedOutput,
+              expectedOutput: getExpectedOutputValue(tc),
             };
           });
 
           const codeWithTests = buildCSharpTestSuite(currentCode, formattedTestCases, funcName);
-          const objectClasses = generateObjectClasses(block.argumentScheme ?? [], "csharp");
+          const objectClasses = generateObjectClasses(
+            block.argumentScheme ?? [],
+            "csharp",
+            activeReturnSchema
+          );
           const codeToRun = objectClasses ? `${codeWithTests}\n\n${objectClasses}` : codeWithTests;
 
           console.log("C# code to run:", codeToRun);
@@ -599,7 +636,7 @@ export function PreviewCodeTask({
                 inResult = false;
                 if (currentResult.length > 0) {
                   const actual = currentResult.join("\n").trim();
-                  const expected = block.testCases[i].expectedOutput.trim();
+                  const expected = getExpectedOutputValue(block.testCases[i]).trim();
 
                   let actualParsed: any;
                   let expectedParsed: any;
@@ -651,12 +688,18 @@ export function PreviewCodeTask({
             const argsInput = formatArgsForDynamicLang(tc.args, block.argumentScheme ?? [], lang);
             const inputToUse = (block.argumentScheme?.length ?? 0) > 0 ? argsInput : tc.input || "";
 
-            if (!inputToUse || !tc.expectedOutput) {
+            const expectedOutput = getExpectedOutputValue(tc);
+
+            if (!inputToUse || !expectedOutput) {
               setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
               return;
             }
 
-            const objectClasses = generateObjectClasses(block.argumentScheme ?? [], lang);
+            const objectClasses = generateObjectClasses(
+              block.argumentScheme ?? [],
+              lang,
+              activeReturnSchema
+            );
             const codeWithClasses = objectClasses
               ? `${currentCode}\n\n${objectClasses}`
               : currentCode;
@@ -709,7 +752,7 @@ export function PreviewCodeTask({
                 inResult = false;
                 if (currentResult.length > 0) {
                   const actual = currentResult.join("\n").trim();
-                  const expected = tc.expectedOutput.trim();
+                  const expected = expectedOutput.trim();
 
                   let actualParsed: any;
                   let expectedParsed: any;
@@ -755,7 +798,9 @@ export function PreviewCodeTask({
           }
         } else {
           for (const tc of block.testCases) {
-            if (!tc.input || !tc.expectedOutput) {
+            const expectedOutput = getExpectedOutputValue(tc);
+
+            if (!tc.input || !expectedOutput) {
               setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
               return;
             }
@@ -820,16 +865,16 @@ export function PreviewCodeTask({
                   }
 
                   try {
-                    expectedParsed = JSON.parse(tc.expectedOutput);
+                    expectedParsed = JSON.parse(expectedOutput);
                   } catch {
-                    expectedParsed = tc.expectedOutput;
+                    expectedParsed = expectedOutput;
                   }
 
                   const passed = compareOutputs(actualParsed, expectedParsed);
 
                   results.push({
                     input: tc.input,
-                    expected: tc.expectedOutput,
+                    expected: expectedOutput,
                     actual: resultStr,
                     passed,
                   });
@@ -925,12 +970,19 @@ export function PreviewCodeTask({
       <p className={styles.taskDescription}>{block.description}</p>
 
       {(block.language === "java" || block.language === "csharp") &&
-        block.argumentScheme &&
-        block.argumentScheme.some((a) => a.type === "object" && a.objectFields) && (
+        generateObjectClassesForPreview(
+          block.argumentScheme ?? [],
+          block.language,
+          activeReturnSchema
+        ) && (
           <div className={styles.objectDescriptions}>
             <h4>Описание классов:</h4>
             <pre className={styles.objectClassCode}>
-              {generateObjectClassesForPreview(block.argumentScheme, block.language)}
+              {generateObjectClassesForPreview(
+                block.argumentScheme ?? [],
+                block.language,
+                activeReturnSchema
+              )}
             </pre>
           </div>
         )}

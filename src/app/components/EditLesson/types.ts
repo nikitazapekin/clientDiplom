@@ -98,6 +98,14 @@ export interface ObjectField {
   value: string;
 }
 
+export interface StructuredTypeSchema {
+  className?: string;
+  arrayElementType?: ArgumentType;
+  arrayElementClassName?: string;
+  objectFields?: ObjectField[];
+  arrayElementObjectFields?: ObjectField[];
+}
+
 export interface FunctionArgument {
   name: string;
   type: ArgumentType;
@@ -105,14 +113,15 @@ export interface FunctionArgument {
   objectFields?: ObjectField[];
 }
 
-export interface ArgumentSchema {
+export interface ArgumentSchema extends StructuredTypeSchema {
   name: string;
   type: ArgumentType;
-  className?: string; // Custom class name for object types
-  arrayElementType?: ArgumentType;
-  arrayElementClassName?: string; // Custom class name for array element objects
-  objectFields?: ObjectField[];
-  arrayElementObjectFields?: ObjectField[];
+}
+
+export type ReturnObjectMode = "generic" | "concrete";
+
+export interface ReturnSchema extends StructuredTypeSchema {
+  objectReturnMode?: ReturnObjectMode;
 }
 
 export interface LanguageSpecificArg {
@@ -132,6 +141,13 @@ export interface TestCaseArgument {
   objectValues?: Record<string, string>;
 }
 
+export interface CodeTaskTestCase {
+  input: string;
+  expectedOutput: string;
+  args?: TestCaseArgument[];
+  expectedObjectValues?: Record<string, string>;
+}
+
 export interface CodeTaskBlock {
   id: string;
   order: number;
@@ -139,12 +155,13 @@ export interface CodeTaskBlock {
   description?: string;
   language: CodeLanguage;
   startCode?: string;
-  testCases?: Array<{ input: string; expectedOutput: string; args?: TestCaseArgument[] }>;
+  testCases?: CodeTaskTestCase[];
   constraints?: CodeConstraint[];
   runnable: boolean;
   expectedOutput?: string;
   argumentScheme?: ArgumentSchema[];
   returnType?: ArgumentType;
+  returnSchema?: ReturnSchema;
 }
 
 export interface FillCodeTaskCaseValue {

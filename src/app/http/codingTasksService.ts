@@ -10,6 +10,7 @@ export interface TestCase {
   input: string;
   expectedOutput: string;
   args?: TestCaseArgument[];
+  expectedObjectValues?: Record<string, string>;
 }
 
 export interface CodeConstraint {
@@ -25,6 +26,15 @@ export interface ArgumentSchema {
   arrayElementClassName?: string;
   objectFields?: { name: string; type: string; value: string }[];
   arrayElementObjectFields?: { name: string; type: string; value: string }[];
+}
+
+export interface ReturnSchema {
+  className?: string;
+  arrayElementType?: string;
+  arrayElementClassName?: string;
+  objectFields?: { name: string; type: string; value: string }[];
+  arrayElementObjectFields?: { name: string; type: string; value: string }[];
+  objectReturnMode?: "generic" | "concrete";
 }
 
 export interface CodeTask {
@@ -44,6 +54,7 @@ export interface CodeTask {
   updatedAt: string;
   argumentScheme?: ArgumentSchema[];
   returnType?: string;
+  returnSchema?: ReturnSchema;
 }
 
 export interface CreateCodeTaskPayload {
@@ -57,6 +68,7 @@ export interface CreateCodeTaskPayload {
   experienceReward: number;
   argumentScheme?: ArgumentSchema[];
   returnType?: string;
+  returnSchema?: ReturnSchema;
 }
 
 export interface SubmitSolutionResult {
@@ -120,7 +132,11 @@ export class CodingTasksService {
     return response.data;
   }
 
-  static async submitSolution(taskId: string, code: string, language: string): Promise<SubmitSolutionResult> {
+  static async submitSolution(
+    taskId: string,
+    code: string,
+    language: string
+  ): Promise<SubmitSolutionResult> {
     const response = await $apiNoRedirect.post("/coding-tasks/submit", { taskId, code, language });
 
     return response.data;
