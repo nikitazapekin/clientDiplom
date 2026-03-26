@@ -101,7 +101,8 @@ export function PreviewFillCodeTask({
       {block.description && <p className={styles.taskDescription}>{block.description}</p>}
 
       <div className={styles.fillTaskHint}>
-        Код менять нельзя. Перетаскивайте варианты в белые поля внутри шаблона.
+        Код менять нельзя. Перетаскивайте варианты в белые поля внутри шаблона или кликните по
+        варианту, а затем по нужному полю.
       </div>
 
       <FillTaskCodeSlots

@@ -50,10 +50,19 @@ const normalizeOptions = (
   options: FillCodeTaskOption[] | undefined,
   testCases: FillCodeTaskCase[] | undefined
 ): FillCodeTaskOption[] => {
-  const normalizedOptions: FillCodeTaskOption[] = (options ?? []).map((option, index) => ({
-    id: option.id || `fill_option_${index + 1}`,
-    value: option.value ?? "",
-  }));
+  const normalizedOptions: FillCodeTaskOption[] = (options ?? []).map((option, index) => {
+    if (typeof option === "string") {
+      return {
+        id: `fill_option_${index + 1}`,
+        value: option,
+      };
+    }
+
+    return {
+      id: option.id || `fill_option_${index + 1}`,
+      value: option.value ?? "",
+    };
+  });
 
   const seenValues = new Set(normalizedOptions.map((option) => normalizeValue(option.value)));
 

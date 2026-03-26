@@ -71,13 +71,11 @@ export const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
 });
 
 export const createFillCodeTaskBlock = (order: number): FillCodeTaskBlock => {
-  const templateCode = `const result = [[leftValue]] [[operator]] [[rightValue]];\nconsole.log(result);`;
+  const templateCode = `// Заполните метод sum так, чтобы он возвращал сумму аргументов a и b\nconst obj = {\n  sum: function(a, b) { return [input1] + [input2]; }\n};\n\nobj.sum(1, 2);`;
   const inputIds = extractFillTaskInputs(templateCode);
   const options = [
     { id: genId(), value: "a" },
     { id: genId(), value: "b" },
-    { id: genId(), value: "+" },
-    { id: genId(), value: "-" },
   ];
 
   return {
@@ -85,7 +83,7 @@ export const createFillCodeTaskBlock = (order: number): FillCodeTaskBlock => {
     order,
     type: "fillCodeTask",
     description:
-      "Соберите код из готовых вариантов. Помечайте места вставки как [[slot-name]] и задавайте допустимые комбинации ниже.",
+      "Дописать код: пользователь не может менять шаблон, он только заполняет белые поля внутри кода. Ниже настройте допустимые комбинации ответов.",
     language: "javascript",
     templateCode,
     options,
@@ -93,17 +91,15 @@ export const createFillCodeTaskBlock = (order: number): FillCodeTaskBlock => {
       {
         ...createEmptyFillTaskCase(genId(), inputIds),
         values: [
-          { slotId: "leftValue", optionId: options[0].id },
-          { slotId: "operator", optionId: options[2].id },
-          { slotId: "rightValue", optionId: options[1].id },
+          { slotId: "input1", optionId: options[0].id },
+          { slotId: "input2", optionId: options[1].id },
         ],
       },
       {
         ...createEmptyFillTaskCase(genId(), inputIds),
         values: [
-          { slotId: "leftValue", optionId: options[1].id },
-          { slotId: "operator", optionId: options[2].id },
-          { slotId: "rightValue", optionId: options[0].id },
+          { slotId: "input1", optionId: options[1].id },
+          { slotId: "input2", optionId: options[0].id },
         ],
       },
     ],

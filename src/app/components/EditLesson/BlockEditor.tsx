@@ -1409,8 +1409,9 @@ export function BlockEditor({
         </div>
 
         <div className={styles.fillTaskHint}>
-          Пишите любой код и отмечайте drop-зоны прямо в шаблоне через <code>[[slot-name]]</code>.
-          Например: <code>return [[value]];</code> или <code>const [[name]] = [[value]];</code>.
+          Это задача типа "дописать код": пользователь не редактирует шаблон, а только заполняет
+          белые поля внутри него. Отмечайте слоты через <code>[[slot-name]]</code> или legacy-формат{" "}
+          <code>[input1]</code>, <code>[input2]</code>.
         </div>
 
         <label>Шаблон кода</label>
@@ -1429,7 +1430,10 @@ export function BlockEditor({
               ? slotIds.map((slotId) => `[[${slotId}]]`).join(", ")
               : "не найдены"}
           </span>
-          <span>Пользователь сможет только перетаскивать варианты в белые поля внутри кода.</span>
+          <span>
+            Пользователь сможет только переносить варианты в белые поля внутри кода. Решение
+            засчитывается, если оно совпало хотя бы с одной комбинацией ниже.
+          </span>
         </div>
 
         <div className={styles.section}>
@@ -1470,7 +1474,7 @@ export function BlockEditor({
 
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <h4>Варианты проверки</h4>
+            <h4>Допустимые решения</h4>
             <Button
               color="#9F0FA7"
               width="auto"
@@ -1496,7 +1500,8 @@ export function BlockEditor({
 
           {slotIds.length > 0 && syncedTestCases.length === 0 && (
             <p className={styles.fillTaskWarning}>
-              Добавьте хотя бы один допустимый вариант заполнения слотов.
+              Добавьте хотя бы один допустимый вариант заполнения слотов. Можно задать несколько
+              комбинаций, и пользователю будет достаточно совпасть с любой из них.
             </p>
           )}
 
