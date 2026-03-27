@@ -1488,3 +1488,57 @@
 .blockWithReview {
   position: relative;
 }
+
+.blocksList,
+.blockCard,
+.blockEditor,
+.codeEditorWrapper {
+  width: 100%;
+  min-width: 0;
+}
+
+.blockCard {
+  overflow: hidden;
+}
+
+.blockCard__toolbar {
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.reviewListButton {
+  background: #f3f6fb;
+  color: #23527c;
+  border: 1px solid rgba(35, 82, 124, 0.16);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #e7eef8;
+    border-color: rgba(35, 82, 124, 0.28);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
+
+.reviewListEmpty {
+  padding: 16px;
+  border-radius: 8px;
+  background: #f7f8fa;
+  color: #46505a;
+  font-size: 14px;
+}
+
+.reviewListMeta {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}

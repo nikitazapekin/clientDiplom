@@ -668,7 +668,7 @@ export default function CodeEditor({
     <div
       ref={containerRef}
       className={`${styles.container} ${className || ""} ${isFocused ? styles.focused : ""}`}
-      style={{ height }}
+      style={{ height, width: "100%" }}
       data-code-editor
     >
       {onRun && (

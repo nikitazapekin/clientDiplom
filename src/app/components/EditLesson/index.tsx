@@ -20,7 +20,7 @@ import {
 import { sortBlocks } from "./editorShared";
 import { normalizeFillTaskBlock } from "./fillTaskUtils";
 import styles from "./index.module.scss";
-import { BlockReviewModal, ResultsModal, SourceModal } from "./modals";
+import { BlockReviewModal, BlockReviewsModal, ResultsModal, SourceModal } from "./modals";
 import { PreviewBlock, PreviewBlockStatic } from "./PreviewBlocks";
 import type {
   CodeTaskBlock,
@@ -48,31 +48,7 @@ type ReviewerInfo = {
 };
 
 const REVIEWABLE_BLOCK_FIELDS = new Set(["id", "order", "type", "file"]);
-
-const REVIEW_FIELD_LABELS: Record<string, string> = {
-  content: "Текст",
-  code: "Код",
-  language: "Язык",
-  runnable: "Режим запуска",
-  url: "Ссылка",
-  note: "Примечание",
-  rows: "Строки",
-  cols: "Столбцы",
-  cells: "Ячейки",
-  description: "Описание",
-  startCode: "Стартовый код",
-  testCases: "Тест-кейсы",
-  constraints: "Ограничения",
-  expectedOutput: "Ожидаемый вывод",
-  argumentScheme: "Аргументы",
-  returnType: "Тип возврата",
-  returnSchema: "Схема возврата",
-  templateCode: "Шаблон кода",
-  options: "Опции",
-  text: "Вопрос",
-  imageUrl: "Изображение",
-  correctIndex: "Правильный ответ",
-};
+const TEST_TASK_BLOCK_TYPES: SlideBlock["type"][] = ["codeTask", "fillCodeTask", "theoryQuestion"];
 
 const getReviewTargetType = (slideType: SlideType): ReviewTargetType =>
   slideType === "test" ? "test" : "slide";
@@ -121,28 +97,6 @@ const buildReviewChanges = (
   }, {});
 };
 
-const formatReviewValue = (value: unknown) => {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  if (value == null) {
-    return "null";
-  }
-
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-};
-
-const getReviewFieldLabel = (field: string) => REVIEW_FIELD_LABELS[field] ?? field;
-
 export default function EditLesson() {
   const params = useParams();
   const lessonId = params?.id as string;
@@ -171,6 +125,10 @@ export default function EditLesson() {
   const [reviewsLoading, setReviewsLoading] = useState<Record<string, boolean>>({});
   const [reviewActionLoading, setReviewActionLoading] = useState<Record<string, boolean>>({});
   const [reviewModalBlock, setReviewModalBlock] = useState<{
+    slideIndex: number;
+    blockId: string;
+  } | null>(null);
+  const [reviewListBlock, setReviewListBlock] = useState<{
     slideIndex: number;
     blockId: string;
   } | null>(null);
@@ -372,6 +330,17 @@ export default function EditLesson() {
       const slide = next[slideIndex];
       if (!slide) return prev;
 
+      if (slide.type === "test" && TEST_TASK_BLOCK_TYPES.includes(kind)) {
+        const hasTaskBlock = slide.blocks.some((block) =>
+          TEST_TASK_BLOCK_TYPES.includes(block.type)
+        );
+
+        if (hasTaskBlock) {
+          setError("На тестовом слайде может быть только одно задание.");
+          return prev;
+        }
+      }
+
       const order = slide.blocks.length;
       let block: SlideBlock;
 
@@ -496,6 +465,10 @@ export default function EditLesson() {
     setIsSubmittingReview(false);
   }, []);
 
+  const closeReviewListModal = useCallback(() => {
+    setReviewListBlock(null);
+  }, []);
+
   const openReviewModal = useCallback(
     (slideIndex: number, blockId: string) => {
       const slide = slides[slideIndex];
@@ -521,6 +494,10 @@ export default function EditLesson() {
     },
     [reviewerInfo, slides]
   );
+
+  const openReviewListModal = useCallback((slideIndex: number, blockId: string) => {
+    setReviewListBlock({ slideIndex, blockId });
+  }, []);
 
   const handleReviewDraftChange = useCallback((patch: Partial<SlideBlock>) => {
     setReviewDraftBlock((prev) => (prev ? ({ ...prev, ...patch } as SlideBlock) : prev));
@@ -566,6 +543,10 @@ export default function EditLesson() {
     setError(null);
 
     try {
+      const createdReviewBlock = {
+        slideIndex: reviewModalBlock.slideIndex,
+        blockId: reviewModalBlock.blockId,
+      };
       const payload = {
         blockId: originalBlock.id,
         reviewerId: reviewerInfo.reviewerId,
@@ -587,6 +568,7 @@ export default function EditLesson() {
       }
 
       await loadReviewsForSlide(slide);
+      setReviewListBlock(createdReviewBlock);
       closeReviewModal();
     } catch (reviewError: any) {
       setError(
@@ -670,6 +652,12 @@ export default function EditLesson() {
       closeReviewModal();
     }
   }, [closeReviewModal, reviewModalBlock, selectedSlideIndex]);
+
+  useEffect(() => {
+    if (reviewListBlock && reviewListBlock.slideIndex !== selectedSlideIndex) {
+      closeReviewListModal();
+    }
+  }, [closeReviewListModal, reviewListBlock, selectedSlideIndex]);
 
   const deleteBlock = useCallback((slideIndex: number, blockId: string) => {
     setSlides((prev) => {
@@ -968,6 +956,15 @@ export default function EditLesson() {
 
   const reviewModalSlide =
     reviewModalBlock != null ? (slides[reviewModalBlock.slideIndex] ?? null) : null;
+  const reviewListSlide =
+    reviewListBlock != null ? (slides[reviewListBlock.slideIndex] ?? null) : null;
+  const reviewListReviews =
+    reviewListSlide != null && reviewListBlock != null
+      ? getReviewsForBlock(reviewListSlide, reviewListBlock.blockId)
+      : [];
+  const selectedSlideHasTaskBlock =
+    selectedSlide?.type === "test" &&
+    selectedSlide.blocks.some((block) => TEST_TASK_BLOCK_TYPES.includes(block.type));
 
   if (isLoading) {
     return (
@@ -1266,37 +1263,48 @@ export default function EditLesson() {
               )}
 
               {selectedSlide.type === "test" && (
-                <div className={styles.blockAddRow}>
-                  <span className={styles.form__label}>Добавить блок:</span>
-                  <Button
-                    color="#9F0FA7"
-                    width="auto"
-                    textColor="#fff"
-                    text="Текст"
-                    onClick={() => addBlock(selectedSlideIndex, "text")}
-                  />
-                  <Button
-                    color="#9F0FA7"
-                    width="auto"
-                    textColor="#fff"
-                    text="Задача с кодом"
-                    onClick={() => addBlock(selectedSlideIndex, "codeTask")}
-                  />
-                  <Button
-                    color="#9F0FA7"
-                    width="auto"
-                    textColor="#fff"
-                    text="Дописать код"
-                    onClick={() => addBlock(selectedSlideIndex, "fillCodeTask")}
-                  />
-                  <Button
-                    color="#9F0FA7"
-                    width="auto"
-                    textColor="#fff"
-                    text="Теор. вопрос"
-                    onClick={() => addBlock(selectedSlideIndex, "theoryQuestion")}
-                  />
-                </div>
+                <>
+                  <div className={styles.blockAddRow}>
+                    <span className={styles.form__label}>Добавить блок:</span>
+                    <Button
+                      color="#9F0FA7"
+                      width="auto"
+                      textColor="#fff"
+                      text="Текст"
+                      onClick={() => addBlock(selectedSlideIndex, "text")}
+                    />
+                    <Button
+                      color="#9F0FA7"
+                      width="auto"
+                      textColor="#fff"
+                      text="Задача с кодом"
+                      onClick={() => addBlock(selectedSlideIndex, "codeTask")}
+                      disabled={selectedSlideHasTaskBlock}
+                    />
+                    <Button
+                      color="#9F0FA7"
+                      width="auto"
+                      textColor="#fff"
+                      text="Дописать код"
+                      onClick={() => addBlock(selectedSlideIndex, "fillCodeTask")}
+                      disabled={selectedSlideHasTaskBlock}
+                    />
+                    <Button
+                      color="#9F0FA7"
+                      width="auto"
+                      textColor="#fff"
+                      text="Теор. вопрос"
+                      onClick={() => addBlock(selectedSlideIndex, "theoryQuestion")}
+                      disabled={selectedSlideHasTaskBlock}
+                    />
+                  </div>
+                  {selectedSlideHasTaskBlock && (
+                    <p className={styles.reviewItemComment}>
+                      На тестовом слайде допускается только одно задание. Текстовые блоки можно
+                      добавлять отдельно.
+                    </p>
+                  )}
+                </>
               )}
 
               <div className={styles.blocksList}>
@@ -1311,15 +1319,9 @@ export default function EditLesson() {
                   const pendingReviews = reviews.filter(
                     (review) => review.status === ReviewStatus.PENDING
                   );
-                  const showReviewPanel =
-                    reviews.length > 0 ||
-                    (selectedSlide.isPersisted && reviewsLoading[selectedSlide.id]);
 
                   return (
-                    <div
-                      key={block.id}
-                      className={`${styles.blockCard} ${showReviewPanel ? styles.blockWithReview : ""}`}
-                    >
+                    <div key={block.id} className={styles.blockCard}>
                       <div className={styles.blockCard__toolbar}>
                         <span className={styles.blockCard__type}>{block.type}</span>
                         <button
@@ -1353,6 +1355,19 @@ export default function EditLesson() {
                             ? `Review (${pendingReviews.length})`
                             : "Review"}
                         </button>
+                        {selectedSlide.isPersisted &&
+                          (reviews.length > 0 || reviewsLoading[selectedSlide.id]) && (
+                            <button
+                              type="button"
+                              className={styles.reviewListButton}
+                              onClick={() => openReviewListModal(selectedSlideIndex, block.id)}
+                              disabled={reviewsLoading[selectedSlide.id]}
+                            >
+                              {reviewsLoading[selectedSlide.id]
+                                ? "Загрузка..."
+                                : `Правки (${reviews.length})`}
+                            </button>
+                          )}
                         <button
                           type="button"
                           className={styles.blockCard__del}
@@ -1371,120 +1386,6 @@ export default function EditLesson() {
                         codeRunOutput={codeRunOutput[block.id]}
                         codeRunLoading={codeRunLoading[block.id]}
                       />
-
-                      {showReviewPanel && (
-                        <aside className={styles.reviewPanel}>
-                          <div className={styles.reviewPanelHeader}>
-                            <span>Правки блока</span>
-                            {selectedSlide.isPersisted && reviewsLoading[selectedSlide.id] && (
-                              <span>Загрузка...</span>
-                            )}
-                          </div>
-
-                          {!reviewsLoading[selectedSlide.id] && reviews.length === 0 && (
-                            <p className={styles.reviewItemComment}>
-                              Для блока пока нет предложений.
-                            </p>
-                          )}
-
-                          {reviews.map((review) => (
-                            <div
-                              key={review.id}
-                              className={`${styles.reviewItem} ${
-                                review.status === ReviewStatus.PENDING
-                                  ? styles.reviewItemPending
-                                  : review.status === ReviewStatus.ACCEPTED
-                                    ? styles.reviewItemAccepted
-                                    : styles.reviewItemRejected
-                              }`}
-                            >
-                              <div className={styles.reviewItemHeader}>
-                                <span className={styles.reviewItemReviewer}>
-                                  {review.reviewerName}
-                                </span>
-                                <span
-                                  className={`${styles.reviewStatus} ${
-                                    review.status === ReviewStatus.PENDING
-                                      ? styles.pending
-                                      : review.status === ReviewStatus.ACCEPTED
-                                        ? styles.accepted
-                                        : styles.rejected
-                                  }`}
-                                >
-                                  {review.status}
-                                </span>
-                              </div>
-
-                              <div className={styles.reviewItemComment}>
-                                {review.comment || "Без комментария"}
-                              </div>
-
-                              <div className={styles.reviewItemChanges}>
-                                {Object.entries(review.proposedChanges).map(([field, value]) => {
-                                  const formattedValue = formatReviewValue(value);
-                                  const isCodeValue =
-                                    field.toLowerCase().includes("code") ||
-                                    formattedValue.includes("\n");
-
-                                  return (
-                                    <div key={field} className={styles.reviewChangeItem}>
-                                      <span className={styles.reviewChangeLabel}>
-                                        {getReviewFieldLabel(field)}
-                                      </span>
-                                      <span
-                                        className={`${styles.reviewChangeValue} ${
-                                          isCodeValue ? styles.reviewChangeCode : ""
-                                        }`}
-                                      >
-                                        {formattedValue}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-
-                              <div className={styles.reviewItemHeader}>
-                                <span>{new Date(review.createdAt).toLocaleString("ru-RU")}</span>
-                              </div>
-
-                              {review.status === ReviewStatus.PENDING && (
-                                <div className={styles.reviewItemActions}>
-                                  <button
-                                    type="button"
-                                    className={`${styles.reviewItemActionBtn} ${styles.accept}`}
-                                    onClick={() =>
-                                      handleReviewDecision(
-                                        selectedSlideIndex,
-                                        block.id,
-                                        review,
-                                        "accept"
-                                      )
-                                    }
-                                    disabled={reviewActionLoading[review.id]}
-                                  >
-                                    {reviewActionLoading[review.id] ? "..." : "Применить"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={`${styles.reviewItemActionBtn} ${styles.reject}`}
-                                    onClick={() =>
-                                      handleReviewDecision(
-                                        selectedSlideIndex,
-                                        block.id,
-                                        review,
-                                        "reject"
-                                      )
-                                    }
-                                    disabled={reviewActionLoading[review.id]}
-                                  >
-                                    {reviewActionLoading[review.id] ? "..." : "Отклонить"}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </aside>
-                      )}
                     </div>
                   );
                 })}
@@ -1545,6 +1446,37 @@ export default function EditLesson() {
           runCode={runCode}
           codeRunOutput={reviewDraftBlock ? codeRunOutput[reviewDraftBlock.id] : undefined}
           codeRunLoading={reviewDraftBlock ? codeRunLoading[reviewDraftBlock.id] : undefined}
+        />
+        <BlockReviewsModal
+          isOpen={reviewListBlock != null}
+          slideTitle={reviewListSlide?.title || "Без названия"}
+          reviews={reviewListReviews}
+          actionLoading={reviewActionLoading}
+          onAccept={(review) => {
+            if (!reviewListBlock) {
+              return;
+            }
+
+            handleReviewDecision(
+              reviewListBlock.slideIndex,
+              reviewListBlock.blockId,
+              review,
+              "accept"
+            );
+          }}
+          onReject={(review) => {
+            if (!reviewListBlock) {
+              return;
+            }
+
+            handleReviewDecision(
+              reviewListBlock.slideIndex,
+              reviewListBlock.blockId,
+              review,
+              "reject"
+            );
+          }}
+          onClose={closeReviewListModal}
         />
       </div>
     </section>

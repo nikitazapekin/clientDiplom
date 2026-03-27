@@ -7,6 +7,52 @@ import styles from "./index.module.scss";
 import type { Slide, SlideBlock } from "./types";
 
 import type { CodeLanguage } from "@/app/http/codeService";
+import { type BlockReview, ReviewStatus } from "@/app/http/reviewService";
+
+const REVIEW_FIELD_LABELS: Record<string, string> = {
+  content: "Текст",
+  code: "Код",
+  language: "Язык",
+  runnable: "Режим запуска",
+  url: "Ссылка",
+  note: "Примечание",
+  rows: "Строки",
+  cols: "Столбцы",
+  cells: "Ячейки",
+  description: "Описание",
+  startCode: "Стартовый код",
+  testCases: "Тест-кейсы",
+  constraints: "Ограничения",
+  expectedOutput: "Ожидаемый вывод",
+  argumentScheme: "Аргументы",
+  returnType: "Тип возврата",
+  returnSchema: "Схема возврата",
+  templateCode: "Шаблон кода",
+  options: "Опции",
+  text: "Вопрос",
+  imageUrl: "Изображение",
+  correctIndex: "Правильный ответ",
+};
+
+const formatReviewValue = (value: unknown) => {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (value == null) {
+    return "null";
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+};
 
 export function SourceModal({
   isOpen,
@@ -324,6 +370,139 @@ export function BlockReviewModal({
             onClick={onSubmit}
             disabled={isSubmitting}
           />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function BlockReviewsModal({
+  isOpen,
+  slideTitle,
+  reviews,
+  actionLoading,
+  onAccept,
+  onReject,
+  onClose,
+}: {
+  isOpen: boolean;
+  slideTitle: string;
+  reviews: BlockReview[];
+  actionLoading: Record<string, boolean>;
+  onAccept: (review: BlockReview) => void;
+  onReject: (review: BlockReview) => void;
+  onClose: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div
+        className={`${styles.modalContent} ${styles.reviewModal}`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className={styles.modalHeader}>
+          <h3>Правки блока</h3>
+          <button className={styles.modalClose} onClick={onClose}>
+            ✕
+          </button>
+        </div>
+
+        <div className={`${styles.modalBody} ${styles.reviewModalBody}`}>
+          <div className={styles.reviewModalFields}>
+            <div className={styles.reviewModalField}>
+              <span className={styles.reviewModalLabel}>Слайд</span>
+              <div className={styles.reviewModalChanges}>{slideTitle}</div>
+            </div>
+
+            {reviews.length === 0 ? (
+              <div className={styles.reviewListEmpty}>Для этого блока пока нет правок.</div>
+            ) : (
+              reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className={`${styles.reviewItem} ${
+                    review.status === ReviewStatus.PENDING
+                      ? styles.reviewItemPending
+                      : review.status === ReviewStatus.ACCEPTED
+                        ? styles.reviewItemAccepted
+                        : styles.reviewItemRejected
+                  }`}
+                >
+                  <div className={styles.reviewItemHeader}>
+                    <span className={styles.reviewItemReviewer}>{review.reviewerName}</span>
+                    <span
+                      className={`${styles.reviewStatus} ${
+                        review.status === ReviewStatus.PENDING
+                          ? styles.pending
+                          : review.status === ReviewStatus.ACCEPTED
+                            ? styles.accepted
+                            : styles.rejected
+                      }`}
+                    >
+                      {review.status}
+                    </span>
+                  </div>
+
+                  <div className={styles.reviewItemComment}>
+                    {review.comment || "Без комментария"}
+                  </div>
+
+                  <div className={styles.reviewItemChanges}>
+                    {Object.entries(review.proposedChanges).map(([field, value]) => {
+                      const formattedValue = formatReviewValue(value);
+                      const isCodeValue =
+                        field.toLowerCase().includes("code") || formattedValue.includes("\n");
+
+                      return (
+                        <div key={field} className={styles.reviewChangeItem}>
+                          <span className={styles.reviewChangeLabel}>
+                            {REVIEW_FIELD_LABELS[field] ?? field}
+                          </span>
+                          <span
+                            className={`${styles.reviewChangeValue} ${
+                              isCodeValue ? styles.reviewChangeCode : ""
+                            }`}
+                          >
+                            {formattedValue}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className={styles.reviewListMeta}>
+                    {new Date(review.createdAt).toLocaleString("ru-RU")}
+                  </div>
+
+                  {review.status === ReviewStatus.PENDING && (
+                    <div className={styles.reviewItemActions}>
+                      <button
+                        type="button"
+                        className={`${styles.reviewItemActionBtn} ${styles.accept}`}
+                        onClick={() => onAccept(review)}
+                        disabled={actionLoading[review.id]}
+                      >
+                        {actionLoading[review.id] ? "..." : "Применить"}
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.reviewItemActionBtn} ${styles.reject}`}
+                        onClick={() => onReject(review)}
+                        disabled={actionLoading[review.id]}
+                      >
+                        {actionLoading[review.id] ? "..." : "Отклонить"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className={styles.modalFooter}>
+          <Button color="#2196f3" width="180px" textColor="#fff" text="Закрыть" onClick={onClose} />
         </div>
       </div>
     </div>
