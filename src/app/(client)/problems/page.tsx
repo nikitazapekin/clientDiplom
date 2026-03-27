@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 import styles from "./page.module.scss";
 
-import type { CodeLanguage } from "@/app/http/codeService";
 import {
   type CodeTask,
   CodingTasksService,
@@ -31,6 +30,7 @@ export default function ProblemsPage() {
   const [tasks, setTasks] = useState<CodeTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadTasks = useCallback(async () => {
     try {
@@ -48,7 +48,14 @@ export default function ProblemsPage() {
     loadTasks();
   }, [loadTasks]);
 
-  const filtered = filter === "all" ? tasks : tasks.filter((t) => t.difficulty === filter);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filtered = tasks.filter((task) => {
+    const matchesDifficulty = filter === "all" || task.difficulty === filter;
+    const searchTarget = [task.title, ...(task.tags || [])].join(" ").toLowerCase();
+    const matchesSearch = normalizedQuery.length === 0 || searchTarget.includes(normalizedQuery);
+
+    return matchesDifficulty && matchesSearch;
+  });
 
   return (
     <div className={styles.page}>
@@ -56,6 +63,15 @@ export default function ProblemsPage() {
         <div className={styles.header}>
           <h1>Coding Challenges</h1>
           <p className={styles.subtitle}>Решайте задачи и набирайте опыт</p>
+        </div>
+
+        <div className={styles.controls}>
+          <input
+            className={styles.searchInput}
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Поиск по названию или тегу"
+          />
         </div>
 
         <div className={styles.filters}>
@@ -97,6 +113,15 @@ export default function ProblemsPage() {
                 <div key={task.id} className={styles.tableRow}>
                   <div className={styles.colTitle}>
                     <span className={styles.taskName}>{task.title}</span>
+                    {(task.tags || []).length > 0 && (
+                      <div className={styles.taskTags}>
+                        {(task.tags || []).map((tag) => (
+                          <span key={tag} className={styles.taskTag}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <span className={styles.taskAuthor}>Автор: {task.authorName}</span>
                   </div>
                   <span className={styles.colDiff}>

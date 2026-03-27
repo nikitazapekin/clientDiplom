@@ -77,6 +77,21 @@
   flex-wrap: wrap;
 }
 
+.taskTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.taskTag {
+  font-size: 12px;
+  color: #836400;
+  background: #fff6da;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
 .badge {
   padding: 4px 12px;
   border-radius: 12px;
@@ -189,6 +204,12 @@
   color: $color-gray-400;
   font-style: italic;
   margin: 4px 0 0;
+}
+
+.moreResults {
+  font-size: 12px;
+  color: $color-gray-400;
+  margin: 8px 0 0;
 }
 
 .codeBlock {

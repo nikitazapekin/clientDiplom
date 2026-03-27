@@ -41,6 +41,7 @@ export interface CodeTask {
   id: string;
   title: string;
   description: string;
+  tags?: string[];
   languages: string[];
   startCodes: Record<string, string>;
   testCases: TestCase[];
@@ -60,6 +61,7 @@ export interface CodeTask {
 export interface CreateCodeTaskPayload {
   title: string;
   description: string;
+  tags?: string[];
   languages: string[];
   startCodes: Record<string, string>;
   testCases: TestCase[];

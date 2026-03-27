@@ -1359,6 +1359,8 @@ export default function SolveProblemPage() {
   const diffLabel = DIFF_LABELS[task.difficulty] || task.difficulty;
   const passedCount = result?.results?.filter((r) => r.passed).length ?? 0;
   const totalCount = result?.results?.length ?? 0;
+  const visibleResults = (result?.results || []).slice(0, 3);
+  const hiddenResultsCount = Math.max(0, totalCount - visibleResults.length);
 
   return (
     <div className={styles.page}>
@@ -1377,6 +1379,15 @@ export default function SolveProblemPage() {
               <span className={styles.xpBadge}>+{task.experienceReward} XP</span>
               <span className={styles.authorTag}>Автор: {task.authorName}</span>
             </div>
+            {(task.tags || []).length > 0 && (
+              <div className={styles.taskTags}>
+                {(task.tags || []).map((tag) => (
+                  <span key={tag} className={styles.taskTag}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className={styles.description}>
@@ -1462,7 +1473,7 @@ export default function SolveProblemPage() {
               )}
 
               <h3>Примеры</h3>
-              {langTestCases.slice(0, 2).map((tc: TestCase, i: number) => (
+              {langTestCases.slice(0, 3).map((tc: TestCase, i: number) => (
                 <div key={i} className={styles.example}>
                   <div>
                     <strong>Вход:</strong> <code>{getDisplayInput(tc, argScheme, selectedLang)}</code>
@@ -1472,9 +1483,9 @@ export default function SolveProblemPage() {
                   </div>
                 </div>
               ))}
-              {langTestCases.length > 2 && (
+              {langTestCases.length > 3 && (
                 <p className={styles.moreTests}>
-                  + ещё {langTestCases.length - 2} скрытых тестов
+                  + ещё {langTestCases.length - 3} скрытых тестов
                 </p>
               )}
             </div>
@@ -1578,7 +1589,7 @@ export default function SolveProblemPage() {
               )}
 
               <div className={styles.testResults}>
-                {(result.results || []).map((r) => (
+                {visibleResults.map((r) => (
                   <div
                     key={r.index}
                     className={`${styles.testResult} ${
@@ -1589,14 +1600,14 @@ export default function SolveProblemPage() {
                       <span>Тест #{r.index + 1}</span>
                       <span>{r.passed ? "Пройден" : "Провален"}</span>
                     </div>
-                    <div className={styles.testResultDetails}>
-                      <span>Вход: {r.input}</span>
-                      <span>Ожидалось: {r.expected}</span>
-                      <span>Получено: {r.actual || "пусто"}</span>
-                    </div>
                   </div>
                 ))}
               </div>
+              {hiddenResultsCount > 0 && (
+                <p className={styles.moreResults}>
+                  Ещё {hiddenResultsCount} тестов скрыто
+                </p>
+              )}
               
               {/* Отладочная информация для разработки */}
               {process.env.NODE_ENV === 'development' && rawOutput && (

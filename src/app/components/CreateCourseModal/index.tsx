@@ -384,8 +384,7 @@ const CreateCourseModal = ({
 
         <div className={styles.modal__fields}>
           {fields.map(renderField)}
-
-          {/* Поле статуса */}
+ 
           <div className={styles.modal__field}>
             <label className={styles.modal__label}>Статус курса</label>
             <select

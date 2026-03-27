@@ -133,11 +133,20 @@
   font-weight: 600;
 }
 
-.taskDesc {
-  color: $color-gray-600;
-  font-size: 14px;
-  line-height: 1.5;
-  margin: 0 0 12px;
+.taskTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.taskTag {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #fff6da;
+  color: #836400;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .taskFooter {
@@ -413,6 +422,35 @@
   gap: 0;
   border-bottom: 2px solid $color-gray-200;
   margin-bottom: -1px;
+}
+
+.tagSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagChip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid $color-gray-200;
+  background: $color-white;
+  color: $color-gray-700;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $color-purple;
+    color: $color-purple;
+  }
+}
+
+.tagChipActive {
+  background: rgba(159, 15, 167, 0.1);
+  border-color: $color-purple;
+  color: $color-purple;
 }
 
 .langTab {

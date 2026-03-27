@@ -244,6 +244,30 @@ const DIFFICULTIES = [
   { value: "hard", label: "Сложный", color: "#f44336" },
 ];
 
+const TAG_OPTIONS = [
+  "JS",
+  "Python",
+  "Golang",
+  "C#",
+  "Java",
+  "Rust",
+  "TypeScript",
+  "Строки",
+  "Сортировки",
+  "Массивы",
+  "Математика",
+  "Матрицы",
+  "Стек",
+  "Очередь",
+  "Связный список",
+  "Динамическое программирование",
+  "Теория игр",
+  "Жадные алгоритмы",
+  "Хеш-таблица",
+  "Деревья",
+  "Бинарное дерево",
+];
+
 const getDefaultStarterCode = (lang: CodeLanguage): string => {
   switch (lang) {
     case "python":
@@ -681,6 +705,7 @@ export default function CodingPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<CodeLanguage[]>(["javascript"]);
   const [startCodes, setStartCodes] = useState<Record<string, string>>({
     javascript: getDefaultStarterCode("javascript"),
@@ -722,6 +747,7 @@ export default function CodingPage() {
     setEditId(null);
     setTitle("");
     setDescription("");
+    setTags([]);
     setSelectedLanguages(["javascript"]);
     setStartCodes({ javascript: getDefaultStarterCode("javascript") });
     setActiveEditorLang("javascript");
@@ -748,6 +774,7 @@ export default function CodingPage() {
     setEditId(task.id);
     setTitle(task.title);
     setDescription(task.description);
+    setTags(task.tags || []);
     setSelectedLanguages((task.languages || []) as CodeLanguage[]);
     setStartCodes(task.startCodes || {});
     setActiveEditorLang((task.languages?.[0] || "javascript") as CodeLanguage);
@@ -771,6 +798,12 @@ export default function CodingPage() {
     } catch (e) {
       console.error("Failed to delete:", e);
     }
+  };
+
+  const toggleTag = (tag: string) => {
+    setTags((prev) =>
+      prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag],
+    );
   };
 
   const convertArgsToInput = (testCases: TestCase[], scheme: ArgumentSchema[], language: string): TestCase[] => {
@@ -844,6 +877,7 @@ export default function CodingPage() {
       const payload = {
         title,
         description,
+        tags,
         languages: selectedLanguages,
         startCodes,
         testCases: processedTestCases,
@@ -1183,11 +1217,15 @@ export default function CodingPage() {
                       <span className={styles.xpBadge}>+{task.experienceReward} XP</span>
                     </div>
                   </div>
-                  <p className={styles.taskDesc}>
-                    {task.description.length > 150
-                      ? task.description.slice(0, 150) + "..."
-                      : task.description}
-                  </p>
+                  {(task.tags || []).length > 0 && (
+                    <div className={styles.taskTags}>
+                      {(task.tags || []).map((tag) => (
+                        <span key={tag} className={styles.taskTag}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <div className={styles.taskFooter}>
                     <span className={styles.taskInfo}>
                       {langLabels(task.languages)} |{" "}
@@ -1249,6 +1287,27 @@ export default function CodingPage() {
                 placeholder="Подробное описание задачи, примеры входных и выходных данных..."
                 rows={6}
               />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>Теги</label>
+              <div className={styles.tagSelector}>
+                {TAG_OPTIONS.map((tag) => {
+                  const active = tags.includes(tag);
+
+                  return (
+                    <button
+                      key={tag}
+                      className={`${styles.tagChip} ${active ? styles.tagChipActive : ""}`}
+                      onClick={() => toggleTag(tag)}
+                      type="button"
+                    >
+                      {active ? "✓ " : ""}
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className={styles.formRow}>

@@ -33,6 +33,25 @@
   margin: 4px 0 0;
 }
 
+.controls {
+  display: flex;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid $color-gray-200;
+  background: $color-white;
+  color: $color-gray-900;
+  font-size: 14px;
+  outline: none;
+
+  &:focus {
+    border-color: $color-purple;
+  }
+}
+
 .filters {
   display: flex;
   gap: px($spacing-sm);
@@ -125,6 +144,22 @@
 .taskAuthor {
   font-size: 12px;
   color: $color-gray-400;
+}
+
+.taskTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.taskTag {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff6da;
+  color: #836400;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .badge {
