@@ -11,6 +11,7 @@
   align-items: center;
   justify-content: center;
 
+  z-index: 111;
   &__inner {
     max-width: px($container-xs);
     background-color: $color-white;

@@ -20,7 +20,7 @@ import {
 import { sortBlocks } from "./editorShared";
 import { normalizeFillTaskBlock } from "./fillTaskUtils";
 import styles from "./index.module.scss";
-import { ResultsModal, SourceModal } from "./modals";
+import { BlockReviewModal, ResultsModal, SourceModal } from "./modals";
 import { PreviewBlock, PreviewBlockStatic } from "./PreviewBlocks";
 import type {
   CodeTaskBlock,
@@ -32,11 +32,116 @@ import type {
   TheoryQuestionBlock,
 } from "./types";
 
+import { AdminService } from "@/app/http/admin";
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";
 import { LessonDetailsService } from "@/app/http/lessonDetailsService";
+import { ProfileService } from "@/app/http/profile";
+import { type BlockReview, ReviewService, ReviewStatus } from "@/app/http/reviewService";
 
 /* eslint-disable */
+
+type ReviewTargetType = "slide" | "test";
+type ReviewerInfo = {
+  reviewerId: string;
+  reviewerName: string;
+};
+
+const REVIEWABLE_BLOCK_FIELDS = new Set(["id", "order", "type", "file"]);
+
+const REVIEW_FIELD_LABELS: Record<string, string> = {
+  content: "Текст",
+  code: "Код",
+  language: "Язык",
+  runnable: "Режим запуска",
+  url: "Ссылка",
+  note: "Примечание",
+  rows: "Строки",
+  cols: "Столбцы",
+  cells: "Ячейки",
+  description: "Описание",
+  startCode: "Стартовый код",
+  testCases: "Тест-кейсы",
+  constraints: "Ограничения",
+  expectedOutput: "Ожидаемый вывод",
+  argumentScheme: "Аргументы",
+  returnType: "Тип возврата",
+  returnSchema: "Схема возврата",
+  templateCode: "Шаблон кода",
+  options: "Опции",
+  text: "Вопрос",
+  imageUrl: "Изображение",
+  correctIndex: "Правильный ответ",
+};
+
+const getReviewTargetType = (slideType: SlideType): ReviewTargetType =>
+  slideType === "test" ? "test" : "slide";
+
+const getReviewBlockKey = (slideId: string, blockId: string, targetType: ReviewTargetType) =>
+  `${targetType}:${slideId}:${blockId}`;
+
+const cloneBlock = <T extends SlideBlock>(block: T): T => {
+  if (typeof structuredClone === "function") {
+    return structuredClone(block);
+  }
+
+  return JSON.parse(JSON.stringify(block)) as T;
+};
+
+const normalizeComparableValue = (value: unknown) => {
+  if (value && typeof value === "object" && "file" in (value as Record<string, unknown>)) {
+    const { file, ...rest } = value as Record<string, unknown>;
+    return rest;
+  }
+
+  return value;
+};
+
+const buildReviewChanges = (
+  originalBlock: SlideBlock,
+  draftBlock: SlideBlock
+): Record<string, unknown> => {
+  const originalRecord = originalBlock as unknown as Record<string, unknown>;
+  const draftRecord = draftBlock as unknown as Record<string, unknown>;
+  const keys = Array.from(new Set([...Object.keys(originalRecord), ...Object.keys(draftRecord)]));
+
+  return keys.reduce<Record<string, unknown>>((changes, key) => {
+    if (REVIEWABLE_BLOCK_FIELDS.has(key)) {
+      return changes;
+    }
+
+    const originalValue = normalizeComparableValue(originalRecord[key]);
+    const draftValue = normalizeComparableValue(draftRecord[key]);
+
+    if (JSON.stringify(originalValue) !== JSON.stringify(draftValue)) {
+      changes[key] = draftValue;
+    }
+
+    return changes;
+  }, {});
+};
+
+const formatReviewValue = (value: unknown) => {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (value == null) {
+    return "null";
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+};
+
+const getReviewFieldLabel = (field: string) => REVIEW_FIELD_LABELS[field] ?? field;
 
 export default function EditLesson() {
   const params = useParams();
@@ -61,6 +166,17 @@ export default function EditLesson() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lessonDetailsId, setLessonDetailsId] = useState<string | null>(null);
+  const [reviewerInfo, setReviewerInfo] = useState<ReviewerInfo | null>(null);
+  const [blockReviews, setBlockReviews] = useState<Record<string, BlockReview[]>>({});
+  const [reviewsLoading, setReviewsLoading] = useState<Record<string, boolean>>({});
+  const [reviewActionLoading, setReviewActionLoading] = useState<Record<string, boolean>>({});
+  const [reviewModalBlock, setReviewModalBlock] = useState<{
+    slideIndex: number;
+    blockId: string;
+  } | null>(null);
+  const [reviewDraftBlock, setReviewDraftBlock] = useState<SlideBlock | null>(null);
+  const [reviewComment, setReviewComment] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [sourceModalOpen, setSourceModalOpen] = useState(false);
   const [currentSources, setCurrentSources] = useState<{ url: string; note?: string }[]>([]);
   const [showResultsModal, setShowResultsModal] = useState(false);
@@ -84,6 +200,75 @@ export default function EditLesson() {
     constraintsPassed: true,
   });
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReviewerInfo = async () => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      const reviewerId = localStorage.getItem("userId");
+      const fallbackEmail = localStorage.getItem("userEmail");
+
+      if (!reviewerId) {
+        return;
+      }
+
+      try {
+        const adminProfile = await AdminService.getAdminByAuditoryId(reviewerId);
+        const reviewerName = [
+          adminProfile.firstName,
+          adminProfile.lastName,
+          adminProfile.middleName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+        if (!cancelled) {
+          setReviewerInfo({
+            reviewerId,
+            reviewerName: reviewerName || fallbackEmail || reviewerId,
+          });
+        }
+        return;
+      } catch (adminError) {
+        console.warn("Unable to load admin reviewer profile", adminError);
+      }
+
+      try {
+        const profile = await ProfileService.getFullProfileByAuditoryId(reviewerId);
+        const reviewerName = [profile.firstName, profile.lastName, profile.middleName]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+        if (!cancelled) {
+          setReviewerInfo({
+            reviewerId,
+            reviewerName: reviewerName || fallbackEmail || reviewerId,
+          });
+        }
+      } catch (profileError) {
+        console.warn("Unable to load client reviewer profile", profileError);
+
+        if (!cancelled) {
+          setReviewerInfo({
+            reviewerId,
+            reviewerName: fallbackEmail || reviewerId,
+          });
+        }
+      }
+    };
+
+    loadReviewerInfo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const loadLessonDetails = useCallback(async () => {
     if (!lessonId) return;
 
@@ -100,6 +285,7 @@ export default function EditLesson() {
           title: slide.title,
           type: slide.type as SlideType,
           order: slide.orderIndex,
+          isPersisted: true,
           blocks: ((slide.blocks || []) as unknown as SlideBlock[]).map((block) =>
             block.type === "fillCodeTask" ? normalizeFillTaskBlock(block) : block
           ),
@@ -109,6 +295,7 @@ export default function EditLesson() {
           title: test.title,
           type: "test" as const,
           order: test.orderIndex,
+          isPersisted: true,
           blocks: ((test.blocks || []) as unknown as SlideBlock[]).map((block) =>
             block.type === "fillCodeTask" ? normalizeFillTaskBlock(block) : block
           ),
@@ -120,6 +307,7 @@ export default function EditLesson() {
       if (err.response?.status === 404) {
         setSlides([]);
         setLessonDetailsId(null);
+        setBlockReviews({});
       } else {
         setError(err.message || "Ошибка загрузки урока");
         console.error("Error loading lesson details:", err);
@@ -142,6 +330,7 @@ export default function EditLesson() {
         title: type === "lesson" ? "Новый слайд" : "Новый тест",
         type,
         order: slides.length,
+        isPersisted: false,
         blocks: [],
       };
 
@@ -243,6 +432,244 @@ export default function EditLesson() {
     },
     []
   );
+
+  const loadReviewsForSlide = useCallback(async (slide: Slide | null) => {
+    if (!slide?.isPersisted) {
+      return;
+    }
+
+    const reviewTargetType = getReviewTargetType(slide.type);
+
+    setReviewsLoading((prev) => ({ ...prev, [slide.id]: true }));
+
+    try {
+      const reviews =
+        reviewTargetType === "test"
+          ? await ReviewService.getTestReviews(slide.id)
+          : await ReviewService.getSlideReviews(slide.id);
+
+      setBlockReviews((prev) => {
+        const next = { ...prev };
+
+        Object.keys(next).forEach((key) => {
+          if (key.startsWith(`${reviewTargetType}:${slide.id}:`)) {
+            delete next[key];
+          }
+        });
+
+        slide.blocks.forEach((block) => {
+          next[getReviewBlockKey(slide.id, block.id, reviewTargetType)] = [];
+        });
+
+        reviews.forEach((review) => {
+          const reviewKey = getReviewBlockKey(slide.id, review.blockId, reviewTargetType);
+          next[reviewKey] = [...(next[reviewKey] ?? []), review];
+        });
+
+        return next;
+      });
+    } catch (reviewsError) {
+      console.error("Error loading block reviews:", reviewsError);
+      setError("Не удалось загрузить правки для выбранного слайда");
+    } finally {
+      setReviewsLoading((prev) => ({ ...prev, [slide.id]: false }));
+    }
+  }, []);
+
+  const getReviewsForBlock = useCallback(
+    (slide: Slide | null, blockId: string) => {
+      if (!slide) {
+        return [];
+      }
+
+      return (
+        blockReviews[getReviewBlockKey(slide.id, blockId, getReviewTargetType(slide.type))] ?? []
+      );
+    },
+    [blockReviews]
+  );
+
+  const closeReviewModal = useCallback(() => {
+    setReviewModalBlock(null);
+    setReviewDraftBlock(null);
+    setReviewComment("");
+    setIsSubmittingReview(false);
+  }, []);
+
+  const openReviewModal = useCallback(
+    (slideIndex: number, blockId: string) => {
+      const slide = slides[slideIndex];
+      const block = slide?.blocks.find((item) => item.id === blockId);
+
+      if (!slide || !block) {
+        return;
+      }
+
+      if (!slide.isPersisted) {
+        setError("Сначала сохраните урок, чтобы создавать правки для этого слайда.");
+        return;
+      }
+
+      if (!reviewerInfo) {
+        setError("Не удалось определить текущего рецензента.");
+        return;
+      }
+
+      setReviewModalBlock({ slideIndex, blockId });
+      setReviewDraftBlock(cloneBlock(block));
+      setReviewComment("");
+    },
+    [reviewerInfo, slides]
+  );
+
+  const handleReviewDraftChange = useCallback((patch: Partial<SlideBlock>) => {
+    setReviewDraftBlock((prev) => (prev ? ({ ...prev, ...patch } as SlideBlock) : prev));
+  }, []);
+
+  const handleReviewDraftImageUpload = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setReviewDraftBlock((prev) =>
+        prev
+          ? ({
+              ...prev,
+              url: reader.result as string,
+              file,
+            } as SlideBlock)
+          : prev
+      );
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const submitReview = useCallback(async () => {
+    if (!reviewModalBlock || !reviewDraftBlock || !reviewerInfo) {
+      return;
+    }
+
+    const slide = slides[reviewModalBlock.slideIndex];
+    const originalBlock = slide?.blocks.find((block) => block.id === reviewModalBlock.blockId);
+
+    if (!slide || !originalBlock) {
+      setError("Блок для правки не найден");
+      return;
+    }
+
+    const proposedChanges = buildReviewChanges(originalBlock, reviewDraftBlock);
+
+    if (Object.keys(proposedChanges).length === 0) {
+      setError("Нет изменений для отправки");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    setError(null);
+
+    try {
+      const payload = {
+        blockId: originalBlock.id,
+        reviewerId: reviewerInfo.reviewerId,
+        reviewerName: reviewerInfo.reviewerName,
+        proposedChanges,
+        comment: reviewComment.trim() || "Предлагаемое изменение блока",
+      };
+
+      if (getReviewTargetType(slide.type) === "test") {
+        await ReviewService.createTestReview({
+          testId: slide.id,
+          ...payload,
+        });
+      } else {
+        await ReviewService.createSlideReview({
+          slideId: slide.id,
+          ...payload,
+        });
+      }
+
+      await loadReviewsForSlide(slide);
+      closeReviewModal();
+    } catch (reviewError: any) {
+      setError(
+        reviewError.response?.data?.message || reviewError.message || "Ошибка создания правки"
+      );
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  }, [
+    closeReviewModal,
+    loadReviewsForSlide,
+    reviewComment,
+    reviewDraftBlock,
+    reviewModalBlock,
+    reviewerInfo,
+    slides,
+  ]);
+
+  const handleReviewDecision = useCallback(
+    async (
+      slideIndex: number,
+      blockId: string,
+      review: BlockReview,
+      action: "accept" | "reject"
+    ) => {
+      const slide = slides[slideIndex];
+
+      if (!slide) {
+        return;
+      }
+
+      setReviewActionLoading((prev) => ({ ...prev, [review.id]: true }));
+      setError(null);
+
+      try {
+        const updatedReview =
+          action === "accept"
+            ? getReviewTargetType(slide.type) === "test"
+              ? await ReviewService.acceptTestReview(review.id)
+              : await ReviewService.acceptSlideReview(review.id)
+            : getReviewTargetType(slide.type) === "test"
+              ? await ReviewService.rejectTestReview(review.id)
+              : await ReviewService.rejectSlideReview(review.id);
+
+        if (action === "accept") {
+          updateBlock(slideIndex, blockId, updatedReview.proposedChanges as Partial<SlideBlock>);
+        }
+
+        setBlockReviews((prev) => {
+          const reviewKey = getReviewBlockKey(slide.id, blockId, getReviewTargetType(slide.type));
+          return {
+            ...prev,
+            [reviewKey]: (prev[reviewKey] ?? []).map((item) =>
+              item.id === updatedReview.id ? updatedReview : item
+            ),
+          };
+        });
+      } catch (reviewError: any) {
+        setError(
+          reviewError.response?.data?.message ||
+            reviewError.message ||
+            "Не удалось обновить статус правки"
+        );
+      } finally {
+        setReviewActionLoading((prev) => ({ ...prev, [review.id]: false }));
+      }
+    },
+    [slides, updateBlock]
+  );
+
+  useEffect(() => {
+    if (!selectedSlide?.isPersisted) {
+      return;
+    }
+
+    loadReviewsForSlide(selectedSlide);
+  }, [loadReviewsForSlide, selectedSlide?.id, selectedSlide?.isPersisted, selectedSlide?.type]);
+
+  useEffect(() => {
+    if (reviewModalBlock && reviewModalBlock.slideIndex !== selectedSlideIndex) {
+      closeReviewModal();
+    }
+  }, [closeReviewModal, reviewModalBlock, selectedSlideIndex]);
 
   const deleteBlock = useCallback((slideIndex: number, blockId: string) => {
     setSlides((prev) => {
@@ -481,6 +908,7 @@ export default function EditLesson() {
       const lessonSlidesData = slides
         .filter((slide) => slide.type === "lesson")
         .map((slide) => ({
+          ...(slide.isPersisted ? { id: slide.id } : {}),
           title: slide.title,
           type: "lesson" as const,
           orderIndex: slide.order,
@@ -499,6 +927,7 @@ export default function EditLesson() {
       const testSlidesData = slides
         .filter((slide) => slide.type === "test")
         .map((slide) => ({
+          ...(slide.isPersisted ? { id: slide.id } : {}),
           title: slide.title,
           orderIndex: slide.order,
           blocks: slide.blocks.map((block) => {
@@ -527,13 +956,18 @@ export default function EditLesson() {
         setLessonDetailsId(response.id);
       }
 
+      await loadLessonDetails();
+
       alert("Урок успешно сохранен!");
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Ошибка сохранения урока");
     } finally {
       setIsSaving(false);
     }
-  }, [lessonDetailsId, lessonId, slides]);
+  }, [lessonDetailsId, lessonId, loadLessonDetails, slides]);
+
+  const reviewModalSlide =
+    reviewModalBlock != null ? (slides[reviewModalBlock.slideIndex] ?? null) : null;
 
   if (isLoading) {
     return (
@@ -867,44 +1301,193 @@ export default function EditLesson() {
 
               <div className={styles.blocksList}>
                 <label className={styles.form__label}>Блоки (порядок можно менять)</label>
-                {sortBlocks(selectedSlide.blocks).map((block, index) => (
-                  <div key={block.id} className={styles.blockCard}>
-                    <div className={styles.blockCard__toolbar}>
-                      <span className={styles.blockCard__type}>{block.type}</span>
-                      <button
-                        type="button"
-                        onClick={() => moveBlock(selectedSlideIndex, block.id, "up")}
-                        disabled={index === 0}
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveBlock(selectedSlideIndex, block.id, "down")}
-                        disabled={index === selectedSlide.blocks.length - 1}
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.blockCard__del}
-                        onClick={() => deleteBlock(selectedSlideIndex, block.id)}
-                      >
-                        Удалить
-                      </button>
+                {!selectedSlide.isPersisted && (
+                  <p className={styles.reviewItemComment}>
+                    Для новых слайдов кнопка review станет доступна после сохранения урока.
+                  </p>
+                )}
+                {sortBlocks(selectedSlide.blocks).map((block, index) => {
+                  const reviews = getReviewsForBlock(selectedSlide, block.id);
+                  const pendingReviews = reviews.filter(
+                    (review) => review.status === ReviewStatus.PENDING
+                  );
+                  const showReviewPanel =
+                    reviews.length > 0 ||
+                    (selectedSlide.isPersisted && reviewsLoading[selectedSlide.id]);
+
+                  return (
+                    <div
+                      key={block.id}
+                      className={`${styles.blockCard} ${showReviewPanel ? styles.blockWithReview : ""}`}
+                    >
+                      <div className={styles.blockCard__toolbar}>
+                        <span className={styles.blockCard__type}>{block.type}</span>
+                        <button
+                          type="button"
+                          onClick={() => moveBlock(selectedSlideIndex, block.id, "up")}
+                          disabled={index === 0}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveBlock(selectedSlideIndex, block.id, "down")}
+                          disabled={index === selectedSlide.blocks.length - 1}
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.reviewButton}
+                          onClick={() => openReviewModal(selectedSlideIndex, block.id)}
+                          disabled={!selectedSlide.isPersisted || !reviewerInfo}
+                          title={
+                            !selectedSlide.isPersisted
+                              ? "Сначала сохраните урок"
+                              : !reviewerInfo
+                                ? "Не удалось определить текущего пользователя"
+                                : "Предложить изменение для блока"
+                          }
+                        >
+                          {pendingReviews.length > 0
+                            ? `Review (${pendingReviews.length})`
+                            : "Review"}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.blockCard__del}
+                          onClick={() => deleteBlock(selectedSlideIndex, block.id)}
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                      <BlockEditor
+                        key={`${block.id}_${block.order}`}
+                        block={block}
+                        slideIndex={selectedSlideIndex}
+                        updateBlock={updateBlock}
+                        onImageUpload={handleImageUpload}
+                        runCode={runCode}
+                        codeRunOutput={codeRunOutput[block.id]}
+                        codeRunLoading={codeRunLoading[block.id]}
+                      />
+
+                      {showReviewPanel && (
+                        <aside className={styles.reviewPanel}>
+                          <div className={styles.reviewPanelHeader}>
+                            <span>Правки блока</span>
+                            {selectedSlide.isPersisted && reviewsLoading[selectedSlide.id] && (
+                              <span>Загрузка...</span>
+                            )}
+                          </div>
+
+                          {!reviewsLoading[selectedSlide.id] && reviews.length === 0 && (
+                            <p className={styles.reviewItemComment}>
+                              Для блока пока нет предложений.
+                            </p>
+                          )}
+
+                          {reviews.map((review) => (
+                            <div
+                              key={review.id}
+                              className={`${styles.reviewItem} ${
+                                review.status === ReviewStatus.PENDING
+                                  ? styles.reviewItemPending
+                                  : review.status === ReviewStatus.ACCEPTED
+                                    ? styles.reviewItemAccepted
+                                    : styles.reviewItemRejected
+                              }`}
+                            >
+                              <div className={styles.reviewItemHeader}>
+                                <span className={styles.reviewItemReviewer}>
+                                  {review.reviewerName}
+                                </span>
+                                <span
+                                  className={`${styles.reviewStatus} ${
+                                    review.status === ReviewStatus.PENDING
+                                      ? styles.pending
+                                      : review.status === ReviewStatus.ACCEPTED
+                                        ? styles.accepted
+                                        : styles.rejected
+                                  }`}
+                                >
+                                  {review.status}
+                                </span>
+                              </div>
+
+                              <div className={styles.reviewItemComment}>
+                                {review.comment || "Без комментария"}
+                              </div>
+
+                              <div className={styles.reviewItemChanges}>
+                                {Object.entries(review.proposedChanges).map(([field, value]) => {
+                                  const formattedValue = formatReviewValue(value);
+                                  const isCodeValue =
+                                    field.toLowerCase().includes("code") ||
+                                    formattedValue.includes("\n");
+
+                                  return (
+                                    <div key={field} className={styles.reviewChangeItem}>
+                                      <span className={styles.reviewChangeLabel}>
+                                        {getReviewFieldLabel(field)}
+                                      </span>
+                                      <span
+                                        className={`${styles.reviewChangeValue} ${
+                                          isCodeValue ? styles.reviewChangeCode : ""
+                                        }`}
+                                      >
+                                        {formattedValue}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              <div className={styles.reviewItemHeader}>
+                                <span>{new Date(review.createdAt).toLocaleString("ru-RU")}</span>
+                              </div>
+
+                              {review.status === ReviewStatus.PENDING && (
+                                <div className={styles.reviewItemActions}>
+                                  <button
+                                    type="button"
+                                    className={`${styles.reviewItemActionBtn} ${styles.accept}`}
+                                    onClick={() =>
+                                      handleReviewDecision(
+                                        selectedSlideIndex,
+                                        block.id,
+                                        review,
+                                        "accept"
+                                      )
+                                    }
+                                    disabled={reviewActionLoading[review.id]}
+                                  >
+                                    {reviewActionLoading[review.id] ? "..." : "Применить"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`${styles.reviewItemActionBtn} ${styles.reject}`}
+                                    onClick={() =>
+                                      handleReviewDecision(
+                                        selectedSlideIndex,
+                                        block.id,
+                                        review,
+                                        "reject"
+                                      )
+                                    }
+                                    disabled={reviewActionLoading[review.id]}
+                                  >
+                                    {reviewActionLoading[review.id] ? "..." : "Отклонить"}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </aside>
+                      )}
                     </div>
-                    <BlockEditor
-                      key={`${block.id}_${block.order}`}
-                      block={block}
-                      slideIndex={selectedSlideIndex}
-                      updateBlock={updateBlock}
-                      onImageUpload={handleImageUpload}
-                      runCode={runCode}
-                      codeRunOutput={codeRunOutput[block.id]}
-                      codeRunLoading={codeRunLoading[block.id]}
-                    />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </form>
@@ -947,6 +1530,22 @@ export default function EditLesson() {
             disabled={isSaving}
           />
         </div>
+
+        <BlockReviewModal
+          isOpen={reviewModalBlock != null && reviewDraftBlock != null}
+          block={reviewDraftBlock}
+          slideTitle={reviewModalSlide?.title || "Без названия"}
+          comment={reviewComment}
+          onCommentChange={setReviewComment}
+          onBlockChange={handleReviewDraftChange}
+          onImageUpload={handleReviewDraftImageUpload}
+          onClose={closeReviewModal}
+          onSubmit={submitReview}
+          isSubmitting={isSubmittingReview}
+          runCode={runCode}
+          codeRunOutput={reviewDraftBlock ? codeRunOutput[reviewDraftBlock.id] : undefined}
+          codeRunLoading={reviewDraftBlock ? codeRunLoading[reviewDraftBlock.id] : undefined}
+        />
       </div>
     </section>
   );

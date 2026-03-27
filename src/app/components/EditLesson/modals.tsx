@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 
 import Button from "../Button";
 
+import { BlockEditor } from "./BlockEditor";
 import styles from "./index.module.scss";
 import type { Slide, SlideBlock } from "./types";
+
+import type { CodeLanguage } from "@/app/http/codeService";
 
 export function SourceModal({
   isOpen,
@@ -219,6 +222,108 @@ export function ResultsModal({
 
         <div className={styles.modalFooter}>
           <Button color="#9F0FA7" width="200px" textColor="#fff" text="Закрыть" onClick={onClose} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function BlockReviewModal({
+  isOpen,
+  block,
+  slideTitle,
+  comment,
+  onCommentChange,
+  onBlockChange,
+  onImageUpload,
+  onClose,
+  onSubmit,
+  isSubmitting,
+  runCode,
+  codeRunOutput,
+  codeRunLoading,
+}: {
+  isOpen: boolean;
+  block: SlideBlock | null;
+  slideTitle: string;
+  comment: string;
+  onCommentChange: (value: string) => void;
+  onBlockChange: (patch: Partial<SlideBlock>) => void;
+  onImageUpload: (file: File) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+  runCode: (blockId: string, lang: CodeLanguage, code: string) => void;
+  codeRunOutput?: string;
+  codeRunLoading?: boolean;
+}) {
+  if (!isOpen || !block) return null;
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div
+        className={`${styles.modalContent} ${styles.reviewModal}`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className={styles.modalHeader}>
+          <h3>Предложить правку</h3>
+          <button className={styles.modalClose} onClick={onClose}>
+            ✕
+          </button>
+        </div>
+
+        <div className={`${styles.modalBody} ${styles.reviewModalBody}`}>
+          <div className={styles.reviewModalFields}>
+            <div className={styles.reviewModalField}>
+              <span className={styles.reviewModalLabel}>Слайд</span>
+              <div className={styles.reviewModalChanges}>{slideTitle}</div>
+            </div>
+
+            <div className={styles.reviewModalField}>
+              <span className={styles.reviewModalLabel}>Изменения блока</span>
+              <BlockEditor
+                block={block}
+                slideIndex={0}
+                updateBlock={(_, __, patch) => onBlockChange(patch)}
+                onImageUpload={(_, __, file) => onImageUpload(file)}
+                runCode={runCode}
+                codeRunOutput={codeRunOutput}
+                codeRunLoading={codeRunLoading}
+              />
+            </div>
+
+            <div className={styles.reviewModalField}>
+              <label className={styles.reviewModalLabel} htmlFor="review-comment">
+                Комментарий
+              </label>
+              <textarea
+                id="review-comment"
+                className={styles.reviewModalTextarea}
+                value={comment}
+                onChange={(event) => onCommentChange(event.target.value)}
+                placeholder="Что именно предлагается изменить"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.modalFooter}>
+          <Button
+            color="#d9dbe5"
+            width="160px"
+            textColor="#1f2937"
+            text="Отменить"
+            onClick={onClose}
+            disabled={isSubmitting}
+          />
+          <Button
+            color="#2196f3"
+            width="180px"
+            textColor="#fff"
+            text={isSubmitting ? "Отправка..." : "Предложить"}
+            onClick={onSubmit}
+            disabled={isSubmitting}
+          />
         </div>
       </div>
     </div>

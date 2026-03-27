@@ -7,6 +7,7 @@ export interface Slide {
   type: SlideType;
   order: number;
   blocks: SlideBlock[];
+  isPersisted?: boolean;
 }
 
 export type CodeLanguage = "javascript" | "python" | "csharp" | "java" | "golang" | "cpp";
