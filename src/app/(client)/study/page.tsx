@@ -13,13 +13,4 @@ const Study = async () => {
 };
 
 export default Study;
-
-/*
- const courses = await CourseService.getCourses();
  
-
-  return (
-    <>
-    
-      <AdminCourses initialCourses={courses} />
-      */

@@ -102,8 +102,7 @@ const CircularProgress = ({
     </div>
   );
 };
-
-// Компонент карточки решенной задачи
+ 
 const SolvedTaskCard = ({
   task,
   solvedAt,
@@ -138,7 +137,7 @@ const SolvedTaskCard = ({
           {diffInfo.label}
         </span>
       </div>
-      <p className={styles.taskDesc}>{task.description}</p>
+    
       <div className={styles.taskFooter}>
         <span className={styles.taskMeta}>
           {(task.languages || []).join(', ')} | {task.testCases?.length ?? 0} тестов
@@ -199,8 +198,7 @@ const SolvedTasksPreview = ({
     </div>
   );
 };
-
-// Компонент модального окна со всеми решенными задачами
+ 
 const AllSolvedTasksModal = ({
   visible,
   onClose,

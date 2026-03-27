@@ -137,8 +137,7 @@ const Course = ({ item, isAdmin }: CourseProps) => {
 
             <h3 className={styles.course__title}>{item.title}</h3>
           </div>
-
-          <span className={styles.course__action}>{ctaLabel}</span>
+ 
         </div>
 
         <p className={styles.course__description}>

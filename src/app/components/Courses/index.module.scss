@@ -21,7 +21,7 @@
   &__grid {
     display: grid;
     gap: px($spacing-lg);
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(3, minmax(320px, 1fr));
   }
 
   &__empty {

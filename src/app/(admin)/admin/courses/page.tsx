@@ -11,26 +11,4 @@ const Courses = async () => {
   );
 };
 
-export default Courses;
-/* import AdminCourses from "@/app/components/AdminCourses";
-
-const Courses = () => {
-  return (
-    <>
-      <AdminCourses />
-    </>
-  );
-};
-
-export default Courses;
- */
-
-/*
-  useEffect(()=> {
-const get = async () => {
-const res = await CourseService.getCourses()
-console.log("res", res)
-}
-get() 
-}, [])
-*/
+export default Courses; 
