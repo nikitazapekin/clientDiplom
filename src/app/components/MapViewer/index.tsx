@@ -112,8 +112,7 @@ const MapViewer: React.FC = () => {
   const [modalData, setModalData] = useState<ModalData | null>(null);
   const [activeBreakpoint, setActiveBreakpoint] = useState<string>("desktop");
   const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
-
-  // Загрузка карты при монтировании
+ 
   useEffect(() => {
     if (courseId) {
       loadCourseMap();
@@ -134,8 +133,7 @@ const MapViewer: React.FC = () => {
         repeat: mapData.backgroundRepeat,
         size: mapData.backgroundSize,
       });
-
-      // Преобразуем элементы из серверного формата
+ 
       const loadedElements = mapData.elements.map((element: any) => ({
         id: element.id,
         type: element.type as MapElement["type"],
@@ -160,24 +158,21 @@ const MapViewer: React.FC = () => {
       }));
 
       setElements(loadedElements);
-
-      // Загружаем дополнительные данные для уроков и контрольных точек
+ 
       await loadAdditionalData(loadedElements);
     } catch (error: any) {
-      console.error("❌ Ошибка загрузки карты:", error);
+      console.error(" Ошибка загрузки карты:", error);
       setError("Не удалось загрузить карту.");
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Загрузка дополнительных данных для уроков и контрольных точек
+ 
   const loadAdditionalData = async (elements: MapElement[]) => {
     try {
       const lessons: Record<string, LessonData> = {};
       const checkpoints: Record<string, CheckpointData> = {};
-
-      // Загружаем данные для каждого урока
+ 
       const lessonElements = elements.filter((el) => el.type === "lesson");
       for (const element of lessonElements) {
         try {
@@ -193,7 +188,7 @@ const MapViewer: React.FC = () => {
             isPublished: lessonData.isPublished,
           };
         } catch (error) {
-          console.warn(`⚠️ Не удалось загрузить данные урока для элемента: ${element.id}`, error);
+          console.warn(` Не удалось загрузить данные урока для элемента: ${element.id}`, error);
           lessons[element.id] = {
             mapElementId: element.id,
             title: element.title || `Урок ${element.id.substring(0, 8)}`,
@@ -203,8 +198,7 @@ const MapViewer: React.FC = () => {
           };
         }
       }
-
-      // Загружаем данные для каждой контрольной точки
+ 
       const checkpointElements = elements.filter((el) => el.type === "checkpoint");
       for (const element of checkpointElements) {
         try {
@@ -223,7 +217,7 @@ const MapViewer: React.FC = () => {
           };
         } catch (error) {
           console.warn(
-            `⚠️ Не удалось загрузить данные контрольной точки для элемента: ${element.id}`,
+            `  Не удалось загрузить данные контрольной точки для элемента: ${element.id}`,
             error
           );
           checkpoints[element.id] = {
@@ -239,19 +233,17 @@ const MapViewer: React.FC = () => {
       setLessonsData(lessons);
       setCheckpointsData(checkpoints);
     } catch (error) {
-      console.error("❌ Ошибка загрузки дополнительных данных:", error);
+      console.error(" Ошибка загрузки дополнительных данных:", error);
     }
   };
-
-  // Функция для получения настроек элемента для текущего брейкпоинта
+ 
   const getElementBreakpointSettings = (element: MapElement) => {
     if (!element.breakpoints || !element.breakpoints[activeBreakpoint]) {
       return {};
     }
     return element.breakpoints[activeBreakpoint];
   };
-
-  // Функция для вычисления позиции элемента с учетом брейкпоинта и размера карты
+ 
   const calculateElementPosition = (element: MapElement): Position => {
     const breakpointSettings = getElementBreakpointSettings(element);
     const isHidden = breakpointSettings.hidden;
@@ -287,8 +279,7 @@ const MapViewer: React.FC = () => {
 
     return basePosition;
   };
-
-  // Обработчик клика на элемент
+ 
   const handleElementClick = (element: MapElement) => {
     if (element.type === "lesson") {
       const lessonData = lessonsData[element.id];
@@ -314,8 +305,7 @@ const MapViewer: React.FC = () => {
       }
     }
   };
-
-  // Обработчик наведения на элемент
+ 
   const handleElementMouseEnter = (elementId: string) => {
     setHoveredElementId(elementId);
   };
@@ -324,20 +314,19 @@ const MapViewer: React.FC = () => {
     setHoveredElementId(null);
   };
   const router = useRouter();
-  // Обработчик перехода к уроку или контрольной точке
+   
   const handleNavigate = () => {
     if (!modalData || !modalData.targetId) return;
 
     if (modalData.type === "lesson") {
       router.push(`/admin/lesson/${modalData.targetId}`);
-      //   window.location.href = `/lessons/${modalData.targetId}`;
+    
     } else if (modalData.type === "checkpoint") {
       router.push(`/admin/checkpoint/${modalData.targetId}`);
-      //  window.location.href = `/checkpoints/${modalData.targetId}`;
+    
     }
   };
-
-  // Рендер элемента
+ 
   const renderElement = (element: MapElement) => {
     const position = calculateElementPosition(element);
     const breakpointSettings = getElementBreakpointSettings(element);
@@ -504,8 +493,7 @@ const MapViewer: React.FC = () => {
         return null;
     }
   };
-
-  // Стили для фона карты
+ 
   const mapBackgroundStyle = {
     backgroundColor: mapBackground.color,
     backgroundImage: mapBackground.image ? `url(${mapBackground.image})` : "none",
@@ -534,7 +522,7 @@ const MapViewer: React.FC = () => {
 
   return (
     <div className={styles.mapViewer}>
-      {/* Основной контейнер карты */}
+  
       <div
         className={styles.mapContainer}
         style={{
@@ -546,7 +534,7 @@ const MapViewer: React.FC = () => {
         <div className={styles.mapContent}>{elements.map((element) => renderElement(element))}</div>
       </div>
 
-      {/* Информационная панель */}
+      
       <div className={styles.mapInfo}>
         <div className={styles.infoRow}>
           <span className={styles.infoLabel}>Размер карты:</span>
@@ -570,8 +558,7 @@ const MapViewer: React.FC = () => {
           Нажмите на урок или контрольную точку для просмотра деталей
         </div>
       </div>
-
-      {/* Модальное окно для уроков и контрольных точек */}
+ 
       {modalData && (
         <div className={styles.modalOverlay} onClick={() => setModalData(null)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>

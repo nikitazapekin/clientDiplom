@@ -13,14 +13,14 @@ import { type CodeTask, CodingTasksService, type StudentLevel } from '@/app/http
 import { ProfileService } from '@/app/http/profile';
 import type { FullClientInfo } from '@/app/http/types/profile';
 
-// Цвета для сложности задач
+ 
 const DIFFICULTIES: Record<string, { label: string; color: string }> = {
   easy: { label: 'Легкий', color: '#4caf50' },
   medium: { label: 'Средний', color: '#ff9800' },
   hard: { label: 'Сложный', color: '#f44336' },
 };
 
-// Компонент круглого прогресс-бара
+ 
 const CircularProgress = ({
   progress,
   level,
@@ -44,7 +44,7 @@ const CircularProgress = ({
   return (
     <div className={styles.circularProgressContainer}>
       <svg width={CIRCLE_SIZE} height={CIRCLE_SIZE} viewBox={`0 0 ${CIRCLE_SIZE} ${CIRCLE_SIZE}`}>
-        {/* Фоновый круг */}
+       
         <circle
           cx={center}
           cy={center}
@@ -54,7 +54,7 @@ const CircularProgress = ({
           fill="none"
         />
 
-        {/* Прогресс (по часовой стрелке) */}
+       
         <circle
           cx={center}
           cy={center}
@@ -68,7 +68,7 @@ const CircularProgress = ({
           transform={`rotate(-90, ${center}, ${center})`}
         />
 
-        {/* Текст уровня в центре */}
+         
         <text
           x={center}
           y={center - 8}
@@ -132,7 +132,7 @@ const SolvedTaskCard = ({
   return (
     <div className={`${styles.taskCard} ${styles.taskCardSolved}`} onClick={onPress}>
       <div className={styles.taskHeader}>
-        <h4 className={styles.taskTitle}>✅ {task.title}</h4>
+        <h4 className={styles.taskTitle}>  {task.title}</h4>
         <span className={styles.badge} style={{ backgroundColor: diffInfo.color }}>
           {diffInfo.label}
         </span>
@@ -151,8 +151,7 @@ const SolvedTaskCard = ({
     </div>
   );
 };
-
-// Компонент для отображения превью решенных задач
+ 
 const SolvedTasksPreview = ({
   solvedTasks,
   allTasks,
@@ -231,7 +230,7 @@ const AllSolvedTasksModal = ({
         <div className={styles.modalListContent}>
           {sortedTasks.length === 0 ? (
             <div className={styles.emptyContainer}>
-              <div className={styles.emptyIcon}>📚</div>
+        
               <p className={styles.emptyText}>У вас еще нет решенных задач</p>
             </div>
           ) : (
@@ -257,9 +256,7 @@ const AllSolvedTasksModal = ({
       </div>
     </div>
   );
-};
-
-// Компонент модального окна выбора аватара
+}; 
 const AvatarPickerModal = ({
   visible,
   onClose,
@@ -303,7 +300,7 @@ const AvatarPickerModal = ({
             className={styles.avatarOptionButton}
             onClick={() => fileInputRef.current?.click()}
           >
-            📁 Выбрать файл
+            Выбрать файл
           </button>
         </div>
       </div>
@@ -321,8 +318,7 @@ const UserProfile: React.FC = () => {
   const [certificates, setCertificates] = useState<CertificateResponse[]>([]);
   const [certificatesLoading, setCertificatesLoading] = useState(false);
   const [activeCertIndex, setActiveCertIndex] = useState(0);
-
-  // Состояния для задач и уровня
+ 
   const [codingTasks, setCodingTasks] = useState<CodeTask[]>([]);
   const [studentLevel, setStudentLevel] = useState<StudentLevel | null>(null);
   const [codingLoading, setCodingLoading] = useState(false);
@@ -343,7 +339,7 @@ const UserProfile: React.FC = () => {
 
       const profileData = await ProfileService.getFullProfileByAuditoryId(userId);
 
-      // Проверяем и обрабатываем аватар
+     
       if (profileData.avatar) {
         if (
           profileData.avatar.imageUrl &&
@@ -355,7 +351,7 @@ const UserProfile: React.FC = () => {
 
       setProfile(profileData);
 
-      // Загружаем сертификаты
+     
       setCertificatesLoading(true);
       try {
         const certs = await CertificateService.getCertificatesByAuditoryId(userId);
@@ -367,7 +363,7 @@ const UserProfile: React.FC = () => {
         setCertificatesLoading(false);
       }
 
-      // Загружаем данные по задачам
+   
       setCodingLoading(true);
       try {
         const [tasksData, levelData] = await Promise.all([
@@ -460,12 +456,12 @@ const UserProfile: React.FC = () => {
   };
 
   const handleTaskPress = (taskId: string) => {
-    // Navigate to coding solve page - for now just log
+   
     console.log('Navigate to task:', taskId);
-    // In real app: router.push(`/coding/${taskId}`);
+    
   };
 
-  // Вычисляем данные для прогресс-бара
+ 
   const getRequiredExp = (level: number) => Math.pow(10, level - 1);
 
   const currentLevel = studentLevel?.level || 1;
@@ -508,7 +504,7 @@ const UserProfile: React.FC = () => {
   return (
     <>
       <div className={styles.container}>
-        {/* Header с аватаром */}
+ 
         <div className={styles.header}>
           <div
             className={styles.avatarContainer}
@@ -543,7 +539,7 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Статистика пользователя */}
+     
         <div className={styles.statsContainer}>
           <div className={styles.statItem}>
             <span className={styles.statValue}>{certificates.length}</span>
@@ -556,7 +552,7 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Секция с уровнем и прогрессом */}
+     
         {!codingLoading && studentLevel && (
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Мой прогресс в задачах</h3>
@@ -571,7 +567,7 @@ const UserProfile: React.FC = () => {
           </div>
         )}
 
-        {/* Превью решенных задач */}
+      
         {!codingLoading &&
           studentLevel?.solvedTasks &&
           studentLevel.solvedTasks.length > 0 &&
@@ -584,7 +580,7 @@ const UserProfile: React.FC = () => {
             />
           )}
 
-        {/* Личная информация */}
+        
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Личная информация</h3>
 
@@ -634,7 +630,7 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Сертификаты */}
+     
         {certificatesLoading ? (
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Сертификаты</h3>
@@ -667,7 +663,7 @@ const UserProfile: React.FC = () => {
           </div>
         ) : null}
 
-        {/* Status Badge */}
+    
         <div className={styles.statusContainer}>
           <div
             className={`${styles.statusBadge} ${profile.isActive ? styles.statusActive : styles.statusInactive}`}
@@ -678,7 +674,7 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Кнопка выхода */}
+      
         <div className={styles.logoutButton}>
           <button
             className={styles.logoutButtonInner}
@@ -699,7 +695,7 @@ const UserProfile: React.FC = () => {
         onUpload={handleUploadAvatar}
       />
 
-      {/* Модальное окно со всеми решенными задачами */}
+     
       <AllSolvedTasksModal
         visible={showAllSolvedModal}
         onClose={() => setShowAllSolvedModal(false)}

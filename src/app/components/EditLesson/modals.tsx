@@ -243,7 +243,7 @@ export function ResultsModal({
             </div>
             <div className={styles.summaryItem}>
               <span className={styles.summaryLabel}>Ограничения:</span>
-              <span className={styles.summaryValue}>{constraintsPassed ? "✅" : "❌"}</span>
+              <span className={styles.summaryValue}>{constraintsPassed ? "Пройден" : "Провален"}</span>
             </div>
           </div>
 
@@ -259,7 +259,7 @@ export function ResultsModal({
                   <span>
                     Тесты: {result.testCasesPassed}/{result.testCasesTotal}
                   </span>
-                  <span>Ограничения: {result.constraintsPassed ? "✅" : "❌"}</span>
+                  <span>Ограничения: {result.constraintsPassed ? "Пройден" : "Провален"}</span>
                 </div>
               </div>
             ))}

@@ -257,7 +257,7 @@ const Map: React.FC = () => {
     "🤠",
   ];
 
-  // Загрузка карты при монтировании
+ 
   useEffect(() => {
     if (courseId) {
       loadCourseMap();
@@ -268,11 +268,11 @@ const Map: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log("🔄 Загрузка карты для курса:", courseId);
+      console.log(" Загрузка карты для курса:", courseId);
 
       const mapData = await MapService.getCourseMapByCourseId(courseId!);
 
-      console.log("✅ Карта загружена. ID:", mapData.id, "Элементов:", mapData.elements.length);
+      console.log(" Карта загружена. ID:", mapData.id, "Элементов:", mapData.elements.length);
 
       setMapId(mapData.id);
       setMapSize({ width: mapData.width, height: mapData.height });
@@ -283,7 +283,7 @@ const Map: React.FC = () => {
         size: mapData.backgroundSize,
       });
 
-      // Преобразуем элементы из серверного формата
+      
       const loadedElements = mapData.elements.map((element: MapElementResponse) => ({
         id: element.id,
         type: element.type as MapElement["type"],
@@ -308,25 +308,22 @@ const Map: React.FC = () => {
       }));
 
       setElements(loadedElements);
-      console.log(`✅ Загружено ${loadedElements.length} элементов с сервера`);
-
-      // Загружаем дополнительные данные для уроков и контрольных точек
+      console.log(`Загружено ${loadedElements.length} элементов с сервера`);
+ 
       await loadAdditionalData(loadedElements);
     } catch (error: any) {
-      console.error("❌ Ошибка загрузки карты:", error);
+      console.error(" Ошибка загрузки карты:", error);
       setError("Не удалось загрузить карту.");
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Загрузка дополнительных данных для уроков и контрольных точек
+ 
   const loadAdditionalData = async (elements: MapElement[]) => {
     try {
       const lessons: Record<string, LessonData> = {};
       const checkpoints: Record<string, CheckpointData> = {};
-
-      // Загружаем данные для каждого урока
+ 
       const lessonElements = elements.filter((el) => el.type === "lesson");
       for (const element of lessonElements) {
         try {
@@ -341,10 +338,10 @@ const Map: React.FC = () => {
             orderIndex: lessonData.orderIndex,
             isPublished: lessonData.isPublished,
           };
-          console.log(`✅ Загружены данные урока для элемента: ${element.id}`);
+          console.log(`  Загружены данные урока для элемента: ${element.id}`);
         } catch (error) {
-          console.warn(`⚠️ Не удалось загрузить данные урока для элемента: ${element.id}`, error);
-          // Создаем базовую структуру если урок не найден
+          console.warn(` Не удалось загрузить данные урока для элемента: ${element.id}`, error);
+     
           lessons[element.id] = {
             mapElementId: element.id,
             title: element.title || `Урок ${element.id.substring(0, 8)}`,
@@ -354,8 +351,7 @@ const Map: React.FC = () => {
           };
         }
       }
-
-      // Загружаем данные для каждой контрольной точки
+ 
       const checkpointElements = elements.filter((el) => el.type === "checkpoint");
       for (const element of checkpointElements) {
         try {
@@ -372,13 +368,13 @@ const Map: React.FC = () => {
             instructions: checkpointData.instructions,
             isPublished: checkpointData.isPublished,
           };
-          console.log(`✅ Загружены данные контрольной точки для элемента: ${element.id}`);
+          console.log(` Загружены данные контрольной точки для элемента: ${element.id}`);
         } catch (error) {
           console.warn(
-            `⚠️ Не удалось загрузить данные контрольной точки для элемента: ${element.id}`,
+            `  Не удалось загрузить данные контрольной точки для элемента: ${element.id}`,
             error
           );
-          // Создаем базовую структуру если контрольная точка не найдена
+         
           checkpoints[element.id] = {
             mapElementId: element.id,
             title: element.title || `Контрольная точка ${element.id.substring(0, 8)}`,
@@ -392,14 +388,13 @@ const Map: React.FC = () => {
       setLessonsData(lessons);
       setCheckpointsData(checkpoints);
       console.log(
-        `✅ Загружено данных: ${Object.keys(lessons).length} уроков, ${Object.keys(checkpoints).length} контрольных точек`
+        ` Загружено данных: ${Object.keys(lessons).length} уроков, ${Object.keys(checkpoints).length} контрольных точек`
       );
     } catch (error) {
-      console.error("❌ Ошибка загрузки дополнительных данных:", error);
+      console.error("Ошибка загрузки дополнительных данных:", error);
     }
   };
-
-  // Преобразование элемента в формат API
+ 
   const convertElementToApiFormat = (element: MapElement): CreateMapElementRequest => {
     return {
       type: element.type as MapElementType,
@@ -426,20 +421,20 @@ const Map: React.FC = () => {
     };
   };
 
-  // Создание нового элемента
+ 
   const createElement = async (
     type: MapElement["type"],
     defaultProps: Partial<MapElement> = {}
   ) => {
     try {
       if (!mapId) {
-        console.error("❌ Нет mapId для создания элемента");
+        console.error(" Нет mapId для создания элемента");
         setError("Карта не загружена");
 
         return;
       }
 
-      // Собираем данные для нового элемента
+     
       const elementData: CreateMapElementRequest = {
         type: type as MapElementType,
         positionX: 50,
@@ -450,7 +445,7 @@ const Map: React.FC = () => {
         rotation: 0,
       };
 
-      // Добавляем специфичные для типа свойства
+    
       switch (type) {
         case "circle":
           elementData.color = "#ff6b6b";
@@ -498,15 +493,15 @@ const Map: React.FC = () => {
           break;
       }
 
-      // Применяем кастомные свойства
+  
       Object.assign(elementData, defaultProps);
 
-      console.log("🆕 Создание элемента на сервере...");
+      console.log(" Создание элемента на сервере...");
       const serverElement = await MapService.addMapElement(mapId, elementData);
 
-      console.log("✅ Элемент создан на сервере с ID:", serverElement.id);
+      console.log("Элемент создан на сервере с ID:", serverElement.id);
 
-      // Преобразуем серверный элемент в формат клиента
+     
       const newElement: MapElement = {
         id: serverElement.id,
         type: serverElement.type as MapElement["type"],
@@ -529,56 +524,52 @@ const Map: React.FC = () => {
         emoji: serverElement.emoji,
         breakpoints: serverElement.breakpoints,
       };
-
-      // Добавляем элемент в состояние
+ 
       setElements((prev) => [...prev, newElement]);
       setSelectedElementId(serverElement.id);
 
-      // Если создали урок или контрольную точку, создаем соответствующие записи
       if (type === "lesson") {
         try {
-          // Здесь нужно вызвать метод создания урока если он есть в API
-          console.log("📝 Создана запись урока для элемента:", serverElement.id);
+     
+          console.log("Создана запись урока для элемента:", serverElement.id);
         } catch (error) {
-          console.warn("⚠️ Не удалось создать запись урока:", error);
+          console.warn(" Не удалось создать запись урока:", error);
         }
       } else if (type === "checkpoint") {
         try {
-          // Здесь нужно вызвать метод создания контрольной точки если он есть в API
-          console.log("📝 Создана запись контрольной точки для элемента:", serverElement.id);
+   
+          console.log(" Создана запись контрольной точки для элемента:", serverElement.id);
         } catch (error) {
-          console.warn("⚠️ Не удалось создать запись контрольной точки:", error);
+          console.warn(" Не удалось создать запись контрольной точки:", error);
         }
       }
     } catch (error: any) {
-      console.error("❌ Ошибка создания элемента:", error);
+      console.error(" Ошибка создания элемента:", error);
       setError("Не удалось создать элемент: " + (error.message || "Неизвестная ошибка"));
     }
   };
 
-  // Обновление элемента с обновлением связанных данных
   const updateElement = async (elementId: string, updates: Partial<MapElement>) => {
     try {
       const element = elements.find((el) => el.id === elementId);
 
       if (!element) {
-        console.error("❌ Элемент не найден для обновления:", elementId);
+        console.error("Элемент не найден для обновления:", elementId);
         return;
       }
 
-      // Создаем обновленный элемент
+
       const updatedElement = { ...element, ...updates };
 
-      // Конвертируем в формат API
       const elementData = convertElementToApiFormat(updatedElement);
 
-      console.log("🔄 Обновление элемента карты с ID:", elementId);
+      console.log(" Обновление элемента карты с ID:", elementId);
       await MapService.updateMapElement(elementId, elementData);
 
-      // Обновляем локальное состояние
+ 
       setElements((prev) => prev.map((el) => (el.id === elementId ? updatedElement : el)));
 
-      console.log("✅ Элемент карты обновлен:", elementId);
+      console.log("Элемент карты обновлен:", elementId);
 
       // Обновляем связанные данные для уроков и контрольных точек
       if (updatedElement.type === "lesson") {
@@ -587,9 +578,8 @@ const Map: React.FC = () => {
         await updateCheckpointData(elementId, updatedElement);
       }
     } catch (error: any) {
-      console.error("❌ Ошибка обновления элемента:", elementId, error);
+      console.error(" Ошибка обновления элемента:", elementId, error);
 
-      // Если элемент не найден (404), перезагружаем карту
       if (error.response?.status === 404) {
         console.log("🔄 Элемент не найден, перезагружаем карту...");
         loadCourseMap();
@@ -597,12 +587,12 @@ const Map: React.FC = () => {
     }
   };
 
-  // Обновление данных урока
+
   const updateLessonData = async (elementId: string, element: MapElement) => {
     try {
       const lessonData = lessonsData[elementId];
       if (!lessonData) {
-        console.warn("⚠️ Данные урока не найдены для элемента:", elementId);
+        console.warn("Данные урока не найдены для элемента:", elementId);
         return;
       }
 
@@ -611,10 +601,9 @@ const Map: React.FC = () => {
         description: element.text || lessonData.description,
       };
 
-      console.log("🔄 Обновление данных урока для элемента:", elementId);
+      console.log("Обновление данных урока для элемента:", elementId);
       const updatedLesson = await LessonService.updateLesson(lessonData.id!, updateData);
 
-      // Обновляем локальные данные
       setLessonsData((prev) => ({
         ...prev,
         [elementId]: {
@@ -624,18 +613,17 @@ const Map: React.FC = () => {
         },
       }));
 
-      console.log("✅ Данные урока обновлены:", elementId);
+      console.log("Данные урока обновлены:", elementId);
     } catch (error) {
-      console.error("❌ Ошибка обновления данных урока:", elementId, error);
+      console.error(" Ошибка обновления данных урока:", elementId, error);
     }
   };
 
-  // Обновление данных контрольной точки
   const updateCheckpointData = async (elementId: string, element: MapElement) => {
     try {
       const checkpointData = checkpointsData[elementId];
       if (!checkpointData) {
-        console.warn("⚠️ Данные контрольной точки не найдены для элемента:", elementId);
+        console.warn(" Данные контрольной точки не найдены для элемента:", elementId);
         return;
       }
 
@@ -644,13 +632,13 @@ const Map: React.FC = () => {
         description: element.text || checkpointData.description,
       };
 
-      console.log("🔄 Обновление данных контрольной точки для элемента:", elementId);
+      console.log("Обновление данных контрольной точки для элемента:", elementId);
       const updatedCheckpoint = await CheckpointService.updateCheckpoint(
         checkpointData.id!,
         updateData
       );
 
-      // Обновляем локальные данные
+
       setCheckpointsData((prev) => ({
         ...prev,
         [elementId]: {
@@ -660,49 +648,47 @@ const Map: React.FC = () => {
         },
       }));
 
-      console.log("✅ Данные контрольной точки обновлены:", elementId);
+      console.log(" Данные контрольной точки обновлены:", elementId);
     } catch (error) {
-      console.error("❌ Ошибка обновления данных контрольной точки:", elementId, error);
+      console.error(" Ошибка обновления данных контрольной точки:", elementId, error);
     }
   };
 
-  // Удаление элемента с удалением связанных данных
+
   const deleteElement = async (elementId: string) => {
     try {
       const element = elements.find((el) => el.id === elementId);
-
-      // Удаляем связанные данные перед удалением элемента карты
+ 
       if (element?.type === "lesson") {
         const lessonData = lessonsData[elementId];
         if (lessonData?.id) {
           try {
-            console.log("🗑️ Удаление данных урока:", lessonData.id);
+            console.log(" Удаление данных урока:", lessonData.id);
             await LessonService.deleteLesson(lessonData.id);
-            console.log("✅ Данные урока удалены:", lessonData.id);
+            console.log(" Данные урока удалены:", lessonData.id);
           } catch (error) {
-            console.warn("⚠️ Не удалось удалить данные урока:", error);
+            console.warn("Не удалось удалить данные урока:", error);
           }
         }
       } else if (element?.type === "checkpoint") {
         const checkpointData = checkpointsData[elementId];
         if (checkpointData?.id) {
           try {
-            console.log("🗑️ Удаление данных контрольной точки:", checkpointData.id);
+            console.log(" Удаление данных контрольной точки:", checkpointData.id);
             await CheckpointService.deleteCheckpoint(checkpointData.id);
-            console.log("✅ Данные контрольной точки удалены:", checkpointData.id);
+            console.log("Данные контрольной точки удалены:", checkpointData.id);
           } catch (error) {
-            console.warn("⚠️ Не удалось удалить данные контрольной точки:", error);
+            console.warn(" Не удалось удалить данные контрольной точки:", error);
           }
         }
       }
 
-      console.log("🗑️ Удаление элемента карты с ID:", elementId);
+      console.log(" Удаление элемента карты с ID:", elementId);
       await MapService.deleteMapElement(elementId);
 
-      // Удаляем из локального состояния
+   
       setElements((prev) => prev.filter((el) => el.id !== elementId));
 
-      // Удаляем связанные данные из локального состояния
       if (element?.type === "lesson") {
         setLessonsData((prev) => {
           const newData = { ...prev };
@@ -721,13 +707,13 @@ const Map: React.FC = () => {
         setSelectedElementId(null);
       }
 
-      console.log("✅ Элемент удален:", elementId);
+      console.log("Элемент удален:", elementId);
     } catch (error: any) {
-      console.error("❌ Ошибка удаления элемента:", elementId, error);
+      console.error("Ошибка удаления элемента:", elementId, error);
 
-      // Если элемент не найден (404), все равно удаляем из локального состояния
+   
       if (error.response?.status === 404) {
-        console.log("ℹ️ Элемент не найден на сервере, удаляем локально");
+        console.log("ℹлемент не найден на сервере, удаляем локально");
         setElements((prev) => prev.filter((el) => el.id !== elementId));
 
         if (selectedElementId === elementId) {
@@ -736,35 +722,30 @@ const Map: React.FC = () => {
       }
     }
   };
-
-  // Функции добавления элементов
+ 
   const addCircle = () => createElement("circle");
   const addImage = () => createElement("image");
   const addLesson = () => createElement("lesson");
   const addText = () => createElement("text");
   const addCheckpoint = () => createElement("checkpoint");
   const addEmoji = (emoji: string) => createElement("emoji", { emoji });
-
-  // Обновление свойства выбранного элемента
+ 
   const updateSelectedElementProperty = (property: string, value: any) => {
     if (!selectedElementId) return;
 
     updateElement(selectedElementId, { [property]: value });
   };
-
-  // Получение данных урока для выбранного элемента
+ 
   const getSelectedLessonData = (): LessonData | null => {
     if (!selectedElementId || selectedElement?.type !== "lesson") return null;
     return lessonsData[selectedElementId] || null;
   };
-
-  // Получение данных контрольной точки для выбранного элемента
+ 
   const getSelectedCheckpointData = (): CheckpointData | null => {
     if (!selectedElementId || selectedElement?.type !== "checkpoint") return null;
     return checkpointsData[selectedElementId] || null;
   };
-
-  // Обработка загрузки изображения для элемента
+ 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -778,8 +759,7 @@ const Map: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
-
-  // Обработка загрузки фонового изображения
+ 
   const handleBackgroundImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -793,8 +773,7 @@ const Map: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
-
-  // Функция для получения настроек элемента для текущего брейкпоинта
+ 
   const getElementBreakpointSettings = (element: MapElement) => {
     if (!element.breakpoints || !element.breakpoints[activeBreakpoint]) {
       return {};
@@ -802,8 +781,7 @@ const Map: React.FC = () => {
 
     return element.breakpoints[activeBreakpoint];
   };
-
-  // Управление брейкпоинтами
+ 
   const updateElementBreakpointSetting = (elementId: string, setting: string, value: any) => {
     const element = elements.find((el) => el.id === elementId);
 
@@ -834,8 +812,7 @@ const Map: React.FC = () => {
 
     updateElement(elementId, { breakpoints });
   };
-
-  // Обработчики изменения размера карты
+ 
   const handleResizeStart = (direction: "right" | "bottom") => (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(direction);
@@ -877,8 +854,7 @@ const Map: React.FC = () => {
     setIsResizing(null);
     setDragStart(null);
   }, []);
-
-  // Drag & Drop для элементов
+ 
   const handleElementDragStart = (elementId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -922,20 +898,20 @@ const Map: React.FC = () => {
       const breakpointSettings = getElementBreakpointSettings(element);
 
       if (dragStart.elementType === "free") {
-        // Для свободного позиционирования - плавное перемещение
+        
         updates.position = {
           x: Math.max(0, Math.min(100, dragStart.elementStart.x + (deltaX / mapSize.width) * 100)),
           y: Math.max(0, Math.min(100, dragStart.elementStart.y + (deltaY / mapSize.height) * 100)),
         };
       } else {
-        // Для фиксированного позиционирования
+         
         const newOffset = {
           x: dragStart.elementStart.x + deltaX,
           y: dragStart.elementStart.y + deltaY,
         };
 
         if (activeBreakpoint !== "desktop") {
-          // Для не-десктоп брейкпоинтов
+       
           updates.breakpoints = {
             ...element.breakpoints,
             [activeBreakpoint]: {
@@ -944,12 +920,12 @@ const Map: React.FC = () => {
             },
           };
         } else {
-          // Для десктопа
+        
           updates.offset = newOffset;
         }
       }
 
-      // Обновляем локальное состояние
+    
       setElements((prev) =>
         prev.map((el) => (el.id === selectedElementId ? { ...el, ...updates } : el))
       );
@@ -960,7 +936,7 @@ const Map: React.FC = () => {
   const handleElementDragEnd = useCallback(() => {
     if (!dragStart || dragStart.type !== "element" || !selectedElementId) return;
 
-    // Сохраняем изменения на сервере
+    
     const element = elements.find((el) => el.id === selectedElementId);
 
     if (element) {
@@ -970,7 +946,7 @@ const Map: React.FC = () => {
     setDragStart(null);
   }, [dragStart, selectedElementId, elements]);
 
-  // Эффекты для обработки событий мыши
+   
   useEffect(() => {
     if (dragStart) {
       if (dragStart.type === "resize") {
@@ -989,8 +965,7 @@ const Map: React.FC = () => {
       };
     }
   }, [dragStart, handleResizeMove, handleElementDragMove, handleResizeEnd, handleElementDragEnd]);
-
-  // Функция для вычисления позиции элемента с учетом брейкпоинта и размера карты
+ 
   const calculateElementPosition = (element: MapElement, targetMapSize: MapSize): Position => {
     const breakpointSettings = getElementBreakpointSettings(element);
     const isHidden = breakpointSettings.hidden;
@@ -1029,8 +1004,7 @@ const Map: React.FC = () => {
 
     return basePosition;
   };
-
-  // Рендер элемента
+ 
   const renderElement = (
     element: MapElement,
     targetMapSize: MapSize = mapSize,
@@ -1191,8 +1165,7 @@ const Map: React.FC = () => {
         return null;
     }
   };
-
-  // Эмулятор
+ 
   const openEmulator = () => {
     setShowEmulator(true);
     setSelectedDevice(devices[0]);
@@ -1212,7 +1185,7 @@ const Map: React.FC = () => {
   const handleNavigateToMap = () => {
     router.push(`/admin/courses/${courseId}/course`);
   };
-  // Размер карты для отображения в эмуляторе
+  
   const emulatorMapSize = selectedDevice
     ? {
         width: selectedDevice.width,
@@ -1220,15 +1193,14 @@ const Map: React.FC = () => {
       }
     : { width: 800, height: 2000 };
 
-  // Стили для фона карты
+ 
   const mapBackgroundStyle = {
     backgroundColor: mapBackground.color,
     backgroundImage: mapBackground.image ? `url(${mapBackground.image})` : "none",
     backgroundRepeat: mapBackground.repeat as any,
     backgroundSize: mapBackground.size as any,
   };
-
-  // Сохранение карты
+ 
   const saveMap = async () => {
     try {
       setSaveState({ isSaving: true, isSuccess: false, error: undefined });
@@ -1237,7 +1209,7 @@ const Map: React.FC = () => {
         throw new Error("Карта не загружена");
       }
 
-      // Обновляем настройки карты
+       
       await MapService.updateCourseMap(mapId, {
         width: mapSize.width,
         height: mapSize.height,
@@ -1248,9 +1220,9 @@ const Map: React.FC = () => {
       });
 
       setSaveState({ isSaving: false, isSuccess: true, error: undefined });
-      console.log("✅ Карта сохранена");
+      console.log(" Карта сохранена");
     } catch (error: any) {
-      console.error("❌ Ошибка сохранения карты:", error);
+      console.error(" Ошибка сохранения карты:", error);
       setSaveState({
         isSaving: false,
         isSuccess: false,
@@ -1316,11 +1288,10 @@ const Map: React.FC = () => {
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.globalStyle} />
-
-      {/* Основной интерфейс */}
+ 
       {!showEmulator ? (
         <div className={styles.wrapperContainer}>
-          {/* Левая панель */}
+     
           <div className={styles.leftPanel}>
             <div className={styles.panelSection}>
               <h3 className={styles.sectionTitle}>Элементы</h3>
@@ -1455,8 +1426,7 @@ const Map: React.FC = () => {
               </button>
             </div>
           </div>
-
-          {/* Основное содержимое */}
+ 
           <div className={styles.mainContent}>
             <button className={styles.toggleButton} onClick={openEmulator}>
               Эмулятор
@@ -1487,24 +1457,7 @@ const Map: React.FC = () => {
                   />
                 </div>
               </div>
-              {/*    <div className={styles.sizeInfo}>
-                Размер карты: {mapSize.width} × {mapSize.height}px | Брейкпоинт: {activeBreakpoint}
-                {courseId && ` | Курс: ${courseId}`}
-                {mapId && ` | ID карты: ${mapId.substring(0, 20)}...`}
-                {selectedElement && selectedElement.type === "lesson" && (
-                  <span>
-                    {" "}
-                    | ID урока: {lessonsData[selectedElement.id]?.id?.substring(0, 8)}...
-                  </span>
-                )}
-                {selectedElement && selectedElement.type === "checkpoint" && (
-                  <span>
-                    {" "}
-                    | ID контрольной точки:{" "}
-                    {checkpointsData[selectedElement.id]?.id?.substring(0, 8)}...
-                  </span>
-                )}
-              </div> */}
+           
 
               <Button
                 text="Просмотр карты"
@@ -1516,13 +1469,13 @@ const Map: React.FC = () => {
             </div>
           </div>
 
-          {/* Правая панель свойств */}
+        
           <div className={styles.rightPanel}>
             {selectedElement ? (
               <>
                 <h3 className={styles.sectionTitle}>Свойства элемента</h3>
 
-                {/* Общие свойства для всех элементов */}
+            
                 <div className={styles.propertyGroup}>
                   <label className={styles.propertyLabel}>Позиция X (%)</label>
                   <input
@@ -1634,8 +1587,7 @@ const Map: React.FC = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Специфичные свойства для кружков */}
+ 
                 {selectedElement.type === "circle" && (
                   <div className={styles.propertyGroup}>
                     <label className={styles.propertyLabel}>Цвет</label>
@@ -1672,7 +1624,7 @@ const Map: React.FC = () => {
                   </div>
                 )}
 
-                {/* Специфичные свойства для картинок */}
+              
                 {selectedElement.type === "image" && (
                   <>
                     <div className={styles.propertyGroup}>
@@ -1735,8 +1687,7 @@ const Map: React.FC = () => {
                     </div>
                   </>
                 )}
-
-                {/* Специфичные свойства для уроков */}
+ 
                 {selectedElement.type === "lesson" && (
                   <>
                     <div className={styles.propertyGroup}>
@@ -1823,8 +1774,7 @@ const Map: React.FC = () => {
                     </div>
                   </>
                 )}
-
-                {/* Специфичные свойства для текста */}
+ 
                 {selectedElement.type === "text" && (
                   <>
                     <div className={styles.propertyGroup}>
@@ -1912,8 +1862,7 @@ const Map: React.FC = () => {
                     </div>
                   </>
                 )}
-
-                {/* Специфичные свойства для контрольных точек */}
+ 
                 {selectedElement.type === "checkpoint" && (
                   <>
                     <div className={styles.propertyGroup}>
@@ -1982,7 +1931,7 @@ const Map: React.FC = () => {
                   </>
                 )}
 
-                {/* Специфичные свойства для эмодзи */}
+           
                 {selectedElement.type === "emoji" && (
                   <div className={styles.propertyGroup}>
                     <label className={styles.propertyLabel}>Смайлик</label>
@@ -2084,8 +2033,7 @@ const Map: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Модальное окно со смайликами */}
+ 
       <div id="emoji-modal" className={styles.emojiModal}>
         <div className={styles.emojiModalContent}>
           <button
@@ -2112,7 +2060,7 @@ const Map: React.FC = () => {
         </div>
       </div>
 
-      {/* Кнопка сохранения */}
+     
       <div className={styles.saveControls}>
         <button
           className={`${styles.saveButton} ${saveState.isSuccess ? styles.success : ""}`}

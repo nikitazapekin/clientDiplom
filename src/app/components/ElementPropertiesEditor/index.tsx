@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import type { LessonResponse } from "@/app/http/lessonService";
 import { LessonService } from "@/app/http/lessonService";
-
-// Локальное определение типов для контрольных точек
+ 
 enum CheckpointType {
   QUIZ = "quiz",
   PRACTICAL_TASK = "practical_task",
@@ -45,20 +44,19 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    // Для уроков
+    
     content: "",
     duration: 0,
     orderIndex: 0,
     isPublished: false,
-    // Для контрольных точек
+   
     type: "quiz" as CheckpointType,
     passingScore: 70,
     maxAttempts: 3,
     timeLimit: 60,
     instructions: "",
   });
-
-  // Загрузка данных при изменении элемента
+ 
   useEffect(() => {
     if (element.id && (element.type === "lesson" || element.type === "checkpoint")) {
       loadElementData();
@@ -88,7 +86,7 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
           instructions: "",
         });
       } else if (element.type === "checkpoint") {
-        // Используем MapService вместо CheckpointService
+      
         const response = await fetch(
           `http://localhost:3002/checkpoints/map-element/${element.id}`,
           {
@@ -122,8 +120,7 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
     } catch (error: any) {
       console.error("Error loading element data:", error);
       setError("Не удалось загрузить данные элемента");
-
-      // Устанавливаем значения по умолчанию
+ 
       setFormData({
         title: element.title || "",
         description: "",
@@ -173,7 +170,7 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
           isPublished: formData.isPublished,
         });
       } else if (element.type === "checkpoint") {
-        // Для контрольных точек используем прямой fetch
+    
         const url = checkpointData?.id
           ? `http://localhost:3002/checkpoints/${checkpointData.id}`
           : `http://localhost:3002/checkpoints`;
@@ -206,8 +203,7 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
-
-      // Обновляем родительский компонент
+ 
       onUpdate();
     } catch (error: any) {
       console.error("Error saving element data:", error);

@@ -1,4 +1,4 @@
-// UserProfile styles
+ 
 
 $primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 $background-color: #f8f9fa;
@@ -58,8 +58,7 @@ $danger-color: #dc3545;
     background-color: darken($accent-color, 10%);
   }
 }
-
-// Header
+ 
 .header {
   background: $primary-gradient;
   padding-top: 60px;
@@ -148,7 +147,7 @@ $danger-color: #dc3545;
   opacity: 0.95;
 }
 
-// Stats
+ 
 .statsContainer {
   background-color: $card-background;
   margin: -30px auto 20px;
@@ -188,8 +187,7 @@ $danger-color: #dc3545;
     display: none;
   }
 }
-
-// Sections
+ 
 .section {
   max-width: 800px;
   margin: 0 auto 24px;
@@ -207,15 +205,14 @@ $danger-color: #dc3545;
   padding-bottom: 12px;
   border-bottom: 2px solid $border-color;
 }
-
-// Level Section
+ 
 .levelSection {
   display: flex;
   justify-content: center;
   padding: 20px 0;
 }
 
-// Circular Progress
+ 
 .circularProgressContainer {
   position: relative;
   display: flex;
@@ -252,7 +249,7 @@ $danger-color: #dc3545;
   color: $text-secondary;
 }
 
-// Solved Tasks
+ 
 .taskCard {
   background-color: $background-color;
   border-radius: 12px;
@@ -391,8 +388,7 @@ $danger-color: #dc3545;
   color: $text-primary;
   line-height: 1.5;
 }
-
-// Certificates
+ 
 .certSection {
   max-width: 800px;
   margin: 0 auto 24px;
@@ -440,8 +436,7 @@ $danger-color: #dc3545;
 .certDotActive {
   background-color: $accent-color;
 }
-
-// Status
+ 
 .statusContainer {
   max-width: 800px;
   margin: 0 auto 20px;
@@ -471,7 +466,7 @@ $danger-color: #dc3545;
   margin: 0;
 }
 
-// Logout Button
+ 
 .logoutButton {
   max-width: 800px;
   margin: 0 auto;
@@ -494,8 +489,7 @@ $danger-color: #dc3545;
     background-color: darken($danger-color, 10%);
   }
 }
-
-// Modal
+ 
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -588,8 +582,7 @@ $danger-color: #dc3545;
   font-size: 16px;
   color: $text-secondary;
 }
-
-// Avatar Picker Modal
+ 
 .avatarPickerModal {
   .modalContent {
     max-width: 400px;
@@ -628,8 +621,7 @@ $danger-color: #dc3545;
 .fileInput {
   display: none;
 }
-
-// Stars rating
+ 
 .starsContainer {
   display: flex;
   gap: 4px;
@@ -643,8 +635,7 @@ $danger-color: #dc3545;
 .starFilled {
   color: #ffc107;
 }
-
-// Result Card
+ 
 .resultCard {
   background-color: $background-color;
   border-radius: 12px;
@@ -675,8 +666,7 @@ $danger-color: #dc3545;
   font-size: 13px;
   color: $text-secondary;
 }
-
-// Responsive
+ 
 @media (max-width: 768px) {
   .header {
     padding-top: 40px;

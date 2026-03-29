@@ -76,7 +76,7 @@ export const parseArguments = (input: string): any[] => {
       return JSON.parse(input);
     }
   } catch {
-    // ignore non-JSON input
+   
   }
 
   const args: any[] = [];
@@ -136,7 +136,7 @@ export const parseValue = (value: string): any => {
   try {
     return JSON.parse(value);
   } catch {
-    // ignore non-JSON input
+ 
   }
 
   if (/^-?\d+(\.\d+)?$/.test(value)) {
@@ -1303,7 +1303,7 @@ export const formatArgsForJavaOrCSharp = (
               return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
             }
           } catch {
-            // ignore invalid JSON
+          
           }
         }
 
@@ -1363,7 +1363,7 @@ export const formatArgsForJavaOrCSharp = (
               return `new ${getTypeString(arrayElementType, language)}[] { ${formatted.join(", ")} }`;
             }
           } catch {
-            // ignore invalid JSON
+           
           }
         }
 
@@ -1384,7 +1384,7 @@ export const formatArgsForJavaOrCSharp = (
               return `new java.util.HashMap<>() {{ put(${entries}); }}`;
             }
           } catch {
-            // ignore invalid JSON
+         
           }
         }
       }
@@ -1403,7 +1403,7 @@ export const formatArgsForJavaOrCSharp = (
               return `new java.util.HashMap<>() {{ put(${entries}); }}`;
             }
           } catch {
-            // ignore invalid JSON
+          
           }
         }
       }
@@ -1467,7 +1467,7 @@ export const formatArgsForDynamicLang = (
               return `[${formatted.join(", ")}]`;
             }
           } catch {
-            // ignore invalid JSON
+          
           }
         }
         return arg.value;
@@ -1533,7 +1533,7 @@ export const formatArgsForDynamicLang = (
               return `[${formatted.join(", ")}]`;
             }
           } catch {
-            // ignore invalid JSON
+         
           }
         }
         return arg.value;
@@ -1751,7 +1751,7 @@ console.log = function(...args) {
   const message = args.map(arg => 
     typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
   ).join(' ');
-  __logs.push('📌 ' + message);
+  __logs.push('' + message);
   __originalConsole.log.apply(console, args);
 };
 
@@ -1759,7 +1759,7 @@ console.error = function(...args) {
   const message = args.map(arg => 
     typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
   ).join(' ');
-  __logs.push('❌ ' + message);
+  __logs.push('' + message);
   __originalConsole.error.apply(console, args);
 };
 
@@ -1767,7 +1767,7 @@ console.warn = function(...args) {
   const message = args.map(arg => 
     typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
   ).join(' ');
-  __logs.push('⚠️ ' + message);
+  __logs.push('' + message);
   __originalConsole.warn.apply(console, args);
 };
 
@@ -1775,7 +1775,7 @@ console.info = function(...args) {
   const message = args.map(arg => 
     typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
   ).join(' ');
-  __logs.push('ℹ️ ' + message);
+  __logs.push('ℹ' + message);
   __originalConsole.info.apply(console, args);
 };
 

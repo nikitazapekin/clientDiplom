@@ -1,4 +1,4 @@
-//@use '@styles/' as *;
+ 
 @use "../../styles/variables.scss" as *;
 @use "../../styles/mixins.scss" as *;
 
@@ -71,38 +71,4 @@ text-align: right;
 
   }
 }
-
-/*
-$color-grayLight:  #f0f0f0;
-$color-gray: #d8d8d8;
-$color-purple: #9f0fa7;
-$color-white: #fff;
-$color-darkLight: #303027;
-$color-dark: #222121;
-
-$container-sm: 1280;
-$container-md: 1400;
-$container-xs: 700;
-  
-
-
-
-$radius-small: 4;
-$radius-medium: 8;
-$radius-large: 16;
-$radius-xlarge: 24;
-$radius-circle: 9999;
-
-$spacing-xs: 4;
-$spacing-sm: 8;
-$spacing-md: 16;
-$spacing-lg: 24;
-$spacing-xl: 32;
-$spacing-xxl: 48;
-
-
-$font-xs: 14;
-$font-sx: 20;
-$font-md: 24;
-$font-lg: 32;
-*/
+ 

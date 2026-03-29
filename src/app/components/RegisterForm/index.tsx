@@ -24,7 +24,7 @@ const registerSchema = z
     middleName: z.string().optional(),
     phone: z.string().min(1, "Телефон обязателен"),
     country: z.string().min(1, "Страна обязательна"),
-    // role полностью убрано
+ 
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Пароли не совпадают",
@@ -124,7 +124,7 @@ const RegisterForm = () => {
             <input
               className={styles.form__input}
               placeholder="Введите пароль (минимум 6 символов)"
-              //type="password"
+          
               type="text"
               disabled={isLoading}
               {...register("password")}
@@ -142,7 +142,7 @@ const RegisterForm = () => {
               className={styles.form__input}
               placeholder="Повторите пароль"
               type="text"
-              //   type="password"
+           
               disabled={isLoading}
               {...register("confirmPassword")}
             />

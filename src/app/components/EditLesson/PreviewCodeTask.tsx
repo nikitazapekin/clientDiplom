@@ -145,7 +145,7 @@ export function PreviewCodeTask({
           if (line.includes("===LOGS_END===")) {
             inLogs = false;
             if (currentLogs.length > 0) {
-              output += "📋 Логи выполнения:\n" + currentLogs.join("\n") + "\n\n";
+              output += " Логи выполнения:\n" + currentLogs.join("\n") + "\n\n";
             }
             continue;
           }
@@ -159,7 +159,7 @@ export function PreviewCodeTask({
           if (line.includes("===RESULT_END===")) {
             inResult = false;
             if (currentResult.length > 0) {
-              output += "✅ Результат функции:\n" + currentResult.join("\n");
+              output += " Результат функции:\n" + currentResult.join("\n");
             }
             continue;
           }
@@ -179,12 +179,12 @@ export function PreviewCodeTask({
       }
 
       if (res.error) {
-        output += `\n❌ Ошибка: ${res.error}`;
+        output += `\n Ошибка: ${res.error}`;
       }
 
-      setConsoleOutput(output || "✅ Код выполнен успешно (нет вывода)");
+      setConsoleOutput(output || " Код выполнен успешно (нет вывода)");
     } catch (e) {
-      setConsoleOutput(`❌ Ошибка выполнения: ${e}`);
+      setConsoleOutput(` Ошибка выполнения: ${e}`);
     } finally {
       setIsRunning(false);
     }
@@ -277,7 +277,7 @@ export function PreviewCodeTask({
           const actualLines = countCodeLines(code);
           results.push({
             type: "maxLines",
-            name: "📏 Максимум строк кода",
+            name: " Максимум строк кода",
             passed: actualLines <= maxLines,
             expected: `≤ ${maxLines} строк`,
             actual: `${actualLines} строк`,
@@ -293,7 +293,7 @@ export function PreviewCodeTask({
           );
           results.push({
             type: "forbiddenTokens",
-            name: "🚫 Запрещённые слова",
+            name: " Запрещённые слова",
             passed,
             expected: forbidden.filter((t) => t.trim()).join(", ") || "нет",
             actual: passed ? "не используются" : "используются",
@@ -306,7 +306,7 @@ export function PreviewCodeTask({
           const passed = !hasComments(code);
           results.push({
             type: "noComments",
-            name: "💬 Без комментариев",
+            name: " Без комментариев",
             passed,
             expected: "без комментариев",
             actual: passed ? "нет комментариев" : "есть комментарии",
@@ -319,7 +319,7 @@ export function PreviewCodeTask({
           const passed = !hasConsoleLog(code);
           results.push({
             type: "noConsoleLog",
-            name: "📢 Без отладочного вывода",
+            name: " Без отладочного вывода",
             passed,
             expected: "без console.log/print",
             actual: passed ? "нет" : "используется",
@@ -333,7 +333,7 @@ export function PreviewCodeTask({
           const actualComplexity = calculateComplexity(code);
           results.push({
             type: "maxComplexity",
-            name: "🔄 Цикломатическая сложность",
+            name: " Цикломатическая сложность",
             passed: actualComplexity <= maxComplexity,
             expected: `≤ ${maxComplexity}`,
             actual: `${actualComplexity}`,
@@ -349,7 +349,7 @@ export function PreviewCodeTask({
 
           results.push({
             type: "memoryLimit",
-            name: "💾 Использование памяти",
+            name: "Использование памяти",
             passed: estimatedMemory <= memoryLimit,
             expected: `≤ ${memoryLimit} МБ`,
             actual: `~${estimatedMemory} МБ`,
@@ -363,7 +363,7 @@ export function PreviewCodeTask({
           const passed = hasRequiredKeywords(code, keywords);
           results.push({
             type: "requiredKeywords",
-            name: "🔑 Обязательные ключевые слова",
+            name: " Обязательные ключевые слова",
             passed,
             expected: keywords.filter((k) => k.trim()).join(", ") || "нет",
             actual: passed ? "все присутствуют" : "отсутствуют",
@@ -395,7 +395,7 @@ export function PreviewCodeTask({
 
             results.push({
               type: "maxTimeMs",
-              name: "⏱ Время выполнения",
+              name: " Время выполнения",
               passed: actualTime <= maxTime,
               expected: `≤ ${maxTime} мс`,
               actual: `${actualTime} мс`,
@@ -404,7 +404,7 @@ export function PreviewCodeTask({
           } catch {
             results.push({
               type: "maxTimeMs",
-              name: "⏱ Время выполнения",
+              name: " Время выполнения",
               passed: false,
               expected: `≤ ${maxTime} мс`,
               actual: "Ошибка выполнения",
@@ -499,7 +499,7 @@ export function PreviewCodeTask({
                 inLogs = false;
                 if (currentLogs.length > 0) {
                   testLogs.push(
-                    `📋 Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`
+                    ` Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`
                   );
                   testLogs.push(currentLogs.join("\n"));
                   testLogs.push("");
@@ -736,7 +736,7 @@ export function PreviewCodeTask({
                 inLogs = false;
                 if (currentLogs.length > 0) {
                   testLogs.push(
-                    `📋 Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`
+                    ` Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`
                   );
                   testLogs.push(currentLogs.join("\n"));
                   testLogs.push("");
@@ -839,7 +839,7 @@ export function PreviewCodeTask({
               if (line.includes("===LOGS_END===")) {
                 inLogs = false;
                 if (currentLogs.length > 0) {
-                  allLogs.push(`📋 Логи для входа "${tc.input}":`);
+                  allLogs.push(`Логи для входа "${tc.input}":`);
                   allLogs.push(currentLogs.join("\n"));
                   allLogs.push("");
                 }
@@ -925,22 +925,22 @@ export function PreviewCodeTask({
             .filter((r) => !r.passed)
             .map(
               (r) =>
-                `❌ Тест ${results.findIndex((tr) => tr === r) + 1}: вход=${r.input}, ожидалось=${r.expected}, получено=${r.actual}`
+                ` Тест ${results.findIndex((tr) => tr === r) + 1}: вход=${r.input}, ожидалось=${r.expected}, получено=${r.actual}`
             );
 
           const failedConstraints = constraintCheckResults
             .filter((c) => !c.passed)
-            .map((c) => `❌ ${c.name}: ожидалось ${c.expected}, получено ${c.actual}`);
+            .map((c) => ` ${c.name}: ожидалось ${c.expected}, получено ${c.actual}`);
 
           const errorMessages = [];
 
           if (failedTests.length > 0) {
-            errorMessages.push(`❌ Провалено тестов: ${failedTests.length} из ${results.length}`);
+            errorMessages.push(` Провалено тестов: ${failedTests.length} из ${results.length}`);
             errorMessages.push(...failedTests);
           }
 
           if (failedConstraints.length > 0) {
-            errorMessages.push(`\n❌ Не пройдены ограничения:`);
+            errorMessages.push(`\n Не пройдены ограничения:`);
             errorMessages.push(...failedConstraints);
           }
 
@@ -1037,7 +1037,7 @@ export function PreviewCodeTask({
                 <div className={styles.testCaseResultHeader}>
                   <span className={styles.testNumber}>Тест #{index + 1}</span>
                   <span className={styles.testStatus}>
-                    {result.passed ? "✅ Пройден" : "❌ Провален"}
+                    {result.passed ? "Пройден" : "Провален"}
                   </span>
                 </div>
                 <div className={styles.testCaseDetails}>
@@ -1068,7 +1068,7 @@ export function PreviewCodeTask({
               >
                 <div className={styles.constraintResultHeader}>
                   <span className={styles.constraintName}>{constraint.name}</span>
-                  <span className={styles.constraintStatus}>{constraint.passed ? "✅" : "❌"}</span>
+                  <span className={styles.constraintStatus}>{constraint.passed ? "Пройден" : "Провален"}</span>
                 </div>
                 <div className={styles.constraintDetails}>
                   <div>Ожидалось: {constraint.expected}</div>

@@ -1533,14 +1533,14 @@ export function BlockEditor({
                 <div key={constraintIndex} className={styles.constraint}>
                   <div className={styles.constraintHeader}>
                     <span className={styles.constraintTitle}>
-                      {constraint.type === "maxTimeMs" && "⏱ Ограничение по времени"}
-                      {constraint.type === "maxLines" && "📏 Ограничение по строкам"}
-                      {constraint.type === "forbiddenTokens" && "🚫 Запрещённые слова"}
-                      {constraint.type === "noComments" && "💬 Без комментариев"}
-                      {constraint.type === "noConsoleLog" && "📢 Без console.log"}
-                      {constraint.type === "maxComplexity" && "🔄 Цикломатическая сложность"}
-                      {constraint.type === "memoryLimit" && "💾 Ограничение по памяти"}
-                      {constraint.type === "requiredKeywords" && "🔑 Обязательные ключевые слова"}
+                      {constraint.type === "maxTimeMs" && " Ограничение по времени"}
+                      {constraint.type === "maxLines" && " Ограничение по строкам"}
+                      {constraint.type === "forbiddenTokens" && " Запрещённые слова"}
+                      {constraint.type === "noComments" && " Без комментариев"}
+                      {constraint.type === "noConsoleLog" && " Без console.log"}
+                      {constraint.type === "maxComplexity" && " Цикломатическая сложность"}
+                      {constraint.type === "memoryLimit" && " Ограничение по памяти"}
+                      {constraint.type === "requiredKeywords" && " Обязательные ключевые слова"}
                     </span>
                     <button
                       className={styles.deleteButton}
@@ -1565,14 +1565,14 @@ export function BlockEditor({
                         updateConstraint(constraintIndex, newType, defaultValue);
                       }}
                     >
-                      <option value="maxTimeMs">⏱ Время выполнения (мс)</option>
-                      <option value="maxLines">📏 Максимум строк кода</option>
-                      <option value="forbiddenTokens">🚫 Запрещённые слова</option>
-                      <option value="noComments">💬 Без комментариев</option>
-                      <option value="noConsoleLog">📢 Без console.log</option>
-                      <option value="maxComplexity">🔄 Макс. цикломатическая сложность</option>
-                      <option value="memoryLimit">💾 Ограничение по памяти (МБ)</option>
-                      <option value="requiredKeywords">🔑 Обязательные ключевые слова</option>
+                      <option value="maxTimeMs">Время выполнения (мс)</option>
+                      <option value="maxLines">Максимум строк кода</option>
+                      <option value="forbiddenTokens">Запрещённые слова</option>
+                      <option value="noComments"> Без комментариев</option>
+                      <option value="noConsoleLog">Без console.log</option>
+                      <option value="maxComplexity">Макс. цикломатическая сложность</option>
+                      <option value="memoryLimit"> Ограничение по памяти (МБ)</option>
+                      <option value="requiredKeywords"> Обязательные ключевые слова</option>
                     </select>
 
                     {constraint.type === "maxTimeMs" && (

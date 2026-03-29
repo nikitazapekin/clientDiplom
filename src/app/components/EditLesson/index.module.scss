@@ -147,7 +147,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    // box-shadow: 9px 10px 4px 0 rgba(0, 0, 0, 0.25);
+
 
     background-color: $color-black;
     max-width: 100%;
@@ -169,7 +169,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    //  justify-content: center;
+
 
     gap: px($spacing-lg);
   }
@@ -566,7 +566,6 @@
   border: 1px solid $color-gray;
 }
 
-// Добавьте в конец файла
 
 .previewTopActions {
   display: flex;
@@ -732,7 +731,6 @@
   }
 }
 
-// Добавьте в index.module.scss
 
 .starsContainer {
   position: relative;
@@ -811,7 +809,6 @@
   }
 }
 
-// Дополнительные стили для модального окна
 .resultsModal {
   min-width: 500px;
 

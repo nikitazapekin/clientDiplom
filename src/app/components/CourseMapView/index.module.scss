@@ -56,8 +56,7 @@
   transform: translate(-50%, -50%) scale(1.05);
   z-index: 10;
 }
-
-/* Lesson Styles */
+ 
 .lesson {
   flex-direction: column;
   align-items: center;
@@ -131,8 +130,7 @@
   color: #333;
   font-weight: 500;
 }
-
-/* Checkpoint Styles */
+ 
 .checkpoint {
   flex-direction: column;
   align-items: center;
@@ -175,8 +173,7 @@
   color: #333;
   font-weight: 500;
 }
-
-/* Image Styles */
+ 
 .imagePlaceholder {
   width: 100%;
   height: 100%;
@@ -207,8 +204,7 @@
 .mapInfo p {
   margin: 5px 0;
 }
-
-/* Loading Styles */
+ 
 .loadingContainer {
   display: flex;
   flex-direction: column;
@@ -231,8 +227,7 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-
-/* Error Styles */
+ 
 .errorContainer {
   display: flex;
   flex-direction: column;
@@ -252,8 +247,7 @@
   color: #6c757d;
   margin-bottom: 10px;
 }
-
-/* Modal Styles */
+ 
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -436,8 +430,7 @@
 .cancelButton:hover {
   background: #e9ecef;
 }
-
-/* Responsive Styles */
+ 
 @media (max-width: 768px) {
   .courseMapView {
     padding: 10px;
