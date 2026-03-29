@@ -125,7 +125,7 @@ const AdminProfilePage = () => {
   if (error) {
     return (
       <div className={styles.errorContainer}>
-        <div className={styles.errorIcon}>⚠️</div>
+   
         <div className={styles.errorText}>{error}</div>
         <button className={styles.retryButton} onClick={loadProfile}>
           Повторить
@@ -246,7 +246,7 @@ const AdminProfilePage = () => {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Мои курсы</h2>
           <div className={styles.emptyState}>
-            <span className={styles.emptyIcon}>📚</span>
+            <span className={styles.emptyIcon}></span>
             <span className={styles.emptyText}>У вас пока нет созданных курсов</span>
           </div>
         </div>

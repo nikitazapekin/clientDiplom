@@ -14,7 +14,7 @@ interface CodeEditorProps {
   readOnly?: boolean;
   height?: string | number;
   className?: string;
-  /** При наличии показывается зелёный треугольник "Запуск" справа сверху */
+ 
   onRun?: () => void;
   runLoading?: boolean;
 }
@@ -265,8 +265,7 @@ export default function CodeEditor({
   const [cursorPosition, setCursorPosition] = useState({ line: 0, column: 0 });
   const [cursorVisible, setCursorVisible] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
-
-  // Мигание курсора
+ 
   useEffect(() => {
     const interval = setInterval(() => {
       setCursorVisible((prev) => !prev);
@@ -274,8 +273,7 @@ export default function CodeEditor({
 
     return () => clearInterval(interval);
   }, []);
-
-  // Фокус на textarea при клике на контейнер
+ 
   useEffect(() => {
     const handleContainerClick = (e: MouseEvent) => {
       if (
@@ -296,8 +294,7 @@ export default function CodeEditor({
       container?.removeEventListener("click", handleContainerClick);
     };
   }, []);
-
-  // Получение текущего слова
+ 
   const getCurrentWord = useCallback((text: string, pos: number) => {
     const beforeCursor = text.slice(0, pos);
     const afterCursor = text.slice(pos);
@@ -307,8 +304,7 @@ export default function CodeEditor({
 
     return (beforeMatch ? beforeMatch[0] : "") + (afterMatch ? afterMatch[0] : "");
   }, []);
-
-  // Обновление автокомплита
+ 
   useEffect(() => {
     const word = getCurrentWord(value, selection.start);
 
@@ -327,7 +323,7 @@ export default function CodeEditor({
     }
   }, [value, selection.start, language, readOnly, isFocused, getCurrentWord]);
 
-  // Вставка сниппета
+ 
   const insertSnippet = useCallback(
     (snippet: string) => {
       const beforeCursor = value.slice(0, selection.start);
@@ -352,8 +348,7 @@ export default function CodeEditor({
     },
     [value, selection, onChange, getCurrentWord]
   );
-
-  // Обновление позиции курсора
+ 
   const handleSelectionChange = useCallback(
     (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
       const target = e.target as HTMLTextAreaElement;
@@ -362,7 +357,7 @@ export default function CodeEditor({
 
       setSelection({ start, end });
 
-      // Вычисляем позицию курсора (строка и колонка)
+     
       const textBeforeCursor = value.slice(0, start);
       const lines = textBeforeCursor.split("\n");
       const line = lines.length - 1;
@@ -372,13 +367,11 @@ export default function CodeEditor({
     },
     [value]
   );
-
-  // Обработка ввода
+ 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       onChange(e.target.value);
-
-      // Обновляем позицию курсора после изменения
+ 
       setTimeout(() => {
         if (textareaRef.current) {
           const start = textareaRef.current.selectionStart;
@@ -395,7 +388,7 @@ export default function CodeEditor({
     [onChange]
   );
 
-  // Обработка клавиш
+ 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (readOnly) return;
@@ -484,7 +477,7 @@ export default function CodeEditor({
     ]
   );
 
-  // Обработчики фокуса
+ 
   const handleFocus = useCallback(() => {
     setIsFocused(true);
   }, []);
@@ -493,7 +486,7 @@ export default function CodeEditor({
     setIsFocused(false);
   }, []);
 
-  // Синхронизация прокрутки
+ 
   useEffect(() => {
     const textarea = textareaRef.current;
     const scrollContainer = containerRef.current?.querySelector(`.${styles.editorScroll}`);
@@ -510,7 +503,7 @@ export default function CodeEditor({
     return () => textarea.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Функция для раскрашивания кода
+ 
   const renderHighlightedCode = useCallback(() => {
     if (!value) {
       return (
@@ -637,8 +630,7 @@ export default function CodeEditor({
         );
         i++;
       }
-
-      // Если текущая строка - это строка с курсором, добавляем мигающий курсор
+ 
       const isCursorLine = lineIndex === cursorPosition.line;
       const showCursor = isCursorLine && isFocused && cursorVisible;
 

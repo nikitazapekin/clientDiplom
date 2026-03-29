@@ -213,7 +213,7 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
       }
 
       case "maxTimeMs": {
-        // Проверяется на сервере
+  
         break;
       }
 
@@ -1074,14 +1074,14 @@ export default function CodingPage() {
       setConstraintsPassed(constraintResult.passed);
       
       if (!constraintResult.passed) {
-        setCodeOutput("❌ Ограничения не пройдены:\n" + constraintResult.errors.join("\n"));
+        setCodeOutput(" Ограничения не пройдены:\n" + constraintResult.errors.join("\n"));
         setRunLoading(false);
 
         return;
       }
       
       if (currentTestCases.length === 0) {
-        setCodeOutput("✅ Ограничения пройдены. Добавьте тест-кейсы для языка " + (LANGUAGES.find(l => l.value === lang)?.label || lang));
+        setCodeOutput(" Ограничения пройдены. Добавьте тест-кейсы для языка " + (LANGUAGES.find(l => l.value === lang)?.label || lang));
         setRunLoading(false);
 
         return;
@@ -1145,11 +1145,11 @@ export default function CodingPage() {
       const allPassed = results.every(r => r.passed);
 
       if (allPassed) {
-        setCodeOutput("✅ Все тесты пройдены! Ограничения также соблюдены.");
+        setCodeOutput(" Все тесты пройдены! Ограничения также соблюдены.");
       } else {
         const failedCount = results.filter(r => !r.passed).length;
 
-        setCodeOutput(`❌ Провалено тестов: ${failedCount} из ${results.length}`);
+        setCodeOutput(` Провалено тестов: ${failedCount} из ${results.length}`);
       }
     } catch (err: any) {
       setCodeOutput(`Ошибка: ${err.message || err}`);
@@ -1413,7 +1413,7 @@ export default function CodingPage() {
               </div>
               {constraintErrors.length > 0 && (
                 <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#ffebee", borderRadius: "4px" }}>
-                  <strong style={{ color: "#c62828" }}>⚠️ Нарушены ограничения:</strong>
+                  <strong style={{ color: "#c62828" }}>Нарушены ограничения:</strong>
                   <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px", color: "#c62828" }}>
                     {constraintErrors.map((error, i) => (
                       <li key={i}>{error}</li>
@@ -1442,7 +1442,7 @@ export default function CodingPage() {
                         }}
                       >
                         <div style={{ fontWeight: "bold" }}>
-                          Тест #{i + 1}: {result.passed ? "✅ Пройден" : "❌ Провален"}
+                          Тест #{i + 1}: {result.passed ? "Пройден" : "Провален"}
                         </div>
                         <div style={{ fontSize: "12px", marginTop: "4px" }}>
                           Вход: {result.input} | Ожидалось: {result.expected} | Получено: {result.actual}
@@ -1488,7 +1488,7 @@ export default function CodingPage() {
                         const newReturnType = e.target.value as ArgumentType;
 
                         setReturnType(newReturnType);
-                        // Обновить стартовый код для всех языков с новым return type
+                 
                         const newCodes: Record<string, string> = {};
 
                         selectedLanguages.forEach((lang) => {

@@ -72,8 +72,7 @@ const AvatarPicker: React.FC<AvatarPickerProps> = ({
       setLoading(false);
       alert('Ошибка: ' + (error.message || 'Не удалось загрузить файл'));
     }
-
-    // Reset input
+ 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -121,12 +120,12 @@ const AvatarPicker: React.FC<AvatarPickerProps> = ({
             />
 
             <button className={styles.optionButton} onClick={handleSelectFromGallery}>
-              <span className={styles.optionIcon}>🖼️</span>
+              <span className={styles.optionIcon}> </span>
               <span className={styles.optionText}>Выбрать из галереи</span>
             </button>
 
             <button className={`${styles.optionButton} ${styles.removeButton}`} onClick={handleRemoveAvatar}>
-              <span className={styles.optionIcon}>🗑️</span>
+              <span className={styles.optionIcon}> </span>
               <span className={`${styles.optionText} ${styles.removeText}`}>
                 Удалить аватар
               </span>

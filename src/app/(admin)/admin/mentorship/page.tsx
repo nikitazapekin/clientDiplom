@@ -426,7 +426,7 @@ const MentorshipPage = () => {
         >
           <span className={styles.treeNode__icon}>
             {node.type === "admin" && "👤"}
-            {node.type === "course" && (node.expanded ? "📂" : "📁")}
+            {node.type === "course" && (node.expanded ? "" : "")}
             {node.type === "student" && "👨‍🎓"}
           </span>
           <span className={styles.treeNode__name}>{node.name}</span>

@@ -249,7 +249,7 @@ const StudentProfilePage = () => {
   if (error) {
     return (
       <div className={styles.errorContainer}>
-        <div className={styles.errorIcon}>⚠️</div>
+
         <div className={styles.errorText}>{error}</div>
         <button className={styles.retryButton} onClick={loadProfile}>
           Повторить
@@ -455,7 +455,7 @@ const StudentProfilePage = () => {
               return (
                 <div key={task.id} className={styles.taskCard}>
                   <div className={styles.taskHeader}>
-                    <span className={styles.taskTitle}>✅ {task.title}</span>
+                    <span className={styles.taskTitle}> {task.title}</span>
                     <span className={`${styles.taskBadge}`} style={{ backgroundColor: diffInfo.color }}>
                       {diffInfo.label}
                     </span>

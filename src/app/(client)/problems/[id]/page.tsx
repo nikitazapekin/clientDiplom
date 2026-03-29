@@ -62,8 +62,7 @@ const LANG_LABELS: Record<string, string> = {
   golang: "Go",
   cpp: "C++",
 };
-
-// Типы ограничений
+ 
 type CodeConstraintType =
   | "maxTimeMs"
   | "maxLines"
@@ -95,8 +94,7 @@ interface ArgumentSchema {
   arrayElementObjectFields?: { name: string; type: string; value: string }[];
   arrayElementClassName?: string;
 }
-
-// Функция для форматирования аргументов для Java и C# (как в EditLesson)
+ 
 const formatArgsForJavaOrCSharp = (
   testCaseArgs: TestCaseArgument[] | undefined,
   argumentScheme: ArgumentSchema[],
@@ -283,8 +281,7 @@ const formatArgsForJavaOrCSharp = (
 
   return args;
 };
-
-// Функция для форматирования аргументов для динамических языков (JS, Python)
+ 
 const formatArgsForDynamicLang = (
   testCaseArgs: TestCaseArgument[] | undefined,
   argumentScheme: ArgumentSchema[],
@@ -316,8 +313,7 @@ const formatArgsForDynamicLang = (
     return arg.value;
   }).join(", ");
 };
-
-// Функция для получения отображаемого ввода тест-кейса (как в EditLesson)
+ 
 const getDisplayInput = (
   testCase: TestCase,
   argumentScheme: ArgumentSchema[] | undefined,
@@ -337,14 +333,12 @@ const getDisplayInput = (
 
   return testCase.input ?? "";
 };
-
-// Интерфейс для результата проверки ограничений
+ 
 interface ConstraintCheckResult {
   passed: boolean;
   errors: string[];
 }
-
-// Вспомогательные функции для обработки кода Java и C#
+ 
 const extractFunctionName = (code: string, lang: CodeLanguage): string | null => {
   if (!code) return null;
 
@@ -395,7 +389,7 @@ const parseArguments = (input: string): any[] => {
       return JSON.parse(input);
     }
   } catch {
-    // Не JSON, продолжаем
+   
   }
 
   const args: any[] = [];
@@ -457,7 +451,7 @@ const parseValue = (value: string): any => {
   try {
     return JSON.parse(value);
   } catch {
-    // Не JSON
+ 
   }
 
   if (/^-?\d+(\.\d+)?$/.test(value)) {
@@ -506,8 +500,7 @@ const formatArgumentsForCode = (args: any[]): string => {
     })
     .join(", ");
 };
-
-// Улучшенная функция для Java с поддержкой нескольких тест-кейсов и логов
+ 
 const buildJavaTestSuite = (
   userCode: string,
   testCases: { input: string; expectedOutput: string; args?: TestCaseArgument[] }[],
@@ -519,12 +512,11 @@ const buildJavaTestSuite = (
   const testCasesCode = testCases
     .map((tc, index) => {
       let argsStr = "";
-
-      // Если есть args и argumentScheme, используем их для Java
+ 
       if (tc.args && tc.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
         argsStr = formatArgsForJavaOrCSharp(tc.args, argumentScheme, "java");
       } else if (tc.input) {
-        // Иначе парсим input
+    
         const args = parseArguments(tc.input);
 
         argsStr = formatArgumentsForCode(args);
@@ -603,8 +595,7 @@ ${testCasesCode}
 }`;
   }
 };
-
-// Функция для построения C# тестов
+ 
 const buildCSharpTestSuite = (
   userCode: string,
   testCases: { input: string; expectedOutput: string; args?: TestCaseArgument[] }[],
@@ -617,12 +608,11 @@ const buildCSharpTestSuite = (
     .map((tc, index) => {
       const testNum = index + 1;
       let argsStr = "";
-
-      // Если есть args и argumentScheme, используем их для C#
+ 
       if (tc.args && tc.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
         argsStr = formatArgsForJavaOrCSharp(tc.args, argumentScheme, "csharp");
       } else if (tc.input) {
-        // Иначе парсим input
+      
         const args = parseArguments(tc.input);
 
         argsStr = formatArgumentsForCode(args);
@@ -677,18 +667,16 @@ const buildCSharpTestSuite = (
         }`;
     })
     .join("\n");
-
-  // Добавляем необходимые using директории
+ 
   const usings = `using System;
 using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Collections.Generic;
 `;
-
-  // Проверяем, есть ли уже using директивы
+ 
   if (userCode.includes("using System;")) {
-    // Заменяем существующие using или добавляем в начало
+   
     return (
       usings +
       "\n" +
@@ -702,7 +690,7 @@ ${testCasesCode}
 }`
     );
   } else {
-    // Добавляем using и класс Program
+   
     return (
       usings +
       "\n" +
@@ -717,8 +705,7 @@ ${testCasesCode}
     );
   }
 };
-
-// Функция для парсинга вывода тестов
+ 
 const parseTestOutput = (output: string, testNum: number): { logs: string[], result: string } => {
   if (!output) return { logs: [], result: '' };
 
@@ -760,8 +747,7 @@ const parseTestOutput = (output: string, testNum: number): { logs: string[], res
 
   return { logs, result: result.trim() };
 };
-
-// Вспомогательные функции для работы с типами
+ 
 const getTypeString = (type: string, language: string): string => {
   const typeMap: Record<string, Record<string, string>> = {
     int: { javascript: "", python: "int", csharp: "int", java: "int", golang: "int", cpp: "int" },
@@ -790,8 +776,7 @@ const getTypeString = (type: string, language: string): string => {
 
   return typeMap[type]?.[language] ?? type;
 };
-
-// Функция для генерации классов объектов (как в EditLesson)
+ 
 const generateObjectClasses = (args: ArgumentSchema[], language: string): string => {
   const objectArgs = args.filter((a) => a.type === "object" && a.objectFields);
 
@@ -886,28 +871,27 @@ ${gettersSetters}
     })
     .join("\n\n");
 };
-
-// Функция для сравнения выводов
+ 
 const compareOutputs = (actual: string, expected: string): boolean => {
-  // Удаляем лишние пробелы и сравниваем
+  
   const normalizedActual = actual.replace(/\s+/g, '').trim();
   const normalizedExpected = expected.replace(/\s+/g, '').trim();
   
   if (normalizedActual === normalizedExpected) return true;
   
   try {
-    // Пробуем распарсить как JSON для сравнения объектов
+ 
     const actualObj = JSON.parse(actual);
     const expectedObj = JSON.parse(expected);
 
     return JSON.stringify(actualObj) === JSON.stringify(expectedObj);
   } catch {
-    // Если не JSON, сравниваем как строки
+    
     return actual.trim() === expected.trim();
   }
 };
 
-// Функция для проверки ограничений
+
 const checkConstraints = (code: string, language: CodeLanguage, constraints: CodeConstraint[]): ConstraintCheckResult => {
   const errors: string[] = [];
 
@@ -928,7 +912,7 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
         const forbiddenTokens = constraint.value as string[];
 
         for (const token of forbiddenTokens) {
-          // Проверяем наличие запрещенного токена как отдельного слова
+      
           const tokenRegex = new RegExp(`\\b${token}\\b`, 'g');
 
           if (tokenRegex.test(code)) {
@@ -940,14 +924,14 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
 
       case "noComments":
         if (constraint.value === true) {
-          // Проверяем наличие комментариев в зависимости от языка
+       
           let hasComments = false;
           
           if (language === "javascript" || language === "java" || language === "csharp" || language === "cpp" || language === "golang") {
-            // Однострочные комментарии // и многострочные /* */
+         
             hasComments = /\/\/.*|\/\*[\s\S]*?\*\//.test(code);
           } else if (language === "python") {
-            // Однострочные комментарии #
+ 
             hasComments = /#.*/.test(code);
           }
           
@@ -960,7 +944,7 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
 
       case "noConsoleLog":
         if (constraint.value === true) {
-          // Проверяем наличие console.log в зависимости от языка
+         
           if (language === "javascript" && /\bconsole\.log\s*\(/.test(code)) {
             errors.push("Использование console.log запрещено");
           } else if (language === "python" && /\bprint\s*\(/.test(code)) {
@@ -973,7 +957,7 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
         break;
 
       case "maxComplexity":
-        // Простая оценка сложности по количеству вложенных циклов/условий
+    
         const complexity = estimateCodeComplexity(code, language);
 
         if (complexity > constraint.value) {
@@ -983,20 +967,18 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
         break;
 
       case "memoryLimit":
-        // Эта проверка должна выполняться на сервере
-        // Здесь просто добавляем предупреждение
+  
         break;
 
       case "maxTimeMs":
-        // Эта проверка должна выполняться на сервере
-        // Здесь просто добавляем предупреждение
+   
         break;
 
       case "requiredKeywords":
         const requiredKeywords = constraint.value as string[];
 
         for (const keyword of requiredKeywords) {
-          // Проверяем наличие обязательного ключевого слова
+      
           const keywordRegex = new RegExp(`\\b${keyword}\\b`, 'g');
 
           if (!keywordRegex.test(code)) {
@@ -1014,17 +996,16 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
   };
 };
 
-// Функция для оценки сложности кода
-const estimateCodeComplexity = (code: string, language: CodeLanguage): number => {
-  let complexity = 1; // Базовая сложность
 
-  // Подсчет циклов
+const estimateCodeComplexity = (code: string, language: CodeLanguage): number => {
+  let complexity = 1;
+
   const loopPatterns = [
-    /\bfor\s*\(/g,  // for loop
-    /\bwhile\s*\(/g,  // while loop
-    /\bdo\s*\{/g,  // do-while
-    /\bforeach\s*\(/g,  // foreach
-    /\bfor\s+\w+\s+in\b/g,  // Python for
+    /\bfor\s*\(/g,  
+    /\bwhile\s*\(/g, 
+    /\bdo\s*\{/g, 
+    /\bforeach\s*\(/g, 
+    /\bfor\s+\w+\s+in\b/g,  
   ];
 
   for (const pattern of loopPatterns) {
@@ -1035,7 +1016,6 @@ const estimateCodeComplexity = (code: string, language: CodeLanguage): number =>
     }
   }
 
-  // Подсчет условных операторов
   const conditionPatterns = [
     /\bif\s*\(/g,
     /\belse\s+if\s*\(/g,
@@ -1054,7 +1034,6 @@ const estimateCodeComplexity = (code: string, language: CodeLanguage): number =>
   return Math.floor(complexity);
 };
 
-// Компонент модального окна
 const SuccessModal = ({ 
   isOpen, 
   onClose, 
@@ -1071,7 +1050,7 @@ const SuccessModal = ({
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalIcon}>✅</div>
+        <div className={styles.modalIcon}></div>
         <h2 className={styles.modalTitle}>Задача решена!</h2>
         <div className={styles.modalBody}>
           <p>Поздравляем! Вы успешно решили задачу.</p>
@@ -1095,14 +1074,14 @@ const SuccessModal = ({
   );
 };
 
-// Компонент для отображения ошибок ограничений
+
 const ConstraintErrors = ({ errors }: { errors: string[] }) => {
   if (errors.length === 0) return null;
 
   return (
     <div className={styles.constraintErrors}>
       <div className={styles.constraintErrorsHeader}>
-        <span>⚠️ Нарушены ограничения:</span>
+        <span>Нарушены ограничения:</span>
       </div>
       <ul className={styles.constraintErrorsList}>
         {errors.map((error, index) => (
@@ -1156,7 +1135,6 @@ export default function SolveProblemPage() {
     loadTask();
   }, [loadTask]);
 
-  // Функция для обновления уровня студента
   const refreshStudentLevel = async () => {
     try {
       const level = await CodingTasksService.getStudentLevel();
@@ -1167,7 +1145,6 @@ export default function SolveProblemPage() {
     }
   };
 
-  // Функция для проверки ограничений перед отправкой
   const validateConstraints = (): boolean => {
     if (!task || !task.constraints || task.constraints.length === 0) {
       setConstraintErrors([]);
@@ -1204,12 +1181,11 @@ export default function SolveProblemPage() {
       const argumentScheme = (task as any).argumentScheme;
       const taskTestCases = (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
       
-      // Для Java и C# нужно модифицировать код для запуска с тестами
       if (selectedLang === "java" || selectedLang === "csharp") {
         const funcName = extractFunctionName(code, selectedLang);
 
         if (funcName && taskTestCases.length > 0) {
-          // Используем первый тест-кейс для быстрого запуска
+       
           const firstTestCase = taskTestCases[0];
 
           if (selectedLang === "java") {
@@ -1222,7 +1198,6 @@ export default function SolveProblemPage() {
       
       const res = await CodeService.executeCode({ language: selectedLang, code: codeToRun });
 
-      // Для Java и C# показываем сырой вывод
       if (selectedLang === "java" || selectedLang === "csharp") {
         setConsoleOutput(res.output || "Код выполнен успешно (нет вывода)");
       } else {
@@ -1238,12 +1213,10 @@ export default function SolveProblemPage() {
   const handleSubmit = async () => {
     if (!task) return;
     
-    // Сначала проверяем ограничения
     if (!validateConstraints()) {
-      // Если ограничения не пройдены, показываем ошибки и не отправляем на сервер
+   
       setResult(null);
-
-      // Показываемalert с информацией об ограничениях
+ 
       if (constraintErrors.length > 0) {
         alert(`Ограничения не пройдены:\n\n${constraintErrors.join("\n")}\n\nИсправьте код и попробуйте снова.`);
       }
@@ -1257,7 +1230,7 @@ export default function SolveProblemPage() {
     setShowSuccessModal(false);
 
     try {
-      // Для Java и C# нужно модифицировать код перед отправкой
+   
       let codeToSubmit = code;
 
       if (selectedLang === "java" || selectedLang === "csharp") {
@@ -1281,15 +1254,13 @@ export default function SolveProblemPage() {
       }
 
       const res = await CodingTasksService.submitSolution(task.id, codeToSubmit, selectedLang);
-
-      // Для Java и C# нужно получить вывод из ответа сервера
+ 
       const responseOutput = (res as any).output || (res as any).message || '';
 
       setRawOutput(responseOutput);
-
-      // Если результат пришел, но нужно обработать вывод для Java/C#
+ 
       if (res && res.results && (selectedLang === "java" || selectedLang === "csharp") && responseOutput) {
-        // Парсим результаты для каждого теста
+        
         const parsedResults = [];
 
         for (let i = 0; i < res.results.length; i++) {
@@ -1297,7 +1268,7 @@ export default function SolveProblemPage() {
           const { logs, result: actualResult } = parseTestOutput(responseOutput, testNum);
           const expected = res.results[i].expected;
 
-          // Если не удалось получить результат из парсинга, используем дефолтное значение
+          
           const actual = actualResult || res.results[i].actual || "";
 
           parsedResults.push({
@@ -1307,15 +1278,15 @@ export default function SolveProblemPage() {
           });
         }
 
-        // Обновляем результаты с учётом ограничений от сервера
+        
         res.results = parsedResults;
         const serverConstraintsPassed = (res as any).constraintsPassed ?? constraintsPassed;
         const serverConstraintErrors = (res as any).constraintErrors ?? constraintErrors;
         
-        // Обновляем allPassed с учётом ограничений
+        
         res.allPassed = parsedResults.every(r => r.passed) && serverConstraintsPassed;
         
-        // Обновляем ошибки ограничений из сервера если есть
+     
         if (serverConstraintErrors && serverConstraintErrors.length > 0) {
           setConstraintErrors(serverConstraintErrors);
           setConstraintsPassed(serverConstraintsPassed);
@@ -1324,17 +1295,16 @@ export default function SolveProblemPage() {
 
       setResult(res);
 
-      // Обновляем уровень студента после отправки решения
+    
       await refreshStudentLevel();
 
-      // Показываем модальное окно, если все тесты пройдены И все ограничения соблюдены
-      // Используем значение от сервера если доступно
+     
       const finalConstraintsPassed = (res as any).constraintsPassed ?? constraintsPassed;
 
       if (res.allPassed && res.experienceGained > 0 && finalConstraintsPassed) {
         setShowSuccessModal(true);
       } else if ((res as any).constraintErrors && (res as any).constraintErrors.length > 0) {
-        // Показываем ошибки ограничений от сервера
+      
         setConstraintErrors((res as any).constraintErrors);
       }
     } catch (e: any) {
@@ -1439,16 +1409,16 @@ export default function SolveProblemPage() {
               <h3>Ограничения</h3>
               {task.constraints.map((c, i) => (
                 <div key={i} className={styles.constraintItem}>
-                  {c.type === "maxTimeMs" && `⏱ Время выполнения: не более ${c.value}мс`}
-                  {c.type === "maxLines" && `📏 Максимум строк кода: ${c.value}`}
+                  {c.type === "maxTimeMs" && ` Время выполнения: не более ${c.value}мс`}
+                  {c.type === "maxLines" && ` Максимум строк кода: ${c.value}`}
                   {c.type === "forbiddenTokens" &&
-                    `🚫 Запрещено использовать: ${(c.value as string[]).join(", ")}`}
-                  {c.type === "noComments" && "💬 Комментарии запрещены"}
-                  {c.type === "noConsoleLog" && "📢 Вывод в консоль запрещен"}
-                  {c.type === "maxComplexity" && `🔄 Максимальная сложность: ${c.value}`}
-                  {c.type === "memoryLimit" && `💾 Ограничение памяти: ${c.value} МБ`}
+                    ` Запрещено использовать: ${(c.value as string[]).join(", ")}`}
+                  {c.type === "noComments" && " Комментарии запрещены"}
+                  {c.type === "noConsoleLog" && " Вывод в консоль запрещен"}
+                  {c.type === "maxComplexity" && `Максимальная сложность: ${c.value}`}
+                  {c.type === "memoryLimit" && ` Ограничение памяти: ${c.value} МБ`}
                   {c.type === "requiredKeywords" &&
-                    `🔑 Обязательно использовать: ${(c.value as string[]).join(", ")}`}
+                    ` Обязательно использовать: ${(c.value as string[]).join(", ")}`}
                 </div>
               ))}
             </div>
@@ -1460,7 +1430,6 @@ export default function SolveProblemPage() {
 
             if (langTestCases.length === 0) return null;
 
-            // Генерируем классы объектов для Java и C#
             const objectClassesCode = generateObjectClasses(argScheme || [], selectedLang);
 
             return (
@@ -1560,7 +1529,7 @@ export default function SolveProblemPage() {
             />
           </div>
 
-          {/* Отображение ошибок ограничений */}
+     
           {constraintErrors.length > 0 && <ConstraintErrors errors={constraintErrors} />}
 
           {consoleOutput && (
@@ -1609,7 +1578,7 @@ export default function SolveProblemPage() {
                 </p>
               )}
               
-              {/* Отладочная информация для разработки */}
+          
               {process.env.NODE_ENV === 'development' && rawOutput && (
                 <div className={styles.debugBox}>
                   <strong>Отладка (сырой вывод):</strong>
@@ -1621,7 +1590,7 @@ export default function SolveProblemPage() {
         </div>
       </div>
 
-      {/* Модальное окно успеха */}
+ 
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
