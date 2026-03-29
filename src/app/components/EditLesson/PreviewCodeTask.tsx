@@ -995,14 +995,7 @@ export function PreviewCodeTask({
       />
 
       <div className={styles.runButtons}>
-        <Button
-          color="#4CAF50"
-          width="120px"
-          textColor="#fff"
-          text={isRunning ? "Запуск..." : "Запустить"}
-          onClick={runUserCode}
-          disabled={isRunning}
-        />
+        
         <Button
           color="#9F0FA7"
           width="120px"
@@ -1023,7 +1016,7 @@ export function PreviewCodeTask({
       {testResults && (
         <div className={styles.testResults}>
           <div className={styles.resultsHeader}>
-            <h4>📊 Результаты тестирования</h4>
+            <h4> Результаты тестирования</h4>
             <span className={styles.testSummary}>
               Пройдено: {testResults.filter((r) => r.passed).length} / {testResults.length}
             </span>

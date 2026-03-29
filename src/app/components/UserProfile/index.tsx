@@ -176,7 +176,7 @@ const SolvedTasksPreview = ({
       <div className={styles.sectionHeader}>
         <h3 className={styles.sectionTitle}>Решенные задачи</h3>
         <button className={styles.viewAllLink} onClick={onViewAll}>
-          Просмотреть все →
+          Просмотреть все 
         </button>
       </div>
 

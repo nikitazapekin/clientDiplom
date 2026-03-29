@@ -425,9 +425,9 @@ const MentorshipPage = () => {
           }}
         >
           <span className={styles.treeNode__icon}>
-            {node.type === "admin" && "👤"}
+            {node.type === "admin" && ""}
             {node.type === "course" && (node.expanded ? "" : "")}
-            {node.type === "student" && "👨‍🎓"}
+            {node.type === "student" && ""}
           </span>
           <span className={styles.treeNode__name}>{node.name}</span>
           {node.email && <span className={styles.treeNode__email}>{node.email}</span>}
@@ -808,12 +808,14 @@ const MentorshipPage = () => {
                 <div className={styles.modal__actions}>
                   <button
                     type="button"
+
+                     style={{ padding: "10px 20px"}}
                     onClick={() => setShowCreateAdminModal(false)}
                     className={styles.modal__btn_secondary}
                   >
                     Отмена
                   </button>
-                  <button type="submit" className={styles.modal__btn_primary}>
+                  <button type="submit"  style={{color: "white", background: "#9f0fa7", padding: "10px 20px"}} className={styles.modal__btn_primary}>
                     Создать
                   </button>
                 </div>

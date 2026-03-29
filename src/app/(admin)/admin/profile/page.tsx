@@ -168,11 +168,7 @@ const AdminProfilePage = () => {
           <span className={styles.email}>{profile.email}</span>
         </div>
 
-        <div className={`${styles.statusBadge} ${profile.isActive ? styles.statusActive : styles.statusInactive}`}>
-          <span className={styles.statusText}>
-            {profile.isActive ? "Активен" : "Не активен"}
-          </span>
-        </div>
+        
       </div>
 
       <div className={styles.statsContainer}>
@@ -186,10 +182,7 @@ const AdminProfilePage = () => {
           <span className={styles.statLabel}>Другие админы</span>
         </div>
         <div className={styles.statDivider} />
-        <div className={styles.statItem}>
-          <span className={styles.statValue}>{profile.permissions?.length || 0}</span>
-          <span className={styles.statLabel}>Разрешений</span>
-        </div>
+        
       </div>
 
       {coursesLoading ? (
@@ -313,12 +306,7 @@ const AdminProfilePage = () => {
             <span className={styles.infoItemLabel}>ID (Auditory)</span>
             <span className={styles.infoItemValue}>{profile.auditoryId}</span>
           </div>
-          <div className={styles.infoItem}>
-            <span className={styles.infoItemLabel}>Разрешения</span>
-            <span className={styles.infoItemValue}>
-              {profile.permissions?.join(", ") || "read, write"}
-            </span>
-          </div>
+        
         </div>
       </div>
     </div>

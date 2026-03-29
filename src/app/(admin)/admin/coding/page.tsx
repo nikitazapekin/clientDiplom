@@ -1180,7 +1180,7 @@ export default function CodingPage() {
         <div className={styles.container}>
           <div className={styles.header}>
             <h1>Coding Tasks</h1>
-            <Button color="#9F0FA7" textColor="#fff" text="+ Создать задачу" onClick={handleCreate} />
+            <Button color="#9F0FA7" width="300px" textColor="#fff" text="+ Создать задачу" onClick={handleCreate} />
           </div>
 
           <div className={styles.filters}>
@@ -1394,16 +1394,9 @@ export default function CodingPage() {
                 />
               </div>
               <div style={{ marginTop: "8px", display: "flex", gap: "8px" }}>
+               
                 <Button
-                  color="#4CAF50"
-                  width="auto"
-                  textColor="#fff"
-                  text={runLoading ? "Запуск..." : "Запустить код"}
-                  onClick={handleRunCode}
-                  disabled={runLoading}
-                />
-                <Button
-                  color="#FFA500"
+                  color="#01398d"
                   width="auto"
                   textColor="#fff"
                   text={runLoading ? "Проверка..." : "Тест (с ограничениями)"}
@@ -1852,7 +1845,8 @@ export default function CodingPage() {
                 <h3>Тест-кейсы (по языкам)</h3>
                 <Button
                   color="#9F0FA7"
-                  width="auto"
+                  width="300px"
+
                   textColor="#fff"
                   text="+ Добавить"
                   onClick={addTestCase}
@@ -1958,8 +1952,8 @@ export default function CodingPage() {
               <div className={styles.sectionHeader}>
                 <h3>Ограничения</h3>
                 <Button
-                  color="#FFA500"
-                  width="auto"
+                 color="#9F0FA7"
+                  width="300px"
                   textColor="#fff"
                   text="+ Добавить"
                   onClick={addConstraint}

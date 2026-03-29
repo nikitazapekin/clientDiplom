@@ -497,6 +497,7 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
           <div className={styles.headerMain}>
             <button
               type="button"
+            style={{width: "300px"}}
               className={styles.secondaryButton}
               onClick={() => router.push(`/study/${courseId}/map`)}
             >
@@ -520,10 +521,9 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
         <div className={styles.surface}>
           <div className={styles.surfaceTop}>
             <div>
-              <p className={styles.slideType}>
-                {currentSlide.type === "test" ? "Проверка" : "Теория"}
-              </p>
-              <h2 className={styles.slideTitle}>{currentSlide.title}</h2>
+           {/*} 
+              <h2 className={styles.slideTitle}>{currentSlide.title}</h2> 
+              */}
             </div>
 
             {currentSlideSources.length > 0 ? (

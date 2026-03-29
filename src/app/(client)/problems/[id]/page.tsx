@@ -1337,7 +1337,7 @@ export default function SolveProblemPage() {
       <div className={styles.layout}>
         <div className={styles.leftPanel}>
           <button className={styles.backBtn} onClick={() => router.push("/problems")}>
-            ← Назад к задачам
+             Назад к задачам
           </button>
 
           <div className={styles.taskInfo}>

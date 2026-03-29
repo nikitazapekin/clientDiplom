@@ -302,11 +302,7 @@ const StudentProfilePage = () => {
           <span className={styles.email}>{profile.email}</span>
         </div>
 
-        <div className={`${styles.statusBadge} ${profile.isActive ? styles.statusActive : styles.statusInactive}`}>
-          <span className={styles.statusText}>
-            {profile.isActive ? "Активен" : "Не активен"}
-          </span>
-        </div>
+       
       </div>
 
       {!tasksLoading && studentLevel && (

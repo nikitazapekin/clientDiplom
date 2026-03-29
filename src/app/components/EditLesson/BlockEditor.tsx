@@ -1522,7 +1522,7 @@ export function BlockEditor({
               <div className={styles.sectionHeader}>
                 <h4>Ограничения</h4>
                 <Button
-                  color="#FFA500"
+                  color="#9f0fa7"
                   width="auto"
                   textColor="#fff"
                   text="+ Добавить ограничение"

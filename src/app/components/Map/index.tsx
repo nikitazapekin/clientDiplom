@@ -1410,27 +1410,11 @@ const Map: React.FC = () => {
               </div>
             </div>
 
-            <div className={styles.breakpointsSection}>
-              <h3 className={styles.sectionTitle}>Брейкпоинты</h3>
-              {breakpoints.map((bp) => (
-                <button
-                  key={bp.name}
-                  className={`${styles.breakpointButton} ${activeBreakpoint === bp.name ? styles.active : ""}`}
-                  onClick={() => setActiveBreakpoint(bp.name)}
-                >
-                  {bp.name} ({bp.width}px)
-                </button>
-              ))}
-              <button className={styles.elementButton} onClick={openEmulator}>
-                Эмулятор
-              </button>
-            </div>
+           
           </div>
  
           <div className={styles.mainContent}>
-            <button className={styles.toggleButton} onClick={openEmulator}>
-              Эмулятор
-            </button>
+          
 
             <div className={styles.contentWrapper}>
               <div
