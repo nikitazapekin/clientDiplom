@@ -11,7 +11,10 @@ export interface AvatarResponse {
 export interface StudentResultResponse {
   id: string;
   clientId: string;
-  lessonId: string;
+  lessonId?: string | null;
+  checkpointId?: string | null;
+  targetId: string;
+  targetType: "lesson" | "checkpoint";
   countOfStars: number;
   completedAt: string;
   createdAt: string;
@@ -51,7 +54,8 @@ export interface UpdateAvatarRequest {
 
 export interface CreateStudentResultRequest {
   clientId: string;
-  lessonId: string;
+  lessonId?: string;
+  checkpointId?: string;
   countOfStars: number;
 }
 

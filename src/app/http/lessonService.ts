@@ -33,6 +33,22 @@ export interface UpdateLessonRequest {
 }
 
 export class LessonService {
+  static async createLesson(data: CreateLessonRequest): Promise<LessonResponse> {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await $api.post(`/lessons`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error("Create lesson error:", error);
+      throw error;
+    }
+  }
+
   static async getLesson(id: string): Promise<LessonResponse> {
     try {
       const token = localStorage.getItem("accessToken");

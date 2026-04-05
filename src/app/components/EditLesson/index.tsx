@@ -97,9 +97,16 @@ const buildReviewChanges = (
   }, {});
 };
 
-export default function EditLesson() {
+interface EditLessonProps {
+  mode?: "lesson" | "checkpoint";
+}
+
+export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
   const params = useParams();
-  const lessonId = params?.id as string;
+  const entityId = params?.id as string;
+  const isCheckpointMode = mode === "checkpoint";
+  const entityTitle = isCheckpointMode ? "контрольной точки" : "урока";
+  const entityDisplayTitle = isCheckpointMode ? "Контрольная точка" : "Урок";
 
   const [slides, setSlides] = useState<Slide[]>([]);
   const [selectedSlideIndex, setSelectedSlideIndex] = useState<number | null>(null);
@@ -228,35 +235,50 @@ export default function EditLesson() {
   }, []);
 
   const loadLessonDetails = useCallback(async () => {
-    if (!lessonId) return;
+    if (!entityId) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await LessonDetailsService.getLessonDetailsByLessonId(lessonId);
+      const data = isCheckpointMode
+        ? await LessonDetailsService.getLessonDetailsByCheckpointId(entityId)
+        : await LessonDetailsService.getLessonDetailsByLessonId(entityId);
       setLessonDetailsId(data.id);
 
+      const lessonSlides: Slide[] = isCheckpointMode
+        ? []
+        : data.slides.map((slide) => ({
+            id: slide.id,
+            title: slide.title,
+            type: slide.type as SlideType,
+            order: slide.orderIndex,
+            isPersisted: true,
+            blocks: ((slide.blocks || []) as unknown as SlideBlock[]).map((block) =>
+              block.type === "fillCodeTask" ? normalizeFillTaskBlock(block) : block
+            ),
+          }));
+
+      const testSlides: Slide[] = data.tests.map((test) => ({
+        id: test.id,
+        title: test.title,
+        type: "test" as const,
+        order: test.orderIndex,
+        isPersisted: true,
+        blocks: ((test.blocks || []) as unknown as SlideBlock[]).map((block) =>
+          block.type === "fillCodeTask" ? normalizeFillTaskBlock(block) : block
+        ),
+      }));
+
       const allSlides: Slide[] = [
-        ...data.slides.map((slide) => ({
-          id: slide.id,
-          title: slide.title,
-          type: slide.type as SlideType,
-          order: slide.orderIndex,
-          isPersisted: true,
-          blocks: ((slide.blocks || []) as unknown as SlideBlock[]).map((block) =>
-            block.type === "fillCodeTask" ? normalizeFillTaskBlock(block) : block
-          ),
-        })),
-        ...data.tests.map((test) => ({
+        ...lessonSlides,
+        ...testSlides.map((test) => ({
           id: test.id,
           title: test.title,
           type: "test" as const,
-          order: test.orderIndex,
-          isPersisted: true,
-          blocks: ((test.blocks || []) as unknown as SlideBlock[]).map((block) =>
-            block.type === "fillCodeTask" ? normalizeFillTaskBlock(block) : block
-          ),
+          order: test.order,
+          isPersisted: test.isPersisted,
+          blocks: test.blocks,
         })),
       ].sort((first, second) => first.order - second.order);
 
@@ -267,13 +289,13 @@ export default function EditLesson() {
         setLessonDetailsId(null);
         setBlockReviews({});
       } else {
-        setError(err.message || "Ошибка загрузки урока");
-        console.error("Error loading lesson details:", err);
+        setError(err.message || `Ошибка загрузки ${entityTitle}`);
+        console.error(`Error loading ${entityTitle}:`, err);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [lessonId]);
+  }, [entityId, entityTitle, isCheckpointMode]);
 
   useEffect(() => {
     loadLessonDetails();
@@ -283,10 +305,16 @@ export default function EditLesson() {
 
   const addSlide = useCallback(
     (type: SlideType) => {
+      const slideType = isCheckpointMode ? "test" : type;
       const newSlide: Slide = {
         id: genId(),
-        title: type === "lesson" ? "Новый слайд" : "Новый тест",
-        type,
+        title:
+          slideType === "lesson"
+            ? "Новый слайд"
+            : isCheckpointMode
+              ? "Новое задание"
+              : "Новый тест",
+        type: slideType,
         order: slides.length,
         isPersisted: false,
         blocks: [],
@@ -295,7 +323,7 @@ export default function EditLesson() {
       setSlides((prev) => [...prev, newSlide]);
       setSelectedSlideIndex(slides.length);
     },
-    [slides.length]
+    [isCheckpointMode, slides.length]
   );
 
   const updateSlide = useCallback((index: number, patch: Partial<Slide>) => {
@@ -479,7 +507,9 @@ export default function EditLesson() {
       }
 
       if (!slide.isPersisted) {
-        setError("Сначала сохраните урок, чтобы создавать правки для этого слайда.");
+        setError(
+          `Сначала сохраните ${isCheckpointMode ? "контрольную точку" : "урок"}, чтобы создавать правки для этого слайда.`
+        );
         return;
       }
 
@@ -492,7 +522,7 @@ export default function EditLesson() {
       setReviewDraftBlock(cloneBlock(block));
       setReviewComment("");
     },
-    [reviewerInfo, slides]
+    [isCheckpointMode, reviewerInfo, slides]
   );
 
   const openReviewListModal = useCallback((slideIndex: number, blockId: string) => {
@@ -884,8 +914,8 @@ export default function EditLesson() {
   }, [calculateResults, slides, testAnswer, fillTaskResults]);
 
   const saveLesson = useCallback(async () => {
-    if (!lessonId) {
-      setError("ID урока не найден");
+    if (!entityId) {
+      setError(`ID ${entityTitle} не найден`);
       return;
     }
 
@@ -932,13 +962,13 @@ export default function EditLesson() {
 
       if (lessonDetailsId) {
         await LessonDetailsService.updateLessonDetails(lessonDetailsId, {
-          slides: lessonSlidesData,
+          slides: isCheckpointMode ? [] : lessonSlidesData,
           tests: testSlidesData,
         });
       } else {
         const response = await LessonDetailsService.createLessonDetails({
-          lessonId,
-          slides: lessonSlidesData,
+          ...(isCheckpointMode ? { checkpointId: entityId } : { lessonId: entityId }),
+          slides: isCheckpointMode ? [] : lessonSlidesData,
           tests: testSlidesData,
         });
         setLessonDetailsId(response.id);
@@ -946,13 +976,21 @@ export default function EditLesson() {
 
       await loadLessonDetails();
 
-      alert("Урок успешно сохранен!");
+      alert(`${entityDisplayTitle} успешно сохранен${isCheckpointMode ? "а" : ""}!`);
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Ошибка сохранения урока");
+      setError(err.response?.data?.message || err.message || `Ошибка сохранения ${entityTitle}`);
     } finally {
       setIsSaving(false);
     }
-  }, [lessonDetailsId, lessonId, loadLessonDetails, slides]);
+  }, [
+    entityDisplayTitle,
+    entityId,
+    entityTitle,
+    isCheckpointMode,
+    lessonDetailsId,
+    loadLessonDetails,
+    slides,
+  ]);
 
   const reviewModalSlide =
     reviewModalBlock != null ? (slides[reviewModalBlock.slideIndex] ?? null) : null;
@@ -970,7 +1008,7 @@ export default function EditLesson() {
     return (
       <section className={styles.lesson}>
         <div className={styles.lesson__container}>
-          <h1 className={styles.lesson__title}>Загрузка урока...</h1>
+          <h1 className={styles.lesson__title}>Загрузка {entityTitle}...</h1>
         </div>
       </section>
     );
@@ -984,7 +1022,7 @@ export default function EditLesson() {
       return (
         <section className={styles.lesson}>
           <div className={styles.lesson__container}>
-            <h1 className={styles.lesson__title}>Превью урока</h1>
+            <h1 className={styles.lesson__title}>Превью {entityTitle}</h1>
             <p>Нет слайдов.</p>
             <Button
               color="#9F0FA7"
@@ -1130,6 +1168,7 @@ export default function EditLesson() {
             setShowResultsModal(false);
             setPreviewMode(false);
           }}
+          title={isCheckpointMode ? "Результаты контрольной точки" : "Результаты урока"}
           results={lessonResults.results}
           totalTasks={lessonResults.totalTasks}
           completedTasks={lessonResults.completedTasks}
@@ -1145,7 +1184,9 @@ export default function EditLesson() {
   return (
     <section className={styles.lesson}>
       <div className={styles.lesson__container}>
-        <h1 className={styles.lesson__title}>Редактирование урока</h1>
+        <h1 className={styles.lesson__title}>
+          {isCheckpointMode ? "Редактирование контрольной точки" : "Редактирование урока"}
+        </h1>
 
         {error && (
           <div className={styles.error}>
@@ -1155,18 +1196,20 @@ export default function EditLesson() {
         )}
 
         <div className={styles.slideActions}>
-          <Button
-            color="#9F0FA7"
-            width="180px"
-            textColor="#fff"
-            text="Слайд (урок)"
-            onClick={() => addSlide("lesson")}
-          />
+          {!isCheckpointMode && (
+            <Button
+              color="#9F0FA7"
+              width="180px"
+              textColor="#fff"
+              text="Слайд (урок)"
+              onClick={() => addSlide("lesson")}
+            />
+          )}
           <Button
             color="#6a0f6e"
             width="180px"
             textColor="#fff"
-            text="Слайд (тест)"
+            text={isCheckpointMode ? "Добавить задание" : "Слайд (тест)"}
             onClick={() => addSlide("test")}
           />
         </div>
@@ -1180,7 +1223,12 @@ export default function EditLesson() {
                   className={selectedSlideIndex === index ? styles.slideTabActive : styles.slideTab}
                   onClick={() => setSelectedSlideIndex(index)}
                 >
-                  {slide.type === "test" ? "Тест" : "Урок"} {index + 1}: {slide.title || "—"}
+                  {slide.type === "test"
+                    ? isCheckpointMode
+                      ? "Задание"
+                      : "Тест"
+                    : "Урок"}{" "}
+                  {index + 1}: {slide.title || "—"}
                 </button>
                 <button
                   type="button"
@@ -1208,18 +1256,20 @@ export default function EditLesson() {
                 />
               </div>
 
-              <div className={styles.form__panel}>
-                <label className={styles.form__label}>Тип слайда</label>
-                <select
-                  value={selectedSlide.type}
-                  onChange={(e) =>
-                    updateSlide(selectedSlideIndex, { type: e.target.value as SlideType })
-                  }
-                >
-                  <option value="lesson">Урок</option>
-                  <option value="test">Тест</option>
-                </select>
-              </div>
+              {!isCheckpointMode && (
+                <div className={styles.form__panel}>
+                  <label className={styles.form__label}>Тип слайда</label>
+                  <select
+                    value={selectedSlide.type}
+                    onChange={(e) =>
+                      updateSlide(selectedSlideIndex, { type: e.target.value as SlideType })
+                    }
+                  >
+                    <option value="lesson">Урок</option>
+                    <option value="test">Тест</option>
+                  </select>
+                </div>
+              )}
 
               {selectedSlide.type === "lesson" && (
                 <div className={styles.blockAddRow}>
@@ -1311,7 +1361,8 @@ export default function EditLesson() {
                 <label className={styles.form__label}>Блоки (порядок можно менять)</label>
                 {!selectedSlide.isPersisted && (
                   <p className={styles.reviewItemComment}>
-                    Для новых слайдов кнопка review станет доступна после сохранения урока.
+                    Для новых слайдов кнопка review станет доступна после сохранения{" "}
+                    {isCheckpointMode ? "контрольной точки" : "урока"}.
                   </p>
                 )}
                 {sortBlocks(selectedSlide.blocks).map((block, index) => {
@@ -1345,7 +1396,7 @@ export default function EditLesson() {
                           disabled={!selectedSlide.isPersisted || !reviewerInfo}
                           title={
                             !selectedSlide.isPersisted
-                              ? "Сначала сохраните урок"
+                              ? `Сначала сохраните ${isCheckpointMode ? "контрольную точку" : "урок"}`
                               : !reviewerInfo
                                 ? "Не удалось определить текущего пользователя"
                                 : "Предложить изменение для блока"

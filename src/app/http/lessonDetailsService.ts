@@ -18,7 +18,8 @@ export interface Slide {
 
 export interface LessonDetailsResponse {
   id: string;
-  lessonId: string;
+  lessonId?: string | null;
+  checkpointId?: string | null;
   slides: Slide[];
   tests: Slide[];
   createdAt: string;
@@ -39,7 +40,8 @@ export interface CreateTestDto {
 }
 
 export interface CreateLessonDetailsRequest {
-  lessonId: string;
+  lessonId?: string;
+  checkpointId?: string;
   slides?: CreateSlideDto[];
   tests?: CreateTestDto[];
 }
@@ -110,6 +112,24 @@ export class LessonDetailsService {
     }
   }
 
+  static async getLessonDetailsByCheckpointId(
+    checkpointId: string
+  ): Promise<LessonDetailsResponse> {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await $api.get(`${this.BASE_URL}/checkpoint/${checkpointId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error("Get lesson details by checkpoint id error:", error);
+      throw error;
+    }
+  }
+
   static async updateLessonDetails(
     id: string,
     data: UpdateLessonDetailsRequest
@@ -157,6 +177,24 @@ export class LessonDetailsService {
       return response.data;
     } catch (error: any) {
       console.error("Delete lesson details by lesson id error:", error);
+      throw error;
+    }
+  }
+
+  static async deleteLessonDetailsByCheckpointId(
+    checkpointId: string
+  ): Promise<{ success: boolean }> {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await $api.delete(`${this.BASE_URL}/checkpoint/${checkpointId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error("Delete lesson details by checkpoint id error:", error);
       throw error;
     }
   }

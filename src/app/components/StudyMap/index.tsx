@@ -93,8 +93,11 @@ interface ModalData {
   disabledReason?: string;
 }
 
-interface LessonProgress {
-  lessonId: string;
+interface CourseProgressUnit {
+  targetId: string;
+  targetType: "lesson" | "checkpoint";
+  mapElementId: string;
+  orderIndex: number;
   bestResult: {
     countOfStars: number | null;
     completedAt: string;
@@ -188,8 +191,7 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
   const [elements, setElements] = useState<MapElement[]>([]);
   const [lessonsData, setLessonsData] = useState<Record<string, LessonData>>({});
   const [checkpointsData, setCheckpointsData] = useState<Record<string, CheckpointData>>({});
-  const [sortedLessons, setSortedLessons] = useState<LessonData[]>([]);
-  const [lessonProgress, setLessonProgress] = useState<Record<string, LessonProgress>>({});
+  const [courseProgress, setCourseProgress] = useState<CourseProgressUnit[]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
   const [modalData, setModalData] = useState<ModalData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -313,13 +315,8 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
       })
     );
 
-    const orderedLessons = Object.values(lessons).sort(
-      (left, right) => left.orderIndex - right.orderIndex
-    );
-
     setLessonsData(lessons);
     setCheckpointsData(checkpoints);
-    setSortedLessons(orderedLessons);
   }, []);
 
   const loadCourseMap = useCallback(async () => {
@@ -356,7 +353,7 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
     const userId = getUserId();
 
     if (!courseId || !userId) {
-      setLessonProgress({});
+      setCourseProgress([]);
 
       return;
     }
@@ -365,16 +362,8 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
       setIsProgressLoading(true);
 
       const response = await ProfileService.getStudentCourseProgress(userId, courseId);
-      const progressMap = (response as LessonProgress[]).reduce<Record<string, LessonProgress>>(
-        (accumulator, item) => {
-          accumulator[item.lessonId] = item;
 
-          return accumulator;
-        },
-        {}
-      );
-
-      setLessonProgress(progressMap);
+      setCourseProgress((response as CourseProgressUnit[]).sort((a, b) => a.orderIndex - b.orderIndex));
     } catch (progressError) {
       console.error("Ошибка загрузки прогресса курса:", progressError);
     } finally {
@@ -415,7 +404,7 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
   const checkCertificateEligibility = useCallback(async () => {
     const userId = getUserId();
 
-    if (!userId || !courseId || sortedLessons.length === 0) {
+    if (!userId || !courseId || courseProgress.length === 0) {
       return;
     }
 
@@ -426,21 +415,21 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
       return;
     }
 
-    const allLessonsCompleted = sortedLessons.every((lesson) => {
-      const stars = lessonProgress[lesson.id]?.bestResult?.countOfStars;
+    const allLessonsCompleted = courseProgress.every((unit) => {
+      const stars = unit.bestResult?.countOfStars;
 
-      return stars !== null && stars !== undefined;
+      return stars !== null && stars !== undefined && stars > 0;
     });
 
     if (!allLessonsCompleted) {
       return;
     }
 
-    const totalStars = sortedLessons.reduce(
-      (sum, lesson) => sum + (lessonProgress[lesson.id]?.bestResult?.countOfStars || 0),
+    const totalStars = courseProgress.reduce(
+      (sum, unit) => sum + (unit.bestResult?.countOfStars || 0),
       0
     );
-    const maxStars = sortedLessons.length * 3;
+    const maxStars = courseProgress.length * 3;
     const completionPercent = maxStars > 0 ? (totalStars / maxStars) * 100 : 0;
 
     if (completionPercent < 90) {
@@ -491,45 +480,42 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
     } finally {
       isCheckingCertificateRef.current = false;
     }
-  }, [courseId, courseName, lessonProgress, sortedLessons]);
+  }, [courseId, courseName, courseProgress]);
 
   useEffect(() => {
     void checkCertificateEligibility();
   }, [checkCertificateEligibility]);
 
-  const getStarsByMapElementId = useCallback(
-    (mapElementId: string) => {
-      const lesson = lessonsData[mapElementId];
-
-      if (!lesson?.id) {
-        return 0;
-      }
-
-      return lessonProgress[lesson.id]?.bestResult?.countOfStars || 0;
-    },
-    [lessonProgress, lessonsData]
+  const getCourseUnitByMapElementId = useCallback(
+    (mapElementId: string) => courseProgress.find((unit) => unit.mapElementId === mapElementId),
+    [courseProgress]
   );
 
-  const isLessonAvailableByMapElementId = useCallback(
+  const getStarsByMapElementId = useCallback(
     (mapElementId: string) => {
-      if (sortedLessons.length === 0) {
+      return getCourseUnitByMapElementId(mapElementId)?.bestResult?.countOfStars || 0;
+    },
+    [getCourseUnitByMapElementId]
+  );
+
+  const isUnitAvailableByMapElementId = useCallback(
+    (mapElementId: string) => {
+      if (courseProgress.length === 0) {
         return true;
       }
 
-      const currentIndex = sortedLessons.findIndex(
-        (lesson) => lesson.mapElementId === mapElementId
-      );
+      const currentIndex = courseProgress.findIndex((unit) => unit.mapElementId === mapElementId);
 
       if (currentIndex <= 0) {
         return true;
       }
 
-      const previousLesson = sortedLessons[currentIndex - 1];
-      const previousStars = lessonProgress[previousLesson.id]?.bestResult?.countOfStars;
+      const previousLesson = courseProgress[currentIndex - 1];
+      const previousStars = previousLesson?.bestResult?.countOfStars;
 
       return previousStars !== null && previousStars !== undefined && previousStars > 0;
     },
-    [lessonProgress, sortedLessons]
+    [courseProgress]
   );
 
   const calculateElementPosition = useCallback(
@@ -571,7 +557,7 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
     (element: MapElement) => {
       if (element.type === "lesson") {
         const lesson = lessonsData[element.id];
-        const isAvailable = isLessonAvailableByMapElementId(element.id);
+        const isAvailable = isUnitAvailableByMapElementId(element.id);
 
         setModalData({
           type: "lesson",
@@ -584,7 +570,7 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
           targetId: lesson?.id,
           disabledReason: isAvailable
             ? undefined
-            : "Сначала завершите предыдущий урок, чтобы открыть этот.",
+            : "Сначала завершите предыдущий этап минимум на 1 звезду, чтобы открыть этот.",
         });
 
         return;
@@ -592,6 +578,7 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
 
       if (element.type === "checkpoint") {
         const checkpoint = checkpointsData[element.id];
+        const isAvailable = isUnitAvailableByMapElementId(element.id);
 
         setModalData({
           type: "checkpoint",
@@ -602,10 +589,13 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
             element.text ||
             "Описание контрольной точки пока не заполнено.",
           targetId: checkpoint?.id,
+          disabledReason: isAvailable
+            ? undefined
+            : "Сначала завершите предыдущий этап минимум на 1 звезду, чтобы открыть этот.",
         });
       }
     },
-    [checkpointsData, isLessonAvailableByMapElementId, lessonsData]
+    [checkpointsData, isUnitAvailableByMapElementId, lessonsData]
   );
 
   const handleNavigate = useCallback(() => {
@@ -619,15 +609,8 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
       return;
     }
 
-    if (modalData.type === "checkpoint") {
-      setModalData((current) =>
-        current
-          ? {
-              ...current,
-              disabledReason: "Веб-версия контрольных точек пока не реализована.",
-            }
-          : current
-      );
+    if (modalData.type === "checkpoint" && modalData.targetId && !modalData.disabledReason) {
+      router.push(`/study/${courseId}/checkpoint/${modalData.targetId}`);
     }
   }, [courseId, modalData, router]);
 
@@ -690,7 +673,7 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
       const lesson = lessonsData[element.id];
       const displayTitle = lesson?.title || element.title || "Урок";
       const starsCount = getStarsByMapElementId(element.id);
-      const isAvailable = isLessonAvailableByMapElementId(element.id);
+      const isAvailable = isUnitAvailableByMapElementId(element.id);
       const lessonStyle: CSSProperties = {
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -757,14 +740,22 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
 
     if (element.type === "checkpoint") {
       const checkpoint = checkpointsData[element.id];
+      const checkpointTitle = checkpoint?.title || element.title || "Контрольная точка";
       const markerSize = Math.max(width, 28);
+      const starsCount = getStarsByMapElementId(element.id);
+      const isAvailable = isUnitAvailableByMapElementId(element.id);
+      const checkpointStyle: CSSProperties = {
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+      };
 
       return (
         <button
           key={element.id}
           type="button"
           className={styles.checkpointContainer}
-          style={baseStyle}
+          style={checkpointStyle}
           onClick={() => openElementModal(element)}
         >
           <div
@@ -773,19 +764,30 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
               width: markerSize,
               height: markerSize,
               backgroundColor: element.color || "#ef4444",
+              opacity: isAvailable ? 1 : 0.5,
             }}
           >
             <div className={styles.checkpointInner} />
           </div>
 
+          <div className={styles.starsArc}>
+            {[1, 2, 3].map((star) => (
+              <div
+                key={`${element.id}_${star}`}
+                className={`${styles.star} ${star <= starsCount ? styles.starFilled : ""}`}
+              />
+            ))}
+          </div>
+
           <span
             className={styles.checkpointTitle}
             style={{
-              maxWidth: `${Math.max(width * 2, 96)}px`,
+              minWidth: `${Math.max(width * 2.2, 104)}px`,
+              maxWidth: `${Math.max(width * 3.6, 156)}px`,
               fontSize: `${Math.max(12, 13 * Math.min(scaleFactor, 1.2))}px`,
             }}
           >
-            {checkpoint?.title || element.title || "Контрольная точка"}
+            {checkpointTitle}
           </span>
         </button>
       );
@@ -841,10 +843,13 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
           </div>
 
           <div className={styles.meta}>
-            <span>Уроков: {sortedLessons.length}</span>
+            <span>Этапов: {courseProgress.length}</span>
             <span>Элементов: {elements.length}</span>
             <span>
-              Прогресс: {isProgressLoading ? "обновляется..." : `${Object.keys(lessonProgress).length} записей`}
+              Прогресс:{" "}
+              {isProgressLoading
+                ? "обновляется..."
+                : `${courseProgress.filter((unit) => (unit.bestResult?.countOfStars || 0) > 0).length}/${courseProgress.length}`}
             </span>
           </div>
         </div>
@@ -902,7 +907,7 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
                 type="button"
                 className={styles.primaryButton}
                 onClick={handleNavigate}
-                disabled={Boolean(modalData.disabledReason) && modalData.type === "lesson"}
+                disabled={Boolean(modalData.disabledReason)}
               >
                 {modalData.type === "lesson" ? "Перейти к уроку" : "Открыть"}
               </button>

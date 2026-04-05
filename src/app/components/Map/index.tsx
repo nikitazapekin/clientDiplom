@@ -98,6 +98,7 @@ interface CheckpointData {
   title: string;
   description: string;
   type: string;
+  orderIndex?: number;
   passingScore?: number;
   maxAttempts?: number;
   timeLimit?: number;
@@ -150,6 +151,15 @@ const Map: React.FC = () => {
   const backgroundFileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedElement = elements.find((el) => el.id === selectedElementId);
+
+  const getNextCourseStepOrderIndex = useCallback(() => {
+    const lessonOrders = Object.values(lessonsData).map((lesson) => lesson.orderIndex || 0);
+    const checkpointOrders = Object.values(checkpointsData).map(
+      (checkpoint) => checkpoint.orderIndex || 0
+    );
+
+    return Math.max(0, ...lessonOrders, ...checkpointOrders) + 1;
+  }, [checkpointsData, lessonsData]);
 
   const breakpoints: Breakpoint[] = [
     { name: "desktop", width: 1200, height: 800 },
@@ -362,6 +372,7 @@ const Map: React.FC = () => {
             title: checkpointData.title,
             description: checkpointData.description,
             type: checkpointData.type || "quiz",
+            orderIndex: checkpointData.orderIndex || 0,
             passingScore: checkpointData.passingScore,
             maxAttempts: checkpointData.maxAttempts,
             timeLimit: checkpointData.timeLimit,
@@ -380,6 +391,7 @@ const Map: React.FC = () => {
             title: element.title || `Контрольная точка ${element.id.substring(0, 8)}`,
             description: element.text || "",
             type: "quiz",
+            orderIndex: 0,
             isPublished: true,
           };
         }
@@ -530,14 +542,60 @@ const Map: React.FC = () => {
 
       if (type === "lesson") {
         try {
-     
+          const createdLesson = await LessonService.createLesson({
+            mapElementId: serverElement.id,
+            title: newElement.title || `Урок ${elements.filter((el) => el.type === "lesson").length + 1}`,
+            description: newElement.text || "",
+            orderIndex: getNextCourseStepOrderIndex(),
+            isPublished: true,
+          });
+
+          setLessonsData((prev) => ({
+            ...prev,
+            [serverElement.id]: {
+              id: createdLesson.id,
+              mapElementId: createdLesson.mapElementId,
+              title: createdLesson.title,
+              description: createdLesson.description,
+              content: createdLesson.content,
+              duration: createdLesson.duration,
+              orderIndex: createdLesson.orderIndex,
+              isPublished: createdLesson.isPublished,
+            },
+          }));
           console.log("Создана запись урока для элемента:", serverElement.id);
         } catch (error) {
           console.warn(" Не удалось создать запись урока:", error);
         }
       } else if (type === "checkpoint") {
         try {
-   
+          const createdCheckpoint = await CheckpointService.createCheckpoint({
+            mapElementId: serverElement.id,
+            title:
+              newElement.title ||
+              `Контрольная точка ${elements.filter((el) => el.type === "checkpoint").length + 1}`,
+            description: newElement.text || "",
+            type: "quiz",
+            orderIndex: getNextCourseStepOrderIndex(),
+            isPublished: true,
+          });
+
+          setCheckpointsData((prev) => ({
+            ...prev,
+            [serverElement.id]: {
+              id: createdCheckpoint.id,
+              mapElementId: createdCheckpoint.mapElementId,
+              title: createdCheckpoint.title,
+              description: createdCheckpoint.description,
+              type: createdCheckpoint.type,
+              orderIndex: createdCheckpoint.orderIndex,
+              passingScore: createdCheckpoint.passingScore,
+              maxAttempts: createdCheckpoint.maxAttempts,
+              timeLimit: createdCheckpoint.timeLimit,
+              instructions: createdCheckpoint.instructions,
+              isPublished: createdCheckpoint.isPublished,
+            },
+          }));
           console.log(" Создана запись контрольной точки для элемента:", serverElement.id);
         } catch (error) {
           console.warn(" Не удалось создать запись контрольной точки:", error);

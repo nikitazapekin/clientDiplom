@@ -103,6 +103,7 @@ export function SourceModal({
 export function ResultsModal({
   isOpen,
   onClose,
+  title,
   results,
   totalTasks,
   completedTasks,
@@ -113,6 +114,7 @@ export function ResultsModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
+  title?: string;
   results: {
     slideId: string;
     title: string;
@@ -201,7 +203,7 @@ export function ResultsModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.modalHeader}>
-          <h3>Результаты урока</h3>
+          <h3>{title || "Результаты урока"}</h3>
           <button className={styles.modalClose} onClick={onClose}>
             ✕
           </button>

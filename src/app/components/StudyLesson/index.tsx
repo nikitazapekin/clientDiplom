@@ -20,6 +20,7 @@ import type {
   SourceBlock,
   TheoryQuestionBlock,
 } from "@/app/components/EditLesson/types";
+import { CheckpointService } from "@/app/http/checkpointService";
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";
 import { LessonDetailsService } from "@/app/http/lessonDetailsService";
@@ -28,7 +29,9 @@ import { ProfileService } from "@/app/http/profile";
 
 interface StudyLessonProps {
   courseId: string;
-  lessonId: string;
+  lessonId?: string;
+  checkpointId?: string;
+  mode?: "lesson" | "checkpoint";
 }
 
 interface CodeTaskResultSummary {
@@ -75,10 +78,20 @@ const getUserId = () => {
   return window.localStorage.getItem("userId");
 };
 
-const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
+const StudyLesson = ({
+  courseId,
+  lessonId,
+  checkpointId,
+  mode = "lesson",
+}: StudyLessonProps) => {
   const router = useRouter();
+  const isCheckpointMode = mode === "checkpoint";
+  const entityId = isCheckpointMode ? checkpointId : lessonId;
+  const entityTitle = isCheckpointMode ? "Контрольная точка" : "Урок";
+  const entityTitleLower = isCheckpointMode ? "контрольная точка" : "урок";
+  const entityTitleGenitive = isCheckpointMode ? "контрольной точки" : "урока";
 
-  const [lessonTitle, setLessonTitle] = useState("Урок");
+  const [lessonTitle, setLessonTitle] = useState(entityTitle);
   const [lessonDescription, setLessonDescription] = useState("");
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -108,18 +121,32 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
   const [showStars, setShowStars] = useState(false);
 
   const loadLessonDetails = useCallback(async () => {
+    if (!entityId) {
+      setError(`${entityTitle} не найден${isCheckpointMode ? "а" : ""}.`);
+      setLoading(false);
+
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const [lessonDetails, lessonMeta] = await Promise.all([
-        LessonDetailsService.getLessonDetailsByLessonId(lessonId),
-        LessonService.getLesson(lessonId).catch(() => null),
+        isCheckpointMode
+          ? LessonDetailsService.getLessonDetailsByCheckpointId(entityId)
+          : LessonDetailsService.getLessonDetailsByLessonId(entityId),
+        isCheckpointMode
+          ? CheckpointService.getCheckpoint(entityId).catch(() => null)
+          : LessonService.getLesson(entityId).catch(() => null),
       ]);
 
       if (lessonMeta) {
-        setLessonTitle(lessonMeta.title || "Урок");
+        setLessonTitle(lessonMeta.title || entityTitle);
         setLessonDescription(lessonMeta.description || "");
+      } else {
+        setLessonTitle(entityTitle);
+        setLessonDescription("");
       }
 
       const normalizeBlocks = (blocks: unknown): Slide["blocks"] => {
@@ -138,11 +165,11 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
 
       const nextSlides: Slide[] = [];
 
-      if (Array.isArray(lessonDetails.slides)) {
+      if (!isCheckpointMode && Array.isArray(lessonDetails.slides)) {
         lessonDetails.slides.forEach((slide, index) => {
           nextSlides.push({
             id: slide.id || `slide_${index}`,
-            title: slide.title || "Слайд",
+            title: slide.title || entityTitle,
             type: "lesson",
             order: slide.orderIndex || index,
             blocks: normalizeBlocks(slide.blocks),
@@ -166,22 +193,31 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
       nextSlides.sort((left, right) => left.order - right.order);
 
       if (nextSlides.length === 0) {
-        setError("В уроке пока нет слайдов.");
+        setError(
+          isCheckpointMode
+            ? "В контрольной точке пока нет заданий."
+            : "В уроке пока нет слайдов."
+        );
         setSlides([]);
       } else {
         setSlides(nextSlides);
         setCurrentIndex(0);
       }
     } catch (loadError: unknown) {
-      console.error("Ошибка загрузки урока:", loadError);
+      console.error(
+        `Ошибка загрузки ${isCheckpointMode ? "контрольной точки" : "урока"}:`,
+        loadError
+      );
 
       setError(
-        loadError instanceof Error ? loadError.message : "Не удалось загрузить урок."
+        loadError instanceof Error
+          ? loadError.message
+          : `Не удалось загрузить ${entityTitleLower}.`
       );
     } finally {
       setLoading(false);
     }
-  }, [lessonId]);
+  }, [entityId, entityTitle, entityTitleLower, isCheckpointMode]);
 
   useEffect(() => {
     void loadLessonDetails();
@@ -245,25 +281,25 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
     async (stars: number) => {
       const userId = getUserId();
 
-      if (!userId) {
+      if (!userId || !entityId) {
         return true;
       }
 
       try {
         await ProfileService.createStudentResult({
           clientId: userId,
-          lessonId,
+          ...(isCheckpointMode ? { checkpointId: entityId } : { lessonId: entityId }),
           countOfStars: stars,
         });
 
         return true;
       } catch (saveError) {
-        console.error("Ошибка сохранения результата урока:", saveError);
+        console.error(`Ошибка сохранения результата ${entityTitleGenitive}:`, saveError);
 
         return false;
       }
     },
-    [lessonId]
+    [entityId, entityTitleGenitive, isCheckpointMode]
   );
 
   const calculateResults = useCallback(async () => {
@@ -406,15 +442,26 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
 
     const isSaved = await saveLessonResult(stars);
 
-    setResultSaveError(isSaved ? null : "Не удалось сохранить результат урока.");
+    setResultSaveError(
+      isSaved ? null : `Не удалось сохранить результат ${entityTitleGenitive}.`
+    );
     setResultsModalOpen(true);
-  }, [codeTaskResults, fillTaskResults, orderedSlides, saveLessonResult, testAnswer]);
+  }, [
+    codeTaskResults,
+    entityTitleGenitive,
+    fillTaskResults,
+    orderedSlides,
+    saveLessonResult,
+    testAnswer,
+  ]);
 
   const retrySaveResult = useCallback(async () => {
     const isSaved = await saveLessonResult(lessonResults.stars);
 
-    setResultSaveError(isSaved ? null : "Не удалось сохранить результат урока.");
-  }, [lessonResults.stars, saveLessonResult]);
+    setResultSaveError(
+      isSaved ? null : `Не удалось сохранить результат ${entityTitleGenitive}.`
+    );
+  }, [entityTitleGenitive, lessonResults.stars, saveLessonResult]);
 
   const goToNext = useCallback(() => {
     if (currentIndex < orderedSlides.length - 1) {
@@ -463,13 +510,13 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
   }, [lessonResults.stars, resultsModalOpen]);
 
   if (loading) {
-    return <div className={styles.state}>Загрузка урока...</div>;
+    return <div className={styles.state}>Загрузка {entityTitleGenitive}...</div>;
   }
 
   if (error || !currentSlide) {
     return (
       <div className={styles.state}>
-        <p>{error || "Урок не найден."}</p>
+        <p>{error || `${entityTitle} не найден${isCheckpointMode ? "а" : ""}.`}</p>
         <div className={styles.stateActions}>
           <button
             type="button"
@@ -505,7 +552,9 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
             </button>
 
             <div className={styles.titleBlock}>
-              <p className={styles.eyebrow}>Прохождение урока</p>
+              <p className={styles.eyebrow}>
+                {isCheckpointMode ? "Прохождение контрольной точки" : "Прохождение урока"}
+              </p>
               <h1 className={styles.title}>{lessonTitle}</h1>
               {lessonDescription ? (
                 <p className={styles.description}>{lessonDescription}</p>
@@ -604,7 +653,11 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
             Назад
           </button>
           <button type="button" className={styles.primaryButton} onClick={goToNext}>
-            {currentIndex === orderedSlides.length - 1 ? "Завершить урок" : "Следующий слайд"}
+            {currentIndex === orderedSlides.length - 1
+              ? isCheckpointMode
+                ? "Завершить контрольную точку"
+                : "Завершить урок"
+              : "Следующий слайд"}
           </button>
         </div>
       </div>
@@ -627,7 +680,9 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
             </button>
 
             <p className={styles.eyebrow}>Результаты</p>
-            <h2 className={styles.modalTitle}>Урок завершён</h2>
+            <h2 className={styles.modalTitle}>
+              {isCheckpointMode ? "Контрольная точка завершена" : "Урок завершён"}
+            </h2>
 
             <div className={styles.starsContainer}>
               {showStars &&
@@ -707,7 +762,9 @@ const StudyLesson = ({ courseId, lessonId }: StudyLessonProps) => {
                 className={styles.secondaryButton}
                 onClick={() => setResultsModalOpen(false)}
               >
-                Остаться в уроке
+                {isCheckpointMode
+                  ? "Остаться в контрольной точке"
+                  : "Остаться в уроке"}
               </button>
               <button
                 type="button"
