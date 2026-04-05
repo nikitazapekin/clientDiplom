@@ -1,4 +1,3 @@
-// app/components/EditLesson/types.ts
 export type SlideType = "lesson" | "test";
 
 export interface Slide {
@@ -51,7 +50,7 @@ export interface ImageBlock {
   order: number;
   type: "image";
   url: string;
-  file?: File | null; // Добавляем опциональное поле file
+  file?: File | null;
 }
 
 export type CodeConstraintType =

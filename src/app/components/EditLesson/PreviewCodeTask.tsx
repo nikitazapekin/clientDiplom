@@ -618,7 +618,7 @@ export function PreviewCodeTask({
                 inLogs = false;
                 if (currentLogs.length > 0) {
                   testLogs.push(
-                    `📋 Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`
+                    ` Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`
                   );
                   testLogs.push(currentLogs.join("\n"));
                   testLogs.push("");
@@ -995,7 +995,6 @@ export function PreviewCodeTask({
       />
 
       <div className={styles.runButtons}>
-        
         <Button
           color="#9F0FA7"
           width="120px"
@@ -1061,7 +1060,9 @@ export function PreviewCodeTask({
               >
                 <div className={styles.constraintResultHeader}>
                   <span className={styles.constraintName}>{constraint.name}</span>
-                  <span className={styles.constraintStatus}>{constraint.passed ? "Пройден" : "Провален"}</span>
+                  <span className={styles.constraintStatus}>
+                    {constraint.passed ? "Пройден" : "Провален"}
+                  </span>
                 </div>
                 <div className={styles.constraintDetails}>
                   <div>Ожидалось: {constraint.expected}</div>
