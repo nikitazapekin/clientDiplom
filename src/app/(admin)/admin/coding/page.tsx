@@ -6,6 +6,20 @@ import styles from "./page.module.scss";
 
 import Button from "@/app/components/Button";
 import CodeEditor from "@/app/components/CodeEditor";
+import {
+  buildCSharpTestSuite as buildSharedCSharpTestSuite,
+  buildJavaTestSuite as buildSharedJavaTestSuite,
+  buildTestCode as buildSharedTestCode,
+  compareOutputs as compareSharedOutputs,
+  extractFunctionName as extractSharedFunctionName,
+  formatArgsForDynamicLang as formatSharedDynamicArgs,
+  formatArgsForGolang as formatSharedGolangArgs,
+  formatArgsForJavaOrCSharp as formatSharedJavaOrCSharpArgs,
+  formatArgsForRust as formatSharedRustArgs,
+  generateObjectClasses as generateSharedObjectClasses,
+  getDefaultStarterCode as getSharedDefaultStarterCode,
+  getTypeString as getSharedTypeString,
+} from "@/app/components/EditLesson/codeUtils";
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";
 import {
@@ -85,20 +99,44 @@ const countCodeLines = (code: string): number => {
 };
 
 const hasComments = (code: string, language: CodeLanguage): boolean => {
-  if (language === "python") {
+  if (language === "python" || language === "ruby") {
     return /#.*/.test(code);
+  }
+
+  if (language === "php") {
+    return /#.*/.test(code) || /\/\/.*|\/\*[\s\S]*?\*\//.test(code);
   }
 
   return /\/\/.*|\/\*[\s\S]*?\*\//.test(code);
 };
 
 const hasConsoleLog = (code: string, language: CodeLanguage): boolean => {
-  if (language === "javascript") {
+  if (language === "javascript" || language === "typescript") {
     return /\bconsole\.(log|error|warn|info)\s*\(/.test(code);
   }
 
   if (language === "python") {
     return /\bprint\s*\(/.test(code);
+  }
+
+  if (language === "php") {
+    return /\b(?:echo|print|print_r|var_dump)\b/.test(code);
+  }
+
+  if (language === "ruby") {
+    return /\b(?:puts|print|p)\b/.test(code);
+  }
+
+  if (language === "rust") {
+    return /\b(?:println!|print!|eprintln!|eprint!)\s*\(/.test(code);
+  }
+
+  if (language === "golang") {
+    return /\bfmt\.Print(?:ln|f)?\s*\(/.test(code);
+  }
+
+  if (language === "cpp") {
+    return /\bcout\s*<</.test(code);
   }
 
   if (language === "java") {
@@ -195,11 +233,11 @@ const checkConstraints = (
 
       case "noConsoleLog": {
         if (constraint.value === true && hasConsoleLog(code, language)) {
-          if (language === "javascript") {
+          if (language === "javascript" || language === "typescript") {
             errors.push("Использование console.log запрещено");
           } else if (language === "python") {
             errors.push("Использование print запрещено");
-          } else if (language === "java" || language === "csharp") {
+          } else {
             errors.push("Использование вывода в консоль запрещено");
           }
         }
@@ -248,7 +286,11 @@ const checkConstraints = (
 
 const LANGUAGES: { value: CodeLanguage; label: string }[] = [
   { value: "javascript", label: "JavaScript" },
+  { value: "typescript", label: "TypeScript" },
   { value: "python", label: "Python" },
+  { value: "php", label: "PHP" },
+  { value: "ruby", label: "Ruby" },
+  { value: "rust", label: "Rust" },
   { value: "csharp", label: "C#" },
   { value: "java", label: "Java" },
   { value: "golang", label: "Go" },
@@ -269,6 +311,8 @@ const TAG_OPTIONS = [
   "Java",
   "Rust",
   "TypeScript",
+  "PHP",
+  "Ruby",
   "Строки",
   "Сортировки",
   "Массивы",
@@ -286,335 +330,11 @@ const TAG_OPTIONS = [
 ];
 
 const getDefaultStarterCode = (lang: CodeLanguage): string => {
-  switch (lang) {
-    case "python":
-      return `def solution(n):\n    # Ваш код здесь\n    return n`;
-
-    case "java":
-      return `public class Main {
-    public static int solution(int n) {
-        // Ваш код здесь
-        return n;
-    }
-}`;
-
-    case "csharp":
-      return `using System;
-
-public class Program
-{
-    public static int Solution(int n)
-    {
-        // Ваш код здесь
-        return n;
-    }
-}`;
-
-    case "golang":
-      return `package main
-
-func solution(n int) interface{} {
-    // Ваш код здесь
-    return n
-}`;
-
-    case "cpp":
-      return `int solution(int n) {
-    // Ваш код здесь
-    return n;
-}`;
-
-    default:
-      return `function solution(n) {
-    // Ваш код здесь
-    return n;
-}`;
-  }
+  return getSharedDefaultStarterCode(lang);
 };
 
 const getTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
-  const typeMap: Record<ArgumentType, Partial<Record<CodeLanguage, string>>> = {
-    int: { javascript: "", python: "int", csharp: "int", java: "int", golang: "int", cpp: "int" },
-    string: {
-      javascript: "",
-      python: "str",
-      csharp: "string",
-      java: "String",
-      golang: "string",
-      cpp: "string",
-    },
-    number: {
-      javascript: "number",
-      python: "float",
-      csharp: "double",
-      java: "double",
-      golang: "float64",
-      cpp: "double",
-    },
-    boolean: {
-      javascript: "",
-      python: "bool",
-      csharp: "bool",
-      java: "boolean",
-      golang: "bool",
-      cpp: "bool",
-    },
-    double: {
-      javascript: "",
-      python: "float",
-      csharp: "double",
-      java: "double",
-      golang: "float64",
-      cpp: "double",
-    },
-    float: {
-      javascript: "",
-      python: "float",
-      csharp: "float",
-      java: "float",
-      golang: "float32",
-      cpp: "float",
-    },
-    long: {
-      javascript: "",
-      python: "int",
-      csharp: "long",
-      java: "long",
-      golang: "int64",
-      cpp: "long",
-    },
-    char: {
-      javascript: "",
-      python: "str",
-      csharp: "char",
-      java: "char",
-      golang: "rune",
-      cpp: "char",
-    },
-    byte: {
-      javascript: "",
-      python: "bytes",
-      csharp: "byte",
-      java: "byte",
-      golang: "byte",
-      cpp: "byte",
-    },
-    short: {
-      javascript: "",
-      python: "int",
-      csharp: "short",
-      java: "short",
-      golang: "int16",
-      cpp: "short",
-    },
-    object: {
-      javascript: "",
-      python: "",
-      csharp: "object",
-      java: "Object",
-      golang: "interface{}",
-      cpp: "object",
-    },
-    array: {
-      javascript: "",
-      python: "list",
-      csharp: "object",
-      java: "int[]",
-      golang: "[]int",
-      cpp: "vector",
-    },
-    array_int: {
-      javascript: "",
-      python: "list",
-      csharp: "int[]",
-      java: "int[]",
-      golang: "[]int",
-      cpp: "vector",
-    },
-    array_string: {
-      javascript: "",
-      python: "list",
-      csharp: "string[]",
-      java: "String[]",
-      golang: "[]string",
-      cpp: "vector",
-    },
-    array_double: {
-      javascript: "",
-      python: "list",
-      csharp: "double[]",
-      java: "double[]",
-      golang: "[]float64",
-      cpp: "vector",
-    },
-    array_float: {
-      javascript: "",
-      python: "list",
-      csharp: "float[]",
-      java: "float[]",
-      golang: "[]float32",
-      cpp: "vector",
-    },
-    array_long: {
-      javascript: "",
-      python: "list",
-      csharp: "long[]",
-      java: "long[]",
-      golang: "[]int64",
-      cpp: "vector",
-    },
-    array_boolean: {
-      javascript: "",
-      python: "list",
-      csharp: "bool[]",
-      java: "boolean[]",
-      golang: "[]bool",
-      cpp: "vector",
-    },
-    array_char: {
-      javascript: "",
-      python: "list",
-      csharp: "char[]",
-      java: "char[]",
-      golang: "[]rune",
-      cpp: "vector",
-    },
-    list: {
-      javascript: "",
-      python: "list",
-      csharp: "List<object>",
-      java: "List<Object>",
-      golang: "[]interface{}",
-      cpp: "vector",
-    },
-    map: {
-      javascript: "Object",
-      python: "dict",
-      csharp: "Dictionary<string, object>",
-      java: "Map<String, Object>",
-      golang: "map[string]interface{}",
-      cpp: "map",
-    },
-    void: {
-      javascript: "void",
-      python: "None",
-      csharp: "void",
-      java: "void",
-      golang: "",
-      cpp: "void",
-    },
-  };
-
-  return typeMap[type_]?.[language] ?? type_;
-};
-
-const getReturnTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
-  if (type_ === "void") {
-    return language === "java" || language === "csharp" || language === "cpp" ? "void" : "";
-  }
-
-  if (type_ === "object") {
-    return language === "java" ? "Object" : language === "golang" ? "interface{}" : "object";
-  }
-
-  if (type_ === "list") {
-    return language === "csharp"
-      ? "List<object>"
-      : language === "java"
-        ? "List<Object>"
-        : language === "golang"
-          ? "[]interface{}"
-          : "object";
-  }
-
-  return getTypeString(type_, language);
-};
-
-const getDefaultReturnValue = (type_: ArgumentType, language?: CodeLanguage): string => {
-  const isPython = language === "python";
-  const isGo = language === "golang";
-
-  /* eslint-disable no-fallthrough */
-  switch (type_) {
-    case "int":
-
-    case "long":
-
-    case "short":
-
-    case "byte":
-
-    case "double":
-
-    case "float":
-
-    case "array_int":
-
-    case "array_double":
-
-    case "array_float":
-
-    case "array_long":
-
-    case "array_char":
-      if (isPython) return "return None";
-
-      if (isGo) return "return 0";
-
-      return "return null;";
-
-    case "string":
-      if (isPython) return 'return ""';
-
-      if (isGo) return 'return ""';
-
-      return 'return "";';
-
-    case "boolean":
-
-    case "array_boolean":
-      if (isPython) return "return False";
-
-      if (isGo) return "return false";
-
-      return "return false;";
-
-    case "char":
-      if (isPython) return 'return ""';
-
-      if (isGo) return "return ''";
-
-      return "return 'a';";
-
-    case "object":
-
-    case "array":
-
-    case "array_string":
-
-    case "list":
-
-    case "map":
-      if (isPython) return "return None";
-
-      if (isGo) return "return nil";
-
-      return "return null;";
-
-    case "void":
-      if (isPython) return "";
-
-      if (isGo) return "";
-
-      return "";
-
-    default:
-      if (isPython) return "return None";
-
-      if (isGo) return "return nil";
-
-      return "return null;";
-  }
+  return getSharedTypeString(type_, language);
 };
 
 const getDefaultStarterCodeWithSchema = (
@@ -622,127 +342,90 @@ const getDefaultStarterCodeWithSchema = (
   args: ArgumentSchema[] = [],
   returnType: ArgumentType = "int"
 ): string => {
-  const argsStr = args
-    .map((arg) => {
-      let typeStr: string;
-
-      if (arg.type === "array") {
-        typeStr = getArrayTypeString(arg, language);
-      } else if (arg.type === "list") {
-        typeStr = getListTypeString(arg, language);
-      } else if (arg.type === "object" && arg.className) {
-        typeStr = arg.className;
-      } else {
-        typeStr = getTypeString(arg.type, language);
-      }
-
-      return `${typeStr} ${arg.name}`;
-    })
-    .join(", ");
-
-  const retTypeStr = getReturnTypeString(returnType, language);
-  const returnValue = getDefaultReturnValue(returnType, language);
-
-  /* eslint-disable no-case-declarations */
-  switch (language) {
-    case "csharp":
-      return `using System;
-
-public class Program
-{
-    public static ${retTypeStr} YourFunction(${argsStr})
-    {
-        // Ваш код здесь
-        Console.WriteLine("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""});
-        ${returnValue}
-    }
-}`;
-
-    case "java":
-      return `public class Main {
-    public static ${retTypeStr} yourFunction(${argsStr}) {
-        // Ваш код здесь
-        System.out.println("HELLO"${args.length > 0 ? ` + " " + ${args.map((a) => a.name).join(' + " " + ')}` : ""});
-        ${returnValue}
-    }
-}`;
-
-    case "python":
-      const pythonArgs = args.map((a) => a.name).join(", ");
-
-      return `def your_function(${pythonArgs}):
-    # Ваш код здесь
-    print("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""})
-    ${returnValue}`;
-
-    case "golang":
-      const goArgsStr = args
-        .map((arg) => {
-          const typeStr = getTypeString(arg.type, "golang");
-
-          return `${arg.name} ${typeStr}`;
-        })
-        .join(", ");
-      const goRetStr = getReturnTypeString(returnType, "golang");
-
-      return `package main
-
-import "fmt"
-
-func yourFunction(${goArgsStr}) ${goRetStr} {
-    // Ваш код здесь
-    fmt.Println("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""})
-    ${returnValue}
-}`;
-
-    default:
-      const jsArgs = args.map((a) => a.name).join(", ");
-
-      return `function yourFunction(${jsArgs}) {
-    // Ваш код здесь
-    console.log("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""});
-    ${returnValue}
-}`;
-  }
+  return getSharedDefaultStarterCode(language, args, returnType);
 };
 
-const getArrayTypeString = (scheme: ArgumentSchema, language: CodeLanguage): string => {
-  const elemType = scheme.arrayElementType || "int";
-  const elemClassName = scheme.arrayElementClassName;
+const getFormattedTestInput = (
+  language: CodeLanguage,
+  testCase: TestCase,
+  scheme: ArgumentSchema[],
+  userCode: string
+): string => {
+  if (testCase.args && scheme.length > 0) {
+    if (language === "java" || language === "csharp") {
+      return formatSharedJavaOrCSharpArgs(testCase.args, scheme, language);
+    }
 
-  if (elemType === "object" && elemClassName) {
-    if (language === "java") return `${elemClassName}[]`;
+    if (language === "golang") {
+      return formatSharedGolangArgs(testCase.args, scheme);
+    }
 
-    if (language === "csharp") return `${elemClassName}[]`;
+    if (language === "rust") {
+      return formatSharedRustArgs(testCase.args, scheme);
+    }
 
-    if (language === "golang") return `[]${elemClassName}`;
-
-    return elemClassName;
+    if (
+      language === "javascript" ||
+      language === "typescript" ||
+      language === "python" ||
+      language === "php" ||
+      language === "ruby"
+    ) {
+      return formatSharedDynamicArgs(testCase.args, scheme, language);
+    }
   }
 
-  return (
-    getTypeString(elemType as ArgumentType, language) +
-    (language === "java" || language === "csharp" ? "[]" : "")
-  );
+  void userCode;
+
+  return testCase.input || "";
 };
 
-const getListTypeString = (scheme: ArgumentSchema, language: CodeLanguage): string => {
-  const elemType = scheme.arrayElementType || "object";
-  const elemClassName = scheme.arrayElementClassName;
-
-  if (elemType === "object" && elemClassName) {
-    if (language === "csharp") return `List<${elemClassName}>`;
-
-    if (language === "java") return `List<${elemClassName}>`;
-
-    return elemClassName;
+const extractExecutionResult = (output: string, testNum?: number): string => {
+  if (!output.trim()) {
+    return "";
   }
 
-  if (language === "csharp") return `List<${getTypeString(elemType as ArgumentType, language)}>`;
+  const lines = output.split(/\r?\n/);
+  const resultLines: string[] = [];
+  let inResult = false;
 
-  if (language === "java") return `List<${getTypeString(elemType as ArgumentType, language)}>`;
+  const startMarkers = testNum
+    ? [`===RESULT_START_${testNum}===`, "===RESULT_START==="]
+    : ["===RESULT_START==="];
+  const endMarkers = testNum
+    ? [`===RESULT_END_${testNum}===`, "===RESULT_END==="]
+    : ["===RESULT_END==="];
 
-  return "list";
+  for (const line of lines) {
+    if (startMarkers.some((marker) => line.includes(marker))) {
+      inResult = true;
+      continue;
+    }
+
+    if (endMarkers.some((marker) => line.includes(marker))) {
+      break;
+    }
+
+    if (inResult) {
+      resultLines.push(line);
+    }
+  }
+
+  return resultLines.length > 0 ? resultLines.join("\n").trim() : output.trim();
+};
+
+const normalizeComparableOutput = (value: string): unknown => {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return trimmed;
+  }
 };
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -1318,23 +1001,48 @@ export default function CodingPage() {
       }
 
       const results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
+      const funcName = extractSharedFunctionName(code, activeEditorLang);
+      const objectClasses =
+        argumentScheme.length > 0
+          ? generateSharedObjectClasses(argumentScheme, activeEditorLang)
+          : "";
 
       for (let i = 0; i < currentTestCases.length; i++) {
         const tc = currentTestCases[i];
-        let testCode: string;
+        const inputToUse = getFormattedTestInput(activeEditorLang, tc, argumentScheme, code);
 
-        if (activeEditorLang === "javascript") {
-          const fnMatch = code.match(/function\s+(\w+)\s*\(/);
-          const fnName = fnMatch?.[1] || "solution";
+        let testCode = code;
+        let expectedTestNum: number | undefined;
 
-          testCode = `${code}\nconst __res__ = ${fnName}(${tc.input});\nconsole.log(__res__);`;
-        } else if (activeEditorLang === "python") {
-          const fnMatch = code.match(/def\s+(\w+)\s*\(/);
-          const fnName = fnMatch?.[1] || "solution";
+        if (activeEditorLang === "java" && funcName) {
+          testCode = buildSharedJavaTestSuite(
+            code,
+            [{ input: inputToUse, expectedOutput: tc.expectedOutput }],
+            funcName
+          );
+          expectedTestNum = 1;
 
-          testCode = `${code}\n__res__ = ${fnName}(${tc.input})\nprint(__res__)`;
-        } else {
-          testCode = code;
+          if (objectClasses) {
+            testCode = `${testCode}\n\n${objectClasses}`;
+          }
+        } else if (activeEditorLang === "csharp" && funcName) {
+          testCode = buildSharedCSharpTestSuite(
+            code,
+            [{ input: inputToUse, expectedOutput: tc.expectedOutput }],
+            funcName
+          );
+          expectedTestNum = 1;
+
+          if (objectClasses) {
+            testCode = `${testCode}\n\n${objectClasses}`;
+          }
+        } else if (funcName) {
+          const sourceCode =
+            activeEditorLang === "typescript" && objectClasses
+              ? `${objectClasses}\n\n${code}`
+              : code;
+
+          testCode = buildSharedTestCode(sourceCode, "", activeEditorLang, funcName, inputToUse);
         }
 
         try {
@@ -1343,26 +1051,22 @@ export default function CodingPage() {
             code: testCode,
           });
 
-          const actual = (res.output || res.error || "").trim();
+          const actual = extractExecutionResult(res.output || res.error || "", expectedTestNum);
           const expected = tc.expectedOutput.trim();
-
-          let passed = false;
-
-          try {
-            passed = JSON.stringify(JSON.parse(actual)) === JSON.stringify(JSON.parse(expected));
-          } catch {
-            passed = actual === expected;
-          }
+          const passed = compareSharedOutputs(
+            normalizeComparableOutput(actual),
+            normalizeComparableOutput(expected)
+          );
 
           results.push({
-            input: tc.input,
+            input: inputToUse || tc.input,
             expected: tc.expectedOutput,
             actual: actual || "(пусто)",
             passed,
           });
         } catch (err: any) {
           results.push({
-            input: tc.input,
+            input: inputToUse || tc.input,
             expected: tc.expectedOutput,
             actual: `Ошибка: ${err.message || err}`,
             passed: false,

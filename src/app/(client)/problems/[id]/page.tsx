@@ -7,6 +7,14 @@ import styles from "./page.module.scss";
 
 import Button from "@/app/components/Button";
 import CodeEditor from "@/app/components/CodeEditor";
+import {
+  buildTestCode as buildSharedTestCode,
+  compareOutputs as compareSharedOutputs,
+  extractFunctionName as extractSharedFunctionName,
+  generateObjectClasses as generateSharedObjectClasses,
+  getDisplayInput as getSharedDisplayInput,
+  getTypeString as getSharedTypeString,
+} from "@/app/components/EditLesson/codeUtils";
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";
 import {
@@ -56,13 +64,17 @@ const DIFF_LABELS: Record<string, string> = {
 
 const LANG_LABELS: Record<string, string> = {
   javascript: "JavaScript",
+  typescript: "TypeScript",
   python: "Python",
+  php: "PHP",
+  ruby: "Ruby",
+  rust: "Rust",
   csharp: "C#",
   java: "Java",
   golang: "Go",
   cpp: "C++",
 };
- 
+
 type CodeConstraintType =
   | "maxTimeMs"
   | "maxLines"
@@ -94,7 +106,7 @@ interface ArgumentSchema {
   arrayElementObjectFields?: { name: string; type: string; value: string }[];
   arrayElementClassName?: string;
 }
- 
+
 const formatArgsForJavaOrCSharp = (
   testCaseArgs: TestCaseArgument[] | undefined,
   argumentScheme: ArgumentSchema[],
@@ -103,282 +115,246 @@ const formatArgsForJavaOrCSharp = (
   if (!testCaseArgs || !argumentScheme) return "";
 
   const cleanValue = (val: string) => {
-    if ((val.startsWith('"') && val.endsWith('"')) ||
-        (val.startsWith("'") && val.endsWith("'"))) {
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       return val.slice(1, -1);
     }
 
     return val;
   };
 
-  const args = testCaseArgs.map((arg, idx) => {
-    const scheme = argumentScheme[idx];
+  const args = testCaseArgs
+    .map((arg, idx) => {
+      const scheme = argumentScheme[idx];
 
-    if (!scheme) return null;
+      if (!scheme) return null;
 
-    const cleanVal = cleanValue(arg.value);
+      const cleanVal = cleanValue(arg.value);
 
-    if (scheme.type === "string") {
-      return `"${cleanVal}"`;
-    }
-
-    if (scheme.type === "char") {
-      return `'${cleanVal}'`;
-    }
-
-    if (scheme.type === "boolean") {
-      return cleanVal.toLowerCase() === "true" ? "true" : "false";
-    }
-
-    if (scheme.type === "object" && scheme.objectFields) {
-      const objValues = arg.objectValues ?? {};
-      const fields = scheme.objectFields.map(f => {
-        const val = cleanValue(objValues[f.name] ?? "");
-
-        if (f.type === "string") {
-          return `"${val}"`;
-        } else if (f.type === "boolean") {
-          return val.toLowerCase() === "true" ? "true" : "false";
-        } else if (f.type === "double" || f.type === "float") {
-          return val;
-        } else if (f.type === "char") {
-          return `'${val}'`;
-        } else {
-          return val;
-        }
-      });
-
-      if (language === "java") {
-        const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
-
-        return `new ${className}(${fields.join(", ")})`;
-      } else if (language === "csharp") {
-        const className = scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
-
-        return `new ${className}(${fields.join(", ")})`;
+      if (scheme.type === "string") {
+        return `"${cleanVal}"`;
       }
 
-      return `{${fields.join(", ")}}`;
-    }
+      if (scheme.type === "char") {
+        return `'${cleanVal}'`;
+      }
 
-    if (scheme.type && scheme.type.startsWith("array_")) {
-      const elementType = scheme.type.replace("array_", "");
-      const typeToUse = elementType === "string" ? "String" : elementType;
+      if (scheme.type === "boolean") {
+        return cleanVal.toLowerCase() === "true" ? "true" : "false";
+      }
 
-      if (arg.value && arg.value.trim().startsWith("[")) {
-        try {
-          const arr = JSON.parse(arg.value);
+      if (scheme.type === "object" && scheme.objectFields) {
+        const objValues = arg.objectValues ?? {};
+        const fields = scheme.objectFields.map((f) => {
+          const val = cleanValue(objValues[f.name] ?? "");
 
-          if (Array.isArray(arr)) {
-            const formatted = arr.map((item: any) => {
-              if (elementType === "string") return `"${item}"`;
-
-              if (elementType === "boolean") return item ? "true" : "false";
-
-              return String(item);
-            });
-
-            if (language === "java") {
-              return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
-            }
-
-            return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
+          if (f.type === "string") {
+            return `"${val}"`;
+          } else if (f.type === "boolean") {
+            return val.toLowerCase() === "true" ? "true" : "false";
+          } else if (f.type === "double" || f.type === "float") {
+            return val;
+          } else if (f.type === "char") {
+            return `'${val}'`;
+          } else {
+            return val;
           }
-        } catch {}
-      }
-
-      if (arg.objectValues && Object.keys(arg.objectValues).length > 0) {
-        const elements = Object.values(arg.objectValues).map((val: any) => {
-          if (elementType === "string") return `"${val}"`;
-
-          if (elementType === "boolean") return val.toLowerCase() === "true" ? "true" : "false";
-
-          return String(val);
         });
 
         if (language === "java") {
+          const className =
+            scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+
+          return `new ${className}(${fields.join(", ")})`;
+        } else if (language === "csharp") {
+          const className =
+            scheme.className || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+
+          return `new ${className}(${fields.join(", ")})`;
+        }
+
+        return `{${fields.join(", ")}}`;
+      }
+
+      if (scheme.type && scheme.type.startsWith("array_")) {
+        const elementType = scheme.type.replace("array_", "");
+        const typeToUse = elementType === "string" ? "String" : elementType;
+
+        if (arg.value && arg.value.trim().startsWith("[")) {
+          try {
+            const arr = JSON.parse(arg.value);
+
+            if (Array.isArray(arr)) {
+              const formatted = arr.map((item: any) => {
+                if (elementType === "string") return `"${item}"`;
+
+                if (elementType === "boolean") return item ? "true" : "false";
+
+                return String(item);
+              });
+
+              if (language === "java") {
+                return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
+              }
+
+              return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
+            }
+          } catch {
+            // Ignore malformed JSON arrays and fall back to the default empty value.
+          }
+        }
+
+        if (arg.objectValues && Object.keys(arg.objectValues).length > 0) {
+          const elements = Object.values(arg.objectValues).map((val: any) => {
+            if (elementType === "string") return `"${val}"`;
+
+            if (elementType === "boolean") return val.toLowerCase() === "true" ? "true" : "false";
+
+            return String(val);
+          });
+
+          if (language === "java") {
+            return `new ${typeToUse}[] { ${elements.join(", ")} }`;
+          }
+
           return `new ${typeToUse}[] { ${elements.join(", ")} }`;
         }
 
-        return `new ${typeToUse}[] { ${elements.join(", ")} }`;
+        return `new ${typeToUse}[0]`;
       }
 
-      return `new ${typeToUse}[0]`;
-    }
+      if (scheme.type === "array" || scheme.type === "list") {
+        const arrayElementType = scheme.arrayElementType ?? "int";
 
-    if (scheme.type === "array" || scheme.type === "list") {
-      const arrayElementType = scheme.arrayElementType ?? "int";
+        if (scheme.arrayElementObjectFields) {
+          const arrayObjValues = arg.objectValues ?? {};
+          const elements = Object.entries(arrayObjValues).map(([key, val]) => {
+            const objFields = scheme.arrayElementObjectFields!;
+            const valObj = typeof val === "object" ? (val as Record<string, string>) : {};
+            const fields = objFields.map((f) => {
+              const fieldVal = cleanValue(valObj?.[f.name] ?? "");
 
-      if (scheme.arrayElementObjectFields) {
-        const arrayObjValues = arg.objectValues ?? {};
-        const elements = Object.entries(arrayObjValues).map(([key, val]) => {
-          const objFields = scheme.arrayElementObjectFields!;
-          const valObj = typeof val === "object" ? val as Record<string, string> : {};
-          const fields = objFields.map(f => {
-            const fieldVal = cleanValue(valObj?.[f.name] ?? "");
-
-            if (f.type === "string") {
-              return `"${fieldVal}"`;
-            } else if (f.type === "boolean") {
-              return fieldVal.toLowerCase() === "true" ? "true" : "false";
-            } else if (f.type === "double" || f.type === "float") {
-              return fieldVal;
-            } else if (f.type === "char") {
-              return `'${fieldVal}'`;
-            } else {
-              return fieldVal;
-            }
-          });
-
-          const elemClassName = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
-
-          if (language === "java") {
-            return `new ${elemClassName}(${fields.join(", ")})`;
-          }
-
-          const csharpFields = objFields.map(f => {
-            const fieldVal = cleanValue(valObj?.[f.name] ?? "");
-
-            if (f.type === "string") {
-              return `"${fieldVal}"`;
-            } else if (f.type === "boolean") {
-              return fieldVal.toLowerCase() === "true" ? "true" : "false";
-            } else {
-              return fieldVal;
-            }
-          });
-
-          return `new ${elemClassName}(${csharpFields.join(", ")})`;
-        });
-        const arrClassName = scheme.arrayElementClassName || scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
-
-        return `new ${arrClassName}[] { ${elements.join(", ")} }`;
-      }
-
-      if (arg.value && arg.value.trim().startsWith("[")) {
-        try {
-          const arr = JSON.parse(arg.value);
-
-          if (Array.isArray(arr)) {
-            const formatted = arr.map(item => {
-              if (arrayElementType === "string") return `"${item}"`;
-
-              if (arrayElementType === "boolean") return item ? "true" : "false";
-
-              return String(item);
+              if (f.type === "string") {
+                return `"${fieldVal}"`;
+              } else if (f.type === "boolean") {
+                return fieldVal.toLowerCase() === "true" ? "true" : "false";
+              } else if (f.type === "double" || f.type === "float") {
+                return fieldVal;
+              } else if (f.type === "char") {
+                return `'${fieldVal}'`;
+              } else {
+                return fieldVal;
+              }
             });
 
-            return `new ${arrayElementType}[] { ${formatted.join(", ")} }`;
+            const elemClassName =
+              scheme.arrayElementClassName ||
+              scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+
+            if (language === "java") {
+              return `new ${elemClassName}(${fields.join(", ")})`;
+            }
+
+            const csharpFields = objFields.map((f) => {
+              const fieldVal = cleanValue(valObj?.[f.name] ?? "");
+
+              if (f.type === "string") {
+                return `"${fieldVal}"`;
+              } else if (f.type === "boolean") {
+                return fieldVal.toLowerCase() === "true" ? "true" : "false";
+              } else {
+                return fieldVal;
+              }
+            });
+
+            return `new ${elemClassName}(${csharpFields.join(", ")})`;
+          });
+          const arrClassName =
+            scheme.arrayElementClassName ||
+            scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
+
+          return `new ${arrClassName}[] { ${elements.join(", ")} }`;
+        }
+
+        if (arg.value && arg.value.trim().startsWith("[")) {
+          try {
+            const arr = JSON.parse(arg.value);
+
+            if (Array.isArray(arr)) {
+              const formatted = arr.map((item) => {
+                if (arrayElementType === "string") return `"${item}"`;
+
+                if (arrayElementType === "boolean") return item ? "true" : "false";
+
+                return String(item);
+              });
+
+              return `new ${arrayElementType}[] { ${formatted.join(", ")} }`;
+            }
+          } catch {
+            // Ignore malformed JSON arrays and fall back to the default empty value.
           }
-        } catch {}
+        }
+
+        return `new ${arrayElementType}[0]`;
       }
 
-      return `new ${arrayElementType}[0]`;
-    }
-
-    return arg.value;
-  }).filter(a => a !== null).join(", ");
+      return arg.value;
+    })
+    .filter((a) => a !== null)
+    .join(", ");
 
   return args;
 };
- 
-const formatArgsForDynamicLang = (
+
+const _formatArgsForDynamicLang = (
   testCaseArgs: TestCaseArgument[] | undefined,
   argumentScheme: ArgumentSchema[],
-  language: string
+  _language: string
 ): string => {
   if (!testCaseArgs || !argumentScheme) return "";
 
-  return testCaseArgs.map((arg, idx) => {
-    const scheme = argumentScheme[idx];
+  return testCaseArgs
+    .map((arg, idx) => {
+      const scheme = argumentScheme[idx];
 
-    if (!scheme) return arg.value;
+      if (!scheme) return arg.value;
 
-    if (scheme.type === "string") {
-      return `"${arg.value}"`;
-    }
-
-    if (scheme.type === "object" && arg.objectValues) {
-      return JSON.stringify(arg.objectValues);
-    }
-
-    if ((scheme.type === "array" || scheme.type === "list") && arg.value) {
-      try {
-        return JSON.stringify(JSON.parse(arg.value));
-      } catch {
-        return arg.value;
+      if (scheme.type === "string") {
+        return `"${arg.value}"`;
       }
-    }
 
-    return arg.value;
-  }).join(", ");
+      if (scheme.type === "object" && arg.objectValues) {
+        return JSON.stringify(arg.objectValues);
+      }
+
+      if ((scheme.type === "array" || scheme.type === "list") && arg.value) {
+        try {
+          return JSON.stringify(JSON.parse(arg.value));
+        } catch {
+          return arg.value;
+        }
+      }
+
+      return arg.value;
+    })
+    .join(", ");
 };
- 
+
 const getDisplayInput = (
   testCase: TestCase,
   argumentScheme: ArgumentSchema[] | undefined,
   language: string
 ): string => {
-  if (!testCase) return "";
-
-  if (testCase.args && testCase.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
-    if (language === "java" || language === "csharp") {
-      return formatArgsForJavaOrCSharp(testCase.args, argumentScheme, language);
-    }
-
-    if (language === "javascript" || language === "python") {
-      return formatArgsForDynamicLang(testCase.args, argumentScheme, language);
-    }
-  }
-
-  return testCase.input ?? "";
+  return getSharedDisplayInput(testCase, argumentScheme, language as CodeLanguage);
 };
- 
+
 interface ConstraintCheckResult {
   passed: boolean;
   errors: string[];
 }
- 
+
 const extractFunctionName = (code: string, lang: CodeLanguage): string | null => {
-  if (!code) return null;
-
-  try {
-    switch (lang) {
-      case "javascript":
-        const jsMatch = code.match(
-          /function\s+(\w+)|const\s+(\w+)\s*=\s*\([^)]*\)\s*=>|let\s+(\w+)\s*=\s*\([^)]*\)\s*=>|var\s+(\w+)\s*=\s*\([^)]*\)\s*=>/
-        );
-
-        return jsMatch ? jsMatch[1] || jsMatch[2] || jsMatch[3] || jsMatch[4] : null;
-
-      case "python":
-        const pyMatch = code.match(/def\s+(\w+)\s*\(/);
-
-        return pyMatch ? pyMatch[1] : null;
-
-      case "golang":
-        const goMatch = code.match(/func\s+(\w+)\s*\(/);
-
-        return goMatch ? goMatch[1] : null;
-
-      case "csharp":
-        const csMatch = code.match(/public\s+static\s+[\w<>\[\]]+\s+(\w+)\s*\([^)]*\)/);
-
-        return csMatch ? csMatch[1] : null;
-
-      case "java":
-        const javaMatch = code.match(/public\s+static\s+[\w<>\[\]]+\s+(\w+)\s*\([^)]*\)/);
-
-        return javaMatch ? javaMatch[1] : null;
-
-      default:
-        return null;
-    }
-  } catch (e) {
-    console.error("Error extracting function name:", e);
-
-    return null;
-  }
+  return extractSharedFunctionName(code, lang);
 };
 
 const parseArguments = (input: string): any[] => {
@@ -389,7 +365,7 @@ const parseArguments = (input: string): any[] => {
       return JSON.parse(input);
     }
   } catch {
-   
+    // Ignore JSON parsing failure and continue with manual argument splitting.
   }
 
   const args: any[] = [];
@@ -451,7 +427,7 @@ const parseValue = (value: string): any => {
   try {
     return JSON.parse(value);
   } catch {
- 
+    // Ignore JSON parsing failure and continue with scalar parsing.
   }
 
   if (/^-?\d+(\.\d+)?$/.test(value)) {
@@ -500,7 +476,7 @@ const formatArgumentsForCode = (args: any[]): string => {
     })
     .join(", ");
 };
- 
+
 const buildJavaTestSuite = (
   userCode: string,
   testCases: { input: string; expectedOutput: string; args?: TestCaseArgument[] }[],
@@ -512,11 +488,10 @@ const buildJavaTestSuite = (
   const testCasesCode = testCases
     .map((tc, index) => {
       let argsStr = "";
- 
+
       if (tc.args && tc.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
         argsStr = formatArgsForJavaOrCSharp(tc.args, argumentScheme, "java");
       } else if (tc.input) {
-    
         const args = parseArguments(tc.input);
 
         argsStr = formatArgumentsForCode(args);
@@ -595,7 +570,7 @@ ${testCasesCode}
 }`;
   }
 };
- 
+
 const buildCSharpTestSuite = (
   userCode: string,
   testCases: { input: string; expectedOutput: string; args?: TestCaseArgument[] }[],
@@ -608,11 +583,10 @@ const buildCSharpTestSuite = (
     .map((tc, index) => {
       const testNum = index + 1;
       let argsStr = "";
- 
+
       if (tc.args && tc.args.length > 0 && argumentScheme && argumentScheme.length > 0) {
         argsStr = formatArgsForJavaOrCSharp(tc.args, argumentScheme, "csharp");
       } else if (tc.input) {
-      
         const args = parseArguments(tc.input);
 
         argsStr = formatArgumentsForCode(args);
@@ -667,16 +641,15 @@ const buildCSharpTestSuite = (
         }`;
     })
     .join("\n");
- 
+
   const usings = `using System;
 using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Collections.Generic;
 `;
- 
+
   if (userCode.includes("using System;")) {
-   
     return (
       usings +
       "\n" +
@@ -690,7 +663,6 @@ ${testCasesCode}
 }`
     );
   } else {
-   
     return (
       usings +
       "\n" +
@@ -705,15 +677,15 @@ ${testCasesCode}
     );
   }
 };
- 
-const parseTestOutput = (output: string, testNum: number): { logs: string[], result: string } => {
-  if (!output) return { logs: [], result: '' };
 
-  const lines = output.split('\n');
+const parseTestOutput = (output: string, testNum: number): { logs: string[]; result: string } => {
+  if (!output) return { logs: [], result: "" };
+
+  const lines = output.split("\n");
   let inLogs = false;
   let inResult = false;
   const logs: string[] = [];
-  let result = '';
+  let result = "";
 
   for (const line of lines) {
     if (line.includes(`===LOGS_START_${testNum}===`) || line.includes(`===LOGS_START===`)) {
@@ -741,179 +713,53 @@ const parseTestOutput = (output: string, testNum: number): { logs: string[], res
     }
 
     if (inResult) {
-      result += line + '\n';
+      result += line + "\n";
     }
   }
 
   return { logs, result: result.trim() };
 };
- 
-const getTypeString = (type: string, language: string): string => {
-  const typeMap: Record<string, Record<string, string>> = {
-    int: { javascript: "", python: "int", csharp: "int", java: "int", golang: "int", cpp: "int" },
-    string: { javascript: "", python: "str", csharp: "string", java: "String", golang: "string", cpp: "string" },
-    number: { javascript: "number", python: "float", csharp: "double", java: "double", golang: "float64", cpp: "double" },
-    boolean: { javascript: "", python: "bool", csharp: "bool", java: "boolean", golang: "bool", cpp: "bool" },
-    double: { javascript: "", python: "float", csharp: "double", java: "double", golang: "float64", cpp: "double" },
-    float: { javascript: "", python: "float", csharp: "float", java: "float", golang: "float32", cpp: "float" },
-    long: { javascript: "", python: "int", csharp: "long", java: "long", golang: "int64", cpp: "long" },
-    char: { javascript: "", python: "str", csharp: "char", java: "char", golang: "rune", cpp: "char" },
-    byte: { javascript: "", python: "bytes", csharp: "byte", java: "byte", golang: "byte", cpp: "byte" },
-    short: { javascript: "", python: "int", csharp: "short", java: "short", golang: "int16", cpp: "short" },
-    object: { javascript: "", python: "", csharp: "object", java: "Object", golang: "interface{}", cpp: "object" },
-    array: { javascript: "", python: "list", csharp: "object", java: "int[]", golang: "[]int", cpp: "vector" },
-    array_int: { javascript: "", python: "list", csharp: "int[]", java: "int[]", golang: "[]int", cpp: "vector" },
-    array_string: { javascript: "", python: "list", csharp: "string[]", java: "String[]", golang: "[]string", cpp: "vector" },
-    array_double: { javascript: "", python: "list", csharp: "double[]", java: "double[]", golang: "[]float64", cpp: "vector" },
-    array_float: { javascript: "", python: "list", csharp: "float[]", java: "float[]", golang: "[]float32", cpp: "vector" },
-    array_long: { javascript: "", python: "list", csharp: "long[]", java: "long[]", golang: "[]int64", cpp: "vector" },
-    array_boolean: { javascript: "", python: "list", csharp: "bool[]", java: "boolean[]", golang: "[]bool", cpp: "vector" },
-    array_char: { javascript: "", python: "list", csharp: "char[]", java: "char[]", golang: "[]rune", cpp: "vector" },
-    list: { javascript: "", python: "list", csharp: "List<object>", java: "List<Object>", golang: "[]interface{}", cpp: "vector" },
-    map: { javascript: "Object", python: "dict", csharp: "Dictionary<string, object>", java: "Map<String, Object>", golang: "map[string]interface{}", cpp: "map" },
-    void: { javascript: "void", python: "None", csharp: "void", java: "void", golang: "", cpp: "void" },
-  };
 
-  return typeMap[type]?.[language] ?? type;
+const _getTypeString = (type: string, language: string): string => {
+  return getSharedTypeString(type as any, language as CodeLanguage);
 };
- 
+
 const generateObjectClasses = (args: ArgumentSchema[], language: string): string => {
-  const objectArgs = args.filter((a) => a.type === "object" && a.objectFields);
-
-  const arrayObjectArgs = args.filter(
-    (a) =>
-      (a.type === "array" || a.type === "list") &&
-      a.arrayElementType === "object" &&
-      a.arrayElementObjectFields
-  );
-
-  const allClasses = [...objectArgs, ...arrayObjectArgs];
-
-  if (allClasses.length === 0) return "";
-
-  return allClasses
-    .map((arg) => {
-      let className: string;
-      const objectFields = arg.objectFields ?? arg.arrayElementObjectFields ?? [];
-
-      if (arg.objectFields) {
-        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-      } else if (arg.arrayElementObjectFields) {
-        className = arg.arrayElementClassName || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-      } else {
-        className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
-      }
-
-      if (language === "java") {
-        const accessModifier = "private";
-        const fields = objectFields.map((f) => `        ${accessModifier} ${getTypeString(f.type, language)} ${f.name};`).join("\n");
-        const constructorParams = objectFields.map((f) => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
-        const constructorBody = objectFields.map((f) => `this.${f.name} = ${f.name};`).join("\n        ");
-        const constructor = objectFields.length > 0 ?
-          `
-    public ${className}(${constructorParams}) {
-        ${constructorBody}
-    }` : "";
-        const gettersSetters = objectFields
-          .map((f) => {
-            const fieldName = f.name;
-            const fieldType = getTypeString(f.type, language);
-
-            return `
-    public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
-        return ${fieldName};
-    }
-    public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
-        this.${fieldName} = ${fieldName};
-    }`;
-          })
-          .join("");
-
-        return `    class ${className} {
-${fields}
-${constructor}
-${gettersSetters}
-    }`;
-      }
-
-      if (language === "csharp") {
-        const fields = objectFields.map((f) => `        public ${getTypeString(f.type, language)} ${f.name};`).join("\n");
-        const constructorParams = objectFields.map((f) => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
-        const constructorBody = objectFields.map((f) => `this.${f.name} = ${f.name};`).join("\n        ");
-        const constructor = objectFields.length > 0 ?
-          `
-    public ${className}(${constructorParams}) {
-        ${constructorBody}
-    }` : "";
-        const gettersSetters = objectFields
-          .map((f) => {
-            const fieldName = f.name;
-            const fieldType = getTypeString(f.type, language);
-
-            return `
-    public ${fieldType} get${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}() {
-        return ${fieldName};
-    }
-    public void set${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${fieldType} ${fieldName}) {
-        this.${fieldName} = ${fieldName};
-    }`;
-          })
-          .join("");
-
-        return `public class ${className} {
-${fields.replace(/ {8}/g, "    ")}
-${constructor.replace(/ {8}/g, "    ")}
-${gettersSetters}
-}`;
-      }
-
-      return "";
-    })
-    .join("\n\n");
+  return generateSharedObjectClasses(args, language as CodeLanguage);
 };
- 
+
 const compareOutputs = (actual: string, expected: string): boolean => {
-  
-  const normalizedActual = actual.replace(/\s+/g, '').trim();
-  const normalizedExpected = expected.replace(/\s+/g, '').trim();
-  
-  if (normalizedActual === normalizedExpected) return true;
-  
-  try {
- 
-    const actualObj = JSON.parse(actual);
-    const expectedObj = JSON.parse(expected);
-
-    return JSON.stringify(actualObj) === JSON.stringify(expectedObj);
-  } catch {
-    
-    return actual.trim() === expected.trim();
-  }
+  return compareSharedOutputs(actual, expected);
 };
 
-
-const checkConstraints = (code: string, language: CodeLanguage, constraints: CodeConstraint[]): ConstraintCheckResult => {
+const checkConstraints = (
+  code: string,
+  language: CodeLanguage,
+  constraints: CodeConstraint[]
+): ConstraintCheckResult => {
   const errors: string[] = [];
 
   for (const constraint of constraints) {
     const type = constraint.type as CodeConstraintType;
 
     switch (type) {
-      case "maxLines":
-        const lineCount = code.split('\n').length;
+      case "maxLines": {
+        const lineCount = code.split("\n").length;
 
         if (lineCount > constraint.value) {
-          errors.push(`Превышено максимальное количество строк: ${lineCount} > ${constraint.value}`);
+          errors.push(
+            `Превышено максимальное количество строк: ${lineCount} > ${constraint.value}`
+          );
         }
 
         break;
+      }
 
-      case "forbiddenTokens":
+      case "forbiddenTokens": {
         const forbiddenTokens = constraint.value as string[];
 
         for (const token of forbiddenTokens) {
-      
-          const tokenRegex = new RegExp(`\\b${token}\\b`, 'g');
+          const tokenRegex = new RegExp(`\\b${token}\\b`, "g");
 
           if (tokenRegex.test(code)) {
             errors.push(`Использование запрещенного токена: "${token}"`);
@@ -921,20 +767,28 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
         }
 
         break;
+      }
 
       case "noComments":
         if (constraint.value === true) {
-       
           let hasComments = false;
-          
-          if (language === "javascript" || language === "java" || language === "csharp" || language === "cpp" || language === "golang") {
-         
+
+          if (
+            language === "javascript" ||
+            language === "typescript" ||
+            language === "java" ||
+            language === "csharp" ||
+            language === "cpp" ||
+            language === "golang" ||
+            language === "rust"
+          ) {
             hasComments = /\/\/.*|\/\*[\s\S]*?\*\//.test(code);
-          } else if (language === "python") {
- 
+          } else if (language === "python" || language === "ruby") {
             hasComments = /#.*/.test(code);
+          } else if (language === "php") {
+            hasComments = /#.*/.test(code) || /\/\/.*|\/\*[\s\S]*?\*\//.test(code);
           }
-          
+
           if (hasComments) {
             errors.push("Использование комментариев запрещено");
           }
@@ -944,20 +798,35 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
 
       case "noConsoleLog":
         if (constraint.value === true) {
-         
-          if (language === "javascript" && /\bconsole\.log\s*\(/.test(code)) {
+          if (
+            (language === "javascript" || language === "typescript") &&
+            /\bconsole\.log\s*\(/.test(code)
+          ) {
             errors.push("Использование console.log запрещено");
           } else if (language === "python" && /\bprint\s*\(/.test(code)) {
             errors.push("Использование print запрещено");
-          } else if ((language === "java" || language === "csharp" || language === "cpp") && /\bSystem\.out\.print|Console\.Write(Line)?|cout\s*<</.test(code)) {
+          } else if (language === "php" && /\b(?:echo|print|print_r|var_dump)\b/.test(code)) {
+            errors.push("Использование вывода в консоль запрещено");
+          } else if (language === "ruby" && /\b(?:puts|print|p)\b/.test(code)) {
+            errors.push("Использование вывода в консоль запрещено");
+          } else if (
+            language === "rust" &&
+            /\b(?:println!|print!|eprintln!|eprint!)\s*\(/.test(code)
+          ) {
+            errors.push("Использование вывода в консоль запрещено");
+          } else if (language === "golang" && /\bfmt\.Print(?:ln|f)?\s*\(/.test(code)) {
+            errors.push("Использование вывода в консоль запрещено");
+          } else if (
+            (language === "java" || language === "csharp" || language === "cpp") &&
+            /\bSystem\.out\.print|Console\.Write(Line)?|cout\s*<</.test(code)
+          ) {
             errors.push("Использование вывода в консоль запрещено");
           }
         }
 
         break;
 
-      case "maxComplexity":
-    
+      case "maxComplexity": {
         const complexity = estimateCodeComplexity(code, language);
 
         if (complexity > constraint.value) {
@@ -965,21 +834,19 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
         }
 
         break;
+      }
 
       case "memoryLimit":
-  
         break;
 
       case "maxTimeMs":
-   
         break;
 
-      case "requiredKeywords":
+      case "requiredKeywords": {
         const requiredKeywords = constraint.value as string[];
 
         for (const keyword of requiredKeywords) {
-      
-          const keywordRegex = new RegExp(`\\b${keyword}\\b`, 'g');
+          const keywordRegex = new RegExp(`\\b${keyword}\\b`, "g");
 
           if (!keywordRegex.test(code)) {
             errors.push(`Отсутствует обязательное ключевое слово: "${keyword}"`);
@@ -987,25 +854,25 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
         }
 
         break;
+      }
     }
   }
 
   return {
     passed: errors.length === 0,
-    errors
+    errors,
   };
 };
-
 
 const estimateCodeComplexity = (code: string, language: CodeLanguage): number => {
   let complexity = 1;
 
   const loopPatterns = [
-    /\bfor\s*\(/g,  
-    /\bwhile\s*\(/g, 
-    /\bdo\s*\{/g, 
-    /\bforeach\s*\(/g, 
-    /\bfor\s+\w+\s+in\b/g,  
+    /\bfor\s*\(/g,
+    /\bwhile\s*\(/g,
+    /\bdo\s*\{/g,
+    /\bforeach\s*\(/g,
+    /\bfor\s+\w+\s+in\b/g,
   ];
 
   for (const pattern of loopPatterns) {
@@ -1016,12 +883,7 @@ const estimateCodeComplexity = (code: string, language: CodeLanguage): number =>
     }
   }
 
-  const conditionPatterns = [
-    /\bif\s*\(/g,
-    /\belse\s+if\s*\(/g,
-    /\bswitch\s*\(/g,
-    /\bcase\s+/g,
-  ];
+  const conditionPatterns = [/\bif\s*\(/g, /\belse\s+if\s*\(/g, /\bswitch\s*\(/g, /\bcase\s+/g];
 
   for (const pattern of conditionPatterns) {
     const matches = code.match(pattern);
@@ -1034,16 +896,16 @@ const estimateCodeComplexity = (code: string, language: CodeLanguage): number =>
   return Math.floor(complexity);
 };
 
-const SuccessModal = ({ 
-  isOpen, 
-  onClose, 
-  experienceGained, 
-  newLevel 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  experienceGained: number; 
-  newLevel: number; 
+const SuccessModal = ({
+  isOpen,
+  onClose,
+  experienceGained,
+  newLevel,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  experienceGained: number;
+  newLevel: number;
 }) => {
   if (!isOpen) return null;
 
@@ -1073,7 +935,6 @@ const SuccessModal = ({
     </div>
   );
 };
-
 
 const ConstraintErrors = ({ errors }: { errors: string[] }) => {
   if (errors.length === 0) return null;
@@ -1157,7 +1018,7 @@ export default function SolveProblemPage() {
 
     setConstraintErrors(result.errors);
     setConstraintsPassed(result.passed);
-    
+
     return result.passed;
   };
 
@@ -1179,13 +1040,13 @@ export default function SolveProblemPage() {
     try {
       let codeToRun = code;
       const argumentScheme = (task as any).argumentScheme;
-      const taskTestCases = (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
-      
+      const taskTestCases =
+        (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
+
       if (selectedLang === "java" || selectedLang === "csharp") {
         const funcName = extractFunctionName(code, selectedLang);
 
         if (funcName && taskTestCases.length > 0) {
-       
           const firstTestCase = taskTestCases[0];
 
           if (selectedLang === "java") {
@@ -1194,8 +1055,23 @@ export default function SolveProblemPage() {
             codeToRun = buildCSharpTestSuite(code, [firstTestCase], funcName, argumentScheme);
           }
         }
+      } else if (taskTestCases.length > 0) {
+        const funcName = extractFunctionName(code, selectedLang);
+        const firstTestCase = taskTestCases[0];
+
+        if (funcName) {
+          const inputToUse = getSharedDisplayInput(firstTestCase, argumentScheme, selectedLang);
+          const objectClasses =
+            selectedLang === "typescript"
+              ? generateSharedObjectClasses(argumentScheme ?? [], "typescript")
+              : "";
+          const sourceCode =
+            selectedLang === "typescript" && objectClasses ? `${objectClasses}\n\n${code}` : code;
+
+          codeToRun = buildSharedTestCode(sourceCode, "", selectedLang, funcName, inputToUse);
+        }
       }
-      
+
       const res = await CodeService.executeCode({ language: selectedLang, code: codeToRun });
 
       if (selectedLang === "java" || selectedLang === "csharp") {
@@ -1212,39 +1088,42 @@ export default function SolveProblemPage() {
 
   const handleSubmit = async () => {
     if (!task) return;
-    
+
     if (!validateConstraints()) {
-   
       setResult(null);
- 
+
       if (constraintErrors.length > 0) {
-        alert(`Ограничения не пройдены:\n\n${constraintErrors.join("\n")}\n\nИсправьте код и попробуйте снова.`);
+        alert(
+          `Ограничения не пройдены:\n\n${constraintErrors.join("\n")}\n\nИсправьте код и попробуйте снова.`
+        );
       }
 
       return;
     }
-    
+
     setSubmitLoading(true);
     setResult(null);
     setRawOutput("");
     setShowSuccessModal(false);
 
     try {
-   
       let codeToSubmit = code;
 
       if (selectedLang === "java" || selectedLang === "csharp") {
         const funcName = extractFunctionName(code, selectedLang);
 
         if (!funcName) {
-          alert(`Не удалось найти имя функции в коде. Убедитесь, что функция определена правильно для ${selectedLang === "java" ? "Java" : "C#"}.`);
+          alert(
+            `Не удалось найти имя функции в коде. Убедитесь, что функция определена правильно для ${selectedLang === "java" ? "Java" : "C#"}.`
+          );
           setSubmitLoading(false);
 
           return;
         }
 
         const argumentScheme = (task as any).argumentScheme;
-        const taskTestCases = (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
+        const taskTestCases =
+          (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
 
         if (selectedLang === "java") {
           codeToSubmit = buildJavaTestSuite(code, taskTestCases, funcName, argumentScheme);
@@ -1254,39 +1133,39 @@ export default function SolveProblemPage() {
       }
 
       const res = await CodingTasksService.submitSolution(task.id, codeToSubmit, selectedLang);
- 
-      const responseOutput = (res as any).output || (res as any).message || '';
+
+      const responseOutput = (res as any).output || (res as any).message || "";
 
       setRawOutput(responseOutput);
- 
-      if (res && res.results && (selectedLang === "java" || selectedLang === "csharp") && responseOutput) {
-        
+
+      if (
+        res &&
+        res.results &&
+        (selectedLang === "java" || selectedLang === "csharp") &&
+        responseOutput
+      ) {
         const parsedResults = [];
 
         for (let i = 0; i < res.results.length; i++) {
           const testNum = i + 1;
-          const { logs, result: actualResult } = parseTestOutput(responseOutput, testNum);
+          const { result: actualResult } = parseTestOutput(responseOutput, testNum);
           const expected = res.results[i].expected;
 
-          
           const actual = actualResult || res.results[i].actual || "";
 
           parsedResults.push({
             ...res.results[i],
             actual: actual || "пусто",
-            passed: compareOutputs(actual, expected)
+            passed: compareOutputs(actual, expected),
           });
         }
 
-        
         res.results = parsedResults;
         const serverConstraintsPassed = (res as any).constraintsPassed ?? constraintsPassed;
         const serverConstraintErrors = (res as any).constraintErrors ?? constraintErrors;
-        
-        
-        res.allPassed = parsedResults.every(r => r.passed) && serverConstraintsPassed;
-        
-     
+
+        res.allPassed = parsedResults.every((r) => r.passed) && serverConstraintsPassed;
+
         if (serverConstraintErrors && serverConstraintErrors.length > 0) {
           setConstraintErrors(serverConstraintErrors);
           setConstraintsPassed(serverConstraintsPassed);
@@ -1295,16 +1174,13 @@ export default function SolveProblemPage() {
 
       setResult(res);
 
-    
       await refreshStudentLevel();
 
-     
       const finalConstraintsPassed = (res as any).constraintsPassed ?? constraintsPassed;
 
       if (res.allPassed && res.experienceGained > 0 && finalConstraintsPassed) {
         setShowSuccessModal(true);
       } else if ((res as any).constraintErrors && (res as any).constraintErrors.length > 0) {
-      
         setConstraintErrors((res as any).constraintErrors);
       }
     } catch (e: any) {
@@ -1337,7 +1213,7 @@ export default function SolveProblemPage() {
       <div className={styles.layout}>
         <div className={styles.leftPanel}>
           <button className={styles.backBtn} onClick={() => router.push("/problems")}>
-             Назад к задачам
+            Назад к задачам
           </button>
 
           <div className={styles.taskInfo}>
@@ -1426,38 +1302,40 @@ export default function SolveProblemPage() {
 
           {(() => {
             const argScheme = (task as any).argumentScheme;
-            const langTestCases = (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
+            const langTestCases =
+              (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
 
             if (langTestCases.length === 0) return null;
 
             const objectClassesCode = generateObjectClasses(argScheme || [], selectedLang);
 
             return (
-            <div className={styles.examplesBox}>
-              {objectClassesCode && (selectedLang === "java" || selectedLang === "csharp") && (
-                <>
-                  <h3>Классы объектов</h3>
-                  <pre className={styles.codeBlock}>{objectClassesCode}</pre>
-                </>
-              )}
+              <div className={styles.examplesBox}>
+                {objectClassesCode && (selectedLang === "java" || selectedLang === "csharp") && (
+                  <>
+                    <h3>Классы объектов</h3>
+                    <pre className={styles.codeBlock}>{objectClassesCode}</pre>
+                  </>
+                )}
 
-              <h3>Примеры</h3>
-              {langTestCases.slice(0, 3).map((tc: TestCase, i: number) => (
-                <div key={i} className={styles.example}>
-                  <div>
-                    <strong>Вход:</strong> <code>{getDisplayInput(tc, argScheme, selectedLang)}</code>
+                <h3>Примеры</h3>
+                {langTestCases.slice(0, 3).map((tc: TestCase, i: number) => (
+                  <div key={i} className={styles.example}>
+                    <div>
+                      <strong>Вход:</strong>{" "}
+                      <code>{getDisplayInput(tc, argScheme, selectedLang)}</code>
+                    </div>
+                    <div>
+                      <strong>Выход:</strong> <code>{tc.expectedOutput}</code>
+                    </div>
                   </div>
-                  <div>
-                    <strong>Выход:</strong> <code>{tc.expectedOutput}</code>
-                  </div>
-                </div>
-              ))}
-              {langTestCases.length > 3 && (
-                <p className={styles.moreTests}>
-                  + ещё {langTestCases.length - 3} скрытых тестов
-                </p>
-              )}
-            </div>
+                ))}
+                {langTestCases.length > 3 && (
+                  <p className={styles.moreTests}>
+                    + ещё {langTestCases.length - 3} скрытых тестов
+                  </p>
+                )}
+              </div>
             );
           })()}
 
@@ -1529,7 +1407,6 @@ export default function SolveProblemPage() {
             />
           </div>
 
-     
           {constraintErrors.length > 0 && <ConstraintErrors errors={constraintErrors} />}
 
           {consoleOutput && (
@@ -1573,13 +1450,10 @@ export default function SolveProblemPage() {
                 ))}
               </div>
               {hiddenResultsCount > 0 && (
-                <p className={styles.moreResults}>
-                  Ещё {hiddenResultsCount} тестов скрыто
-                </p>
+                <p className={styles.moreResults}>Ещё {hiddenResultsCount} тестов скрыто</p>
               )}
-              
-          
-              {process.env.NODE_ENV === 'development' && rawOutput && (
+
+              {process.env.NODE_ENV === "development" && rawOutput && (
                 <div className={styles.debugBox}>
                   <strong>Отладка (сырой вывод):</strong>
                   <pre>{rawOutput}</pre>
@@ -1590,7 +1464,6 @@ export default function SolveProblemPage() {
         </div>
       </div>
 
- 
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
