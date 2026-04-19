@@ -115,8 +115,20 @@ const hasConsoleLog = (code: string, language: CodeLanguage): boolean => {
 const calculateComplexity = (code: string): number => {
   let complexity = 1;
   const complexityKeywords = [
-    "if ", "else if", "else", "for ", "while ", "do ",
-    "case ", "catch ", "||", "&&", "? :", "??", "switch", "?"
+    "if ",
+    "else if",
+    "else",
+    "for ",
+    "while ",
+    "do ",
+    "case ",
+    "catch ",
+    "||",
+    "&&",
+    "? :",
+    "??",
+    "switch",
+    "?",
   ];
 
   complexityKeywords.forEach((keyword) => {
@@ -137,7 +149,11 @@ const hasRequiredKeywords = (code: string, keywords: string[]): boolean => {
   );
 };
 
-const checkConstraints = (code: string, language: CodeLanguage, constraints: CodeConstraint[]): ConstraintCheckResult => {
+const checkConstraints = (
+  code: string,
+  language: CodeLanguage,
+  constraints: CodeConstraint[]
+): ConstraintCheckResult => {
   const errors: string[] = [];
 
   for (const constraint of constraints) {
@@ -159,7 +175,7 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
         const forbiddenTokens = constraint.value as string[];
 
         for (const token of forbiddenTokens) {
-          const tokenRegex = new RegExp(`\\b${token}\\b`, 'g');
+          const tokenRegex = new RegExp(`\\b${token}\\b`, "g");
 
           if (tokenRegex.test(code)) {
             errors.push(`Использование запрещенного токена: "${token}"`);
@@ -196,7 +212,9 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
         const actualComplexity = calculateComplexity(code);
 
         if (actualComplexity > maxComplexity) {
-          errors.push(`Превышена максимальная сложность кода: ${actualComplexity} > ${maxComplexity}`);
+          errors.push(
+            `Превышена максимальная сложность кода: ${actualComplexity} > ${maxComplexity}`
+          );
         }
 
         break;
@@ -213,7 +231,6 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
       }
 
       case "maxTimeMs": {
-  
         break;
       }
 
@@ -225,7 +242,7 @@ const checkConstraints = (code: string, language: CodeLanguage, constraints: Cod
 
   return {
     passed: errors.length === 0,
-    errors
+    errors,
   };
 };
 
@@ -316,29 +333,176 @@ func solution(n int) interface{} {
 };
 
 const getTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
-  const typeMap: Record<ArgumentType, Record<CodeLanguage, string>> = {
+  const typeMap: Record<ArgumentType, Partial<Record<CodeLanguage, string>>> = {
     int: { javascript: "", python: "int", csharp: "int", java: "int", golang: "int", cpp: "int" },
-    string: { javascript: "", python: "str", csharp: "string", java: "String", golang: "string", cpp: "string" },
-    number: { javascript: "number", python: "float", csharp: "double", java: "double", golang: "float64", cpp: "double" },
-    boolean: { javascript: "", python: "bool", csharp: "bool", java: "boolean", golang: "bool", cpp: "bool" },
-    double: { javascript: "", python: "float", csharp: "double", java: "double", golang: "float64", cpp: "double" },
-    float: { javascript: "", python: "float", csharp: "float", java: "float", golang: "float32", cpp: "float" },
-    long: { javascript: "", python: "int", csharp: "long", java: "long", golang: "int64", cpp: "long" },
-    char: { javascript: "", python: "str", csharp: "char", java: "char", golang: "rune", cpp: "char" },
-    byte: { javascript: "", python: "bytes", csharp: "byte", java: "byte", golang: "byte", cpp: "byte" },
-    short: { javascript: "", python: "int", csharp: "short", java: "short", golang: "int16", cpp: "short" },
-    object: { javascript: "", python: "", csharp: "object", java: "Object", golang: "interface{}", cpp: "object" },
-    array: { javascript: "", python: "list", csharp: "object", java: "int[]", golang: "[]int", cpp: "vector" },
-    array_int: { javascript: "", python: "list", csharp: "int[]", java: "int[]", golang: "[]int", cpp: "vector" },
-    array_string: { javascript: "", python: "list", csharp: "string[]", java: "String[]", golang: "[]string", cpp: "vector" },
-    array_double: { javascript: "", python: "list", csharp: "double[]", java: "double[]", golang: "[]float64", cpp: "vector" },
-    array_float: { javascript: "", python: "list", csharp: "float[]", java: "float[]", golang: "[]float32", cpp: "vector" },
-    array_long: { javascript: "", python: "list", csharp: "long[]", java: "long[]", golang: "[]int64", cpp: "vector" },
-    array_boolean: { javascript: "", python: "list", csharp: "bool[]", java: "boolean[]", golang: "[]bool", cpp: "vector" },
-    array_char: { javascript: "", python: "list", csharp: "char[]", java: "char[]", golang: "[]rune", cpp: "vector" },
-    list: { javascript: "", python: "list", csharp: "List<object>", java: "List<Object>", golang: "[]interface{}", cpp: "vector" },
-    map: { javascript: "Object", python: "dict", csharp: "Dictionary<string, object>", java: "Map<String, Object>", golang: "map[string]interface{}", cpp: "map" },
-    void: { javascript: "void", python: "None", csharp: "void", java: "void", golang: "", cpp: "void" },
+    string: {
+      javascript: "",
+      python: "str",
+      csharp: "string",
+      java: "String",
+      golang: "string",
+      cpp: "string",
+    },
+    number: {
+      javascript: "number",
+      python: "float",
+      csharp: "double",
+      java: "double",
+      golang: "float64",
+      cpp: "double",
+    },
+    boolean: {
+      javascript: "",
+      python: "bool",
+      csharp: "bool",
+      java: "boolean",
+      golang: "bool",
+      cpp: "bool",
+    },
+    double: {
+      javascript: "",
+      python: "float",
+      csharp: "double",
+      java: "double",
+      golang: "float64",
+      cpp: "double",
+    },
+    float: {
+      javascript: "",
+      python: "float",
+      csharp: "float",
+      java: "float",
+      golang: "float32",
+      cpp: "float",
+    },
+    long: {
+      javascript: "",
+      python: "int",
+      csharp: "long",
+      java: "long",
+      golang: "int64",
+      cpp: "long",
+    },
+    char: {
+      javascript: "",
+      python: "str",
+      csharp: "char",
+      java: "char",
+      golang: "rune",
+      cpp: "char",
+    },
+    byte: {
+      javascript: "",
+      python: "bytes",
+      csharp: "byte",
+      java: "byte",
+      golang: "byte",
+      cpp: "byte",
+    },
+    short: {
+      javascript: "",
+      python: "int",
+      csharp: "short",
+      java: "short",
+      golang: "int16",
+      cpp: "short",
+    },
+    object: {
+      javascript: "",
+      python: "",
+      csharp: "object",
+      java: "Object",
+      golang: "interface{}",
+      cpp: "object",
+    },
+    array: {
+      javascript: "",
+      python: "list",
+      csharp: "object",
+      java: "int[]",
+      golang: "[]int",
+      cpp: "vector",
+    },
+    array_int: {
+      javascript: "",
+      python: "list",
+      csharp: "int[]",
+      java: "int[]",
+      golang: "[]int",
+      cpp: "vector",
+    },
+    array_string: {
+      javascript: "",
+      python: "list",
+      csharp: "string[]",
+      java: "String[]",
+      golang: "[]string",
+      cpp: "vector",
+    },
+    array_double: {
+      javascript: "",
+      python: "list",
+      csharp: "double[]",
+      java: "double[]",
+      golang: "[]float64",
+      cpp: "vector",
+    },
+    array_float: {
+      javascript: "",
+      python: "list",
+      csharp: "float[]",
+      java: "float[]",
+      golang: "[]float32",
+      cpp: "vector",
+    },
+    array_long: {
+      javascript: "",
+      python: "list",
+      csharp: "long[]",
+      java: "long[]",
+      golang: "[]int64",
+      cpp: "vector",
+    },
+    array_boolean: {
+      javascript: "",
+      python: "list",
+      csharp: "bool[]",
+      java: "boolean[]",
+      golang: "[]bool",
+      cpp: "vector",
+    },
+    array_char: {
+      javascript: "",
+      python: "list",
+      csharp: "char[]",
+      java: "char[]",
+      golang: "[]rune",
+      cpp: "vector",
+    },
+    list: {
+      javascript: "",
+      python: "list",
+      csharp: "List<object>",
+      java: "List<Object>",
+      golang: "[]interface{}",
+      cpp: "vector",
+    },
+    map: {
+      javascript: "Object",
+      python: "dict",
+      csharp: "Dictionary<string, object>",
+      java: "Map<String, Object>",
+      golang: "map[string]interface{}",
+      cpp: "map",
+    },
+    void: {
+      javascript: "void",
+      python: "None",
+      csharp: "void",
+      java: "void",
+      golang: "",
+      cpp: "void",
+    },
   };
 
   return typeMap[type_]?.[language] ?? type_;
@@ -354,7 +518,13 @@ const getReturnTypeString = (type_: ArgumentType, language: CodeLanguage): strin
   }
 
   if (type_ === "list") {
-    return language === "csharp" ? "List<object>" : language === "java" ? "List<Object>" : language === "golang" ? "[]interface{}" : "object";
+    return language === "csharp"
+      ? "List<object>"
+      : language === "java"
+        ? "List<Object>"
+        : language === "golang"
+          ? "[]interface{}"
+          : "object";
   }
 
   return getTypeString(type_, language);
@@ -539,7 +709,7 @@ func yourFunction(${goArgsStr}) ${goRetStr} {
 const getArrayTypeString = (scheme: ArgumentSchema, language: CodeLanguage): string => {
   const elemType = scheme.arrayElementType || "int";
   const elemClassName = scheme.arrayElementClassName;
-  
+
   if (elemType === "object" && elemClassName) {
     if (language === "java") return `${elemClassName}[]`;
 
@@ -549,14 +719,17 @@ const getArrayTypeString = (scheme: ArgumentSchema, language: CodeLanguage): str
 
     return elemClassName;
   }
-  
-  return getTypeString(elemType as ArgumentType, language) + (language === "java" || language === "csharp" ? "[]" : "");
+
+  return (
+    getTypeString(elemType as ArgumentType, language) +
+    (language === "java" || language === "csharp" ? "[]" : "")
+  );
 };
 
 const getListTypeString = (scheme: ArgumentSchema, language: CodeLanguage): string => {
   const elemType = scheme.arrayElementType || "object";
   const elemClassName = scheme.arrayElementClassName;
-  
+
   if (elemType === "object" && elemClassName) {
     if (language === "csharp") return `List<${elemClassName}>`;
 
@@ -564,7 +737,7 @@ const getListTypeString = (scheme: ArgumentSchema, language: CodeLanguage): stri
 
     return elemClassName;
   }
-  
+
   if (language === "csharp") return `List<${getTypeString(elemType as ArgumentType, language)}>`;
 
   if (language === "java") return `List<${getTypeString(elemType as ArgumentType, language)}>`;
@@ -575,39 +748,50 @@ const getListTypeString = (scheme: ArgumentSchema, language: CodeLanguage): stri
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const generateObjectClasses = (args: ArgumentSchema[], language: CodeLanguage): string => {
   const objectArgs = args.filter((a) => a.type === "object" && a.objectFields);
-  
+
   const arrayObjectArgs = args.filter(
-    (a) => (a.type === "array" || a.type === "list") && 
-           a.arrayElementType === "object" && 
-           a.arrayElementObjectFields
+    (a) =>
+      (a.type === "array" || a.type === "list") &&
+      a.arrayElementType === "object" &&
+      a.arrayElementObjectFields
   );
-  
+
   const allClasses = [...objectArgs, ...arrayObjectArgs];
-  
+
   if (allClasses.length === 0) return "";
 
   return allClasses
     .map((arg) => {
       let className: string;
       const objectFields = arg.objectFields ?? arg.arrayElementObjectFields ?? [];
-      
+
       if (arg.objectFields) {
         className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
       } else if (arg.arrayElementObjectFields) {
-        className = arg.arrayElementClassName || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
+        className =
+          arg.arrayElementClassName || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
       } else {
         className = arg.className || arg.name.charAt(0).toUpperCase() + arg.name.slice(1);
       }
 
       if (language === "java") {
         const accessModifier = "private";
-        const fields = objectFields.map((f) => `        ${accessModifier} ${getTypeString(f.type, language)} ${f.name};`).join("\n");
-        const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
-        const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
-        const constructor = objectFields.length > 0 ? `
+        const fields = objectFields
+          .map((f) => `        ${accessModifier} ${getTypeString(f.type, language)} ${f.name};`)
+          .join("\n");
+        const constructorParams = objectFields
+          .map((f) => `${getTypeString(f.type, language)} ${f.name}`)
+          .join(", ");
+        const constructorBody = objectFields
+          .map((f) => `this.${f.name} = ${f.name};`)
+          .join("\n        ");
+        const constructor =
+          objectFields.length > 0
+            ? `
     public ${className}(${constructorParams}) {
         ${constructorBody}
-    }` : "";
+    }`
+            : "";
         const gettersSetters = objectFields
           .map((f) => {
             const fieldName = f.name;
@@ -631,13 +815,22 @@ ${gettersSetters}
       }
 
       if (language === "csharp") {
-        const fields = objectFields.map((f) => `        public ${getTypeString(f.type, language)} ${f.name};`).join("\n");
-        const constructorParams = objectFields.map(f => `${getTypeString(f.type, language)} ${f.name}`).join(", ");
-        const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n        ");
-        const constructor = objectFields.length > 0 ? `
+        const fields = objectFields
+          .map((f) => `        public ${getTypeString(f.type, language)} ${f.name};`)
+          .join("\n");
+        const constructorParams = objectFields
+          .map((f) => `${getTypeString(f.type, language)} ${f.name}`)
+          .join(", ");
+        const constructorBody = objectFields
+          .map((f) => `this.${f.name} = ${f.name};`)
+          .join("\n        ");
+        const constructor =
+          objectFields.length > 0
+            ? `
     public ${className}(${constructorParams}) {
         ${constructorBody}
-    }` : "";
+    }`
+            : "";
         const gettersSetters = objectFields
           .map((f) => {
             const fieldName = f.name;
@@ -661,14 +854,19 @@ ${gettersSetters}
       }
 
       if (language === "javascript") {
-        const constructorParams = objectFields.map(f => f.name).join(", ");
-        const constructorBody = objectFields.map(f => `this.${f.name} = ${f.name};`).join("\n    ");
-        const constructor = objectFields.length > 0 ? `
+        const constructorParams = objectFields.map((f) => f.name).join(", ");
+        const constructorBody = objectFields
+          .map((f) => `this.${f.name} = ${f.name};`)
+          .join("\n    ");
+        const constructor =
+          objectFields.length > 0
+            ? `
 class ${className} {
     constructor(${constructorParams}) {
         ${constructorBody}
     }
-}` : `
+}`
+            : `
 class ${className} {
 }`;
 
@@ -676,12 +874,17 @@ class ${className} {
       }
 
       if (language === "python") {
-        const constructorParams = objectFields.map(f => f.name).join(", ");
-        const constructorBody = objectFields.map(f => `self.${f.name} = ${f.name}`).join("\n        ");
-        const constructor = objectFields.length > 0 ? `
+        const constructorParams = objectFields.map((f) => f.name).join(", ");
+        const constructorBody = objectFields
+          .map((f) => `self.${f.name} = ${f.name}`)
+          .join("\n        ");
+        const constructor =
+          objectFields.length > 0
+            ? `
 class ${className}:
     def __init__(self, ${constructorParams}):
-        ${constructorBody}` : `
+        ${constructorBody}`
+            : `
 class ${className}:
     pass`;
 
@@ -724,7 +927,9 @@ export default function CodingPage() {
   const [runLoading, setRunLoading] = useState(false);
   const [constraintErrors, setConstraintErrors] = useState<string[]>([]);
   const [constraintsPassed, setConstraintsPassed] = useState<boolean | null>(null);
-  const [testResults, setTestResults] = useState<{ input: string; expected: string; actual: string; passed: boolean }[] | null>(null);
+  const [testResults, setTestResults] = useState<
+    { input: string; expected: string; actual: string; passed: boolean }[] | null
+  >(null);
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
@@ -801,12 +1006,14 @@ export default function CodingPage() {
   };
 
   const toggleTag = (tag: string) => {
-    setTags((prev) =>
-      prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag],
-    );
+    setTags((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]));
   };
 
-  const convertArgsToInput = (testCases: TestCase[], scheme: ArgumentSchema[], language: string): TestCase[] => {
+  const convertArgsToInput = (
+    testCases: TestCase[],
+    scheme: ArgumentSchema[],
+    language: string
+  ): TestCase[] => {
     return testCases.map((tc) => {
       if (tc.args && tc.args.length > 0 && scheme && scheme.length > 0) {
         const argValues = tc.args.map((arg, idx) => {
@@ -814,7 +1021,11 @@ export default function CodingPage() {
 
           if (!argScheme) return arg.value;
 
-          if (argScheme.type === "object" && arg.objectValues && Object.keys(arg.objectValues).length > 0) {
+          if (
+            argScheme.type === "object" &&
+            arg.objectValues &&
+            Object.keys(arg.objectValues).length > 0
+          ) {
             if (language === "javascript" || language === "python") {
               return JSON.stringify(arg.objectValues);
             }
@@ -843,7 +1054,7 @@ export default function CodingPage() {
       return;
     }
 
-    const hasTestsInAnyLang = Object.values(testCasesByLanguage).some(tcs => tcs.length > 0);
+    const hasTestsInAnyLang = Object.values(testCasesByLanguage).some((tcs) => tcs.length > 0);
 
     if (!hasTestsInAnyLang) {
       alert("Добавьте хотя бы один тест-кейс для одного из языков");
@@ -864,14 +1075,22 @@ export default function CodingPage() {
     setSaving(true);
     try {
       const firstLangTestCases = testCasesByLanguage[selectedLanguages[0]] || [];
-      const processedTestCases = convertArgsToInput(firstLangTestCases, argumentScheme, selectedLanguages[0]);
-      
+      const processedTestCases = convertArgsToInput(
+        firstLangTestCases,
+        argumentScheme,
+        selectedLanguages[0]
+      );
+
       const processedTestCasesByLanguage: Record<string, TestCase[]> = {};
 
       for (const lang of selectedLanguages) {
         const langTestCases = testCasesByLanguage[lang] || [];
 
-        processedTestCasesByLanguage[lang] = convertArgsToInput(langTestCases, argumentScheme, lang);
+        processedTestCasesByLanguage[lang] = convertArgsToInput(
+          langTestCases,
+          argumentScheme,
+          lang
+        );
       }
 
       const payload = {
@@ -971,7 +1190,10 @@ export default function CodingPage() {
 
     if (newTestCases[lang] && newTestCases[lang][testCaseIndex]) {
       newTestCases[lang] = [...newTestCases[lang]];
-      newTestCases[lang][testCaseIndex] = { ...newTestCases[lang][testCaseIndex], expectedOutput: value };
+      newTestCases[lang][testCaseIndex] = {
+        ...newTestCases[lang][testCaseIndex],
+        expectedOutput: value,
+      };
       setTestCasesByLanguage(newTestCases);
     }
   };
@@ -981,41 +1203,46 @@ export default function CodingPage() {
     const newTestCases = { ...testCasesByLanguage };
 
     if (!newTestCases[lang]) return;
-    
+
     newTestCases[lang] = [...newTestCases[lang]];
     const tc = { ...newTestCases[lang][testCaseIndex] };
     const args = tc.args ? [...tc.args] : [];
-    
+
     if (!args[argIndex]) {
       args[argIndex] = { index: argIndex, value: "", objectValues: {} };
     }
 
     args[argIndex] = { ...args[argIndex], value };
-    
+
     tc.args = args;
     newTestCases[lang][testCaseIndex] = tc;
     setTestCasesByLanguage(newTestCases);
   };
 
-  const updateTestCaseArgObjectValue = (testCaseIndex: number, argIndex: number, fieldName: string, value: string) => {
+  const updateTestCaseArgObjectValue = (
+    testCaseIndex: number,
+    argIndex: number,
+    fieldName: string,
+    value: string
+  ) => {
     const lang = activeTestLang || selectedLanguages[0];
     const newTestCases = { ...testCasesByLanguage };
 
     if (!newTestCases[lang]) return;
-    
+
     newTestCases[lang] = [...newTestCases[lang]];
     const tc = { ...newTestCases[lang][testCaseIndex] };
     const args = tc.args ? [...tc.args] : [];
-    
+
     if (!args[argIndex]) {
       args[argIndex] = { index: argIndex, value: "", objectValues: {} };
     }
-    
+
     const objectValues = args[argIndex].objectValues ? { ...args[argIndex].objectValues } : {};
 
     objectValues[fieldName] = value;
     args[argIndex] = { ...args[argIndex], objectValues };
-    
+
     tc.args = args;
     newTestCases[lang][testCaseIndex] = tc;
     setTestCasesByLanguage(newTestCases);
@@ -1062,37 +1289,40 @@ export default function CodingPage() {
     const code = startCodes[activeEditorLang] || "";
     const lang = activeTestLang || activeEditorLang;
     const currentTestCases = testCasesByLanguage[lang] || [];
-    
+
     setRunLoading(true);
     setCodeOutput("");
     setTestResults(null);
-    
+
     try {
       const constraintResult = checkConstraints(code, activeEditorLang, constraints);
 
       setConstraintErrors(constraintResult.errors);
       setConstraintsPassed(constraintResult.passed);
-      
+
       if (!constraintResult.passed) {
         setCodeOutput(" Ограничения не пройдены:\n" + constraintResult.errors.join("\n"));
         setRunLoading(false);
 
         return;
       }
-      
+
       if (currentTestCases.length === 0) {
-        setCodeOutput(" Ограничения пройдены. Добавьте тест-кейсы для языка " + (LANGUAGES.find(l => l.value === lang)?.label || lang));
+        setCodeOutput(
+          " Ограничения пройдены. Добавьте тест-кейсы для языка " +
+            (LANGUAGES.find((l) => l.value === lang)?.label || lang)
+        );
         setRunLoading(false);
 
         return;
       }
-      
+
       const results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
-      
+
       for (let i = 0; i < currentTestCases.length; i++) {
         const tc = currentTestCases[i];
         let testCode: string;
-        
+
         if (activeEditorLang === "javascript") {
           const fnMatch = code.match(/function\s+(\w+)\s*\(/);
           const fnName = fnMatch?.[1] || "solution";
@@ -1106,16 +1336,16 @@ export default function CodingPage() {
         } else {
           testCode = code;
         }
-        
+
         try {
           const res = await CodeService.executeCode({
             language: activeEditorLang,
             code: testCode,
           });
-          
+
           const actual = (res.output || res.error || "").trim();
           const expected = tc.expectedOutput.trim();
-          
+
           let passed = false;
 
           try {
@@ -1123,31 +1353,31 @@ export default function CodingPage() {
           } catch {
             passed = actual === expected;
           }
-          
+
           results.push({
             input: tc.input,
             expected: tc.expectedOutput,
             actual: actual || "(пусто)",
-            passed
+            passed,
           });
         } catch (err: any) {
           results.push({
             input: tc.input,
             expected: tc.expectedOutput,
             actual: `Ошибка: ${err.message || err}`,
-            passed: false
+            passed: false,
           });
         }
       }
-      
+
       setTestResults(results);
-      
-      const allPassed = results.every(r => r.passed);
+
+      const allPassed = results.every((r) => r.passed);
 
       if (allPassed) {
         setCodeOutput(" Все тесты пройдены! Ограничения также соблюдены.");
       } else {
-        const failedCount = results.filter(r => !r.passed).length;
+        const failedCount = results.filter((r) => !r.passed).length;
 
         setCodeOutput(` Провалено тестов: ${failedCount} из ${results.length}`);
       }
@@ -1180,7 +1410,13 @@ export default function CodingPage() {
         <div className={styles.container}>
           <div className={styles.header}>
             <h1>Coding Tasks</h1>
-            <Button color="#9F0FA7" width="300px" textColor="#fff" text="+ Создать задачу" onClick={handleCreate} />
+            <Button
+              color="#9F0FA7"
+              width="300px"
+              textColor="#fff"
+              text="+ Создать задачу"
+              onClick={handleCreate}
+            />
           </div>
 
           <div className={styles.filters}>
@@ -1195,7 +1431,9 @@ export default function CodingPage() {
                 key={d.value}
                 className={`${styles.filterBtn} ${filterDifficulty === d.value ? styles.filterActive : ""}`}
                 onClick={() => setFilterDifficulty(d.value)}
-                style={filterDifficulty === d.value ? { backgroundColor: d.color, color: "#fff" } : {}}
+                style={
+                  filterDifficulty === d.value ? { backgroundColor: d.color, color: "#fff" } : {}
+                }
               >
                 {d.label}
               </button>
@@ -1228,8 +1466,8 @@ export default function CodingPage() {
                   )}
                   <div className={styles.taskFooter}>
                     <span className={styles.taskInfo}>
-                      {langLabels(task.languages)} |{" "}
-                      {task.testCases?.length || 0} тестов | Автор: {task.authorName}
+                      {langLabels(task.languages)} | {task.testCases?.length || 0} тестов | Автор:{" "}
+                      {task.authorName}
                     </span>
                     <div className={styles.taskActions}>
                       <button className={styles.editBtn} onClick={() => handleEdit(task)}>
@@ -1394,7 +1632,6 @@ export default function CodingPage() {
                 />
               </div>
               <div style={{ marginTop: "8px", display: "flex", gap: "8px" }}>
-               
                 <Button
                   color="#01398d"
                   width="auto"
@@ -1405,7 +1642,14 @@ export default function CodingPage() {
                 />
               </div>
               {constraintErrors.length > 0 && (
-                <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#ffebee", borderRadius: "4px" }}>
+                <div
+                  style={{
+                    marginTop: "12px",
+                    padding: "12px",
+                    backgroundColor: "#ffebee",
+                    borderRadius: "4px",
+                  }}
+                >
                   <strong style={{ color: "#c62828" }}>Нарушены ограничения:</strong>
                   <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px", color: "#c62828" }}>
                     {constraintErrors.map((error, i) => (
@@ -1415,7 +1659,15 @@ export default function CodingPage() {
                 </div>
               )}
               {constraintsPassed === true && constraintErrors.length === 0 && (
-                <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#e8f5e9", borderRadius: "4px", color: "#2e7d32" }}>
+                <div
+                  style={{
+                    marginTop: "12px",
+                    padding: "12px",
+                    backgroundColor: "#e8f5e9",
+                    borderRadius: "4px",
+                    color: "#2e7d32",
+                  }}
+                >
                   ✅ Ограничения пройдены
                 </div>
               )}
@@ -1431,14 +1683,15 @@ export default function CodingPage() {
                           marginBottom: "4px",
                           backgroundColor: result.passed ? "#e8f5e9" : "#ffebee",
                           borderRadius: "4px",
-                          borderLeft: `4px solid ${result.passed ? "#4caf50" : "#f44336"}`
+                          borderLeft: `4px solid ${result.passed ? "#4caf50" : "#f44336"}`,
                         }}
                       >
                         <div style={{ fontWeight: "bold" }}>
                           Тест #{i + 1}: {result.passed ? "Пройден" : "Провален"}
                         </div>
                         <div style={{ fontSize: "12px", marginTop: "4px" }}>
-                          Вход: {result.input} | Ожидалось: {result.expected} | Получено: {result.actual}
+                          Вход: {result.input} | Ожидалось: {result.expected} | Получено:{" "}
+                          {result.actual}
                         </div>
                       </div>
                     ))}
@@ -1447,14 +1700,23 @@ export default function CodingPage() {
               )}
               {codeOutput && (
                 <div className={styles.codeOutput}>
-                  <strong>Вывод ({LANGUAGES.find((l) => l.value === activeEditorLang)?.label}):</strong>
+                  <strong>
+                    Вывод ({LANGUAGES.find((l) => l.value === activeEditorLang)?.label}):
+                  </strong>
                   <pre>{codeOutput}</pre>
                 </div>
               )}
             </div>
 
             <div className={styles.formGroup}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "12px",
+                }}
+              >
                 <label style={{ fontWeight: "bold" }}>Схема аргументов</label>
                 <Button
                   color="#9F0FA7"
@@ -1462,14 +1724,19 @@ export default function CodingPage() {
                   textColor="#fff"
                   text="+ Добавить аргумент"
                   onClick={() => {
-                    const isTypedLang = ["java", "csharp", "golang", "cpp"].includes(activeEditorLang);
+                    const isTypedLang = ["java", "csharp", "golang", "cpp"].includes(
+                      activeEditorLang
+                    );
                     const defaultType: ArgumentType = isTypedLang ? "int" : "string";
 
-                    setArgumentScheme((prev) => [...prev, { name: `arg${prev.length + 1}`, type: defaultType }]);
+                    setArgumentScheme((prev) => [
+                      ...prev,
+                      { name: `arg${prev.length + 1}`, type: defaultType },
+                    ]);
                   }}
                 />
               </div>
-              
+
               {argumentScheme.length > 0 && (
                 <div style={{ marginBottom: "12px" }}>
                   <div style={{ marginBottom: "8px" }}>
@@ -1481,11 +1748,15 @@ export default function CodingPage() {
                         const newReturnType = e.target.value as ArgumentType;
 
                         setReturnType(newReturnType);
-                 
+
                         const newCodes: Record<string, string> = {};
 
                         selectedLanguages.forEach((lang) => {
-                          newCodes[lang] = getDefaultStarterCodeWithSchema(lang as CodeLanguage, argumentScheme, newReturnType);
+                          newCodes[lang] = getDefaultStarterCodeWithSchema(
+                            lang as CodeLanguage,
+                            argumentScheme,
+                            newReturnType
+                          );
                         });
                         setStartCodes((prev) => ({ ...prev, ...newCodes }));
                       }}
@@ -1518,22 +1789,54 @@ export default function CodingPage() {
                       )}
                     </select>
                   </div>
-                  
+
                   {argumentScheme.map((arg, i) => {
-                    const isTypedLang = ["java", "csharp", "golang", "cpp"].includes(activeEditorLang);
+                    const isTypedLang = ["java", "csharp", "golang", "cpp"].includes(
+                      activeEditorLang
+                    );
 
                     return (
-                      <div key={i} style={{ padding: "12px", backgroundColor: "#f5f5f5", borderRadius: "4px", marginBottom: "8px" }}>
-                        <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px" }}>
+                      <div
+                        key={i}
+                        style={{
+                          padding: "12px",
+                          backgroundColor: "#f5f5f5",
+                          borderRadius: "4px",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            alignItems: "center",
+                            marginBottom: "8px",
+                          }}
+                        >
                           <span style={{ fontWeight: "bold" }}>Аргумент #{i + 1}</span>
                           <button
-                            onClick={() => setArgumentScheme((prev) => prev.filter((_, idx) => idx !== i))}
-                            style={{ marginLeft: "auto", background: "none", border: "none", color: "red", cursor: "pointer" }}
+                            onClick={() =>
+                              setArgumentScheme((prev) => prev.filter((_, idx) => idx !== i))
+                            }
+                            style={{
+                              marginLeft: "auto",
+                              background: "none",
+                              border: "none",
+                              color: "red",
+                              cursor: "pointer",
+                            }}
                           >
                             ✕ Удалить
                           </button>
                         </div>
-                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                          }}
+                        >
                           <input
                             className={styles.input}
                             value={arg.name}
@@ -1597,10 +1900,25 @@ export default function CodingPage() {
                               </>
                             )}
                           </select>
-                          
+
                           {arg.type === "object" && isTypedLang && (
-                            <div style={{ marginTop: "8px", padding: "8px", backgroundColor: "#fff", borderRadius: "4px", width: "100%" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                            <div
+                              style={{
+                                marginTop: "8px",
+                                padding: "8px",
+                                backgroundColor: "#fff",
+                                borderRadius: "4px",
+                                width: "100%",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  marginBottom: "8px",
+                                }}
+                              >
                                 <span>Имя класса:</span>
                                 <input
                                   className={styles.input}
@@ -1629,13 +1947,25 @@ export default function CodingPage() {
                                       newScheme[i].objectFields = [];
                                     }
 
-                                    newScheme[i].objectFields!.push({ name: `field${newScheme[i].objectFields!.length + 1}`, type: "string", value: "" });
+                                    newScheme[i].objectFields!.push({
+                                      name: `field${newScheme[i].objectFields!.length + 1}`,
+                                      type: "string",
+                                      value: "",
+                                    });
                                     setArgumentScheme(newScheme);
                                   }}
                                 />
                               </div>
                               {(arg.objectFields || []).map((field, fieldIdx) => (
-                                <div key={fieldIdx} style={{ display: "flex", gap: "8px", marginTop: "4px", alignItems: "center" }}>
+                                <div
+                                  key={fieldIdx}
+                                  style={{
+                                    display: "flex",
+                                    gap: "8px",
+                                    marginTop: "4px",
+                                    alignItems: "center",
+                                  }}
+                                >
                                   <input
                                     className={styles.input}
                                     value={field.name}
@@ -1654,7 +1984,8 @@ export default function CodingPage() {
                                     onChange={(e) => {
                                       const newScheme = [...argumentScheme];
 
-                                      newScheme[i].objectFields![fieldIdx].type = e.target.value as ArgumentType;
+                                      newScheme[i].objectFields![fieldIdx].type = e.target
+                                        .value as ArgumentType;
                                       setArgumentScheme(newScheme);
                                     }}
                                     style={{ width: "auto" }}
@@ -1671,7 +2002,12 @@ export default function CodingPage() {
                                       newScheme[i].objectFields!.splice(fieldIdx, 1);
                                       setArgumentScheme(newScheme);
                                     }}
-                                    style={{ background: "none", border: "none", color: "red", cursor: "pointer" }}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      color: "red",
+                                      cursor: "pointer",
+                                    }}
                                   >
                                     ✕
                                   </button>
@@ -1679,15 +2015,32 @@ export default function CodingPage() {
                               ))}
                             </div>
                           )}
-                          
+
                           {arg.type === "object" && !isTypedLang && (
-                            <div style={{ marginTop: "8px", padding: "8px", backgroundColor: "#fff", borderRadius: "4px", color: "#666", fontSize: "12px" }}>
+                            <div
+                              style={{
+                                marginTop: "8px",
+                                padding: "8px",
+                                backgroundColor: "#fff",
+                                borderRadius: "4px",
+                                color: "#666",
+                                fontSize: "12px",
+                              }}
+                            >
                               Для JavaScript/Python объекты вводятся как {`{key: value}`}
                             </div>
                           )}
-                          
+
                           {(arg.type === "array" || arg.type === "list") && (
-                            <div style={{ marginTop: "8px", padding: "8px", backgroundColor: "#fff", borderRadius: "4px", width: "100%" }}>
+                            <div
+                              style={{
+                                marginTop: "8px",
+                                padding: "8px",
+                                backgroundColor: "#fff",
+                                borderRadius: "4px",
+                                width: "100%",
+                              }}
+                            >
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                 <span>Тип элементов массива:</span>
                                 <select
@@ -1724,10 +2077,12 @@ export default function CodingPage() {
                                   )}
                                 </select>
                               </div>
-                              
+
                               {arg.arrayElementType === "object" && (
                                 <div style={{ marginTop: "8px" }}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                  <div
+                                    style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                                  >
                                     <span>Имя класса элемента:</span>
                                     <input
                                       className={styles.input}
@@ -1742,7 +2097,14 @@ export default function CodingPage() {
                                       style={{ width: "120px" }}
                                     />
                                   </div>
-                                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "8px",
+                                      marginTop: "8px",
+                                    }}
+                                  >
                                     <span>Поля элемента объекта:</span>
                                     <Button
                                       color="#6a0f6e"
@@ -1756,20 +2118,33 @@ export default function CodingPage() {
                                           newScheme[i].arrayElementObjectFields = [];
                                         }
 
-                                        newScheme[i].arrayElementObjectFields!.push({ name: `field${newScheme[i].arrayElementObjectFields!.length + 1}`, type: "string", value: "" });
+                                        newScheme[i].arrayElementObjectFields!.push({
+                                          name: `field${newScheme[i].arrayElementObjectFields!.length + 1}`,
+                                          type: "string",
+                                          value: "",
+                                        });
                                         setArgumentScheme(newScheme);
                                       }}
                                     />
                                   </div>
                                   {(arg.arrayElementObjectFields || []).map((field, fieldIdx) => (
-                                    <div key={fieldIdx} style={{ display: "flex", gap: "8px", marginTop: "4px", alignItems: "center" }}>
+                                    <div
+                                      key={fieldIdx}
+                                      style={{
+                                        display: "flex",
+                                        gap: "8px",
+                                        marginTop: "4px",
+                                        alignItems: "center",
+                                      }}
+                                    >
                                       <input
                                         className={styles.input}
                                         value={field.name}
                                         onChange={(e) => {
                                           const newScheme = [...argumentScheme];
 
-                                          newScheme[i].arrayElementObjectFields![fieldIdx].name = e.target.value;
+                                          newScheme[i].arrayElementObjectFields![fieldIdx].name =
+                                            e.target.value;
                                           setArgumentScheme(newScheme);
                                         }}
                                         placeholder="Имя поля"
@@ -1781,7 +2156,8 @@ export default function CodingPage() {
                                         onChange={(e) => {
                                           const newScheme = [...argumentScheme];
 
-                                          newScheme[i].arrayElementObjectFields![fieldIdx].type = e.target.value as ArgumentType;
+                                          newScheme[i].arrayElementObjectFields![fieldIdx].type = e
+                                            .target.value as ArgumentType;
                                           setArgumentScheme(newScheme);
                                         }}
                                         style={{ width: "auto" }}
@@ -1795,10 +2171,18 @@ export default function CodingPage() {
                                         onClick={() => {
                                           const newScheme = [...argumentScheme];
 
-                                          newScheme[i].arrayElementObjectFields!.splice(fieldIdx, 1);
+                                          newScheme[i].arrayElementObjectFields!.splice(
+                                            fieldIdx,
+                                            1
+                                          );
                                           setArgumentScheme(newScheme);
                                         }}
-                                        style={{ background: "none", border: "none", color: "red", cursor: "pointer" }}
+                                        style={{
+                                          background: "none",
+                                          border: "none",
+                                          color: "red",
+                                          cursor: "pointer",
+                                        }}
                                       >
                                         ✕
                                       </button>
@@ -1812,7 +2196,7 @@ export default function CodingPage() {
                       </div>
                     );
                   })}
-                  
+
                   <Button
                     color="#4CAF50"
                     width="auto"
@@ -1822,18 +2206,22 @@ export default function CodingPage() {
                       const newCodes: Record<string, string> = {};
 
                       selectedLanguages.forEach((lang) => {
-                        newCodes[lang] = getDefaultStarterCodeWithSchema(lang as CodeLanguage, argumentScheme, returnType);
+                        newCodes[lang] = getDefaultStarterCodeWithSchema(
+                          lang as CodeLanguage,
+                          argumentScheme,
+                          returnType
+                        );
                       });
                       setStartCodes((prev) => ({ ...prev, ...newCodes }));
                     }}
-                   
                   />
                 </div>
               )}
-              
+
               {argumentScheme.length === 0 && (
                 <p style={{ color: "#666", fontSize: "14px" }}>
-                  Добавьте аргументы для создания типизированной функции с автоматической генерацией стартового кода.
+                  Добавьте аргументы для создания типизированной функции с автоматической генерацией
+                  стартового кода.
                 </p>
               )}
             </div>
@@ -1846,13 +2234,12 @@ export default function CodingPage() {
                 <Button
                   color="#9F0FA7"
                   width="300px"
-
                   textColor="#fff"
                   text="+ Добавить"
                   onClick={addTestCase}
                 />
               </div>
-              
+
               {selectedLanguages.length > 1 && (
                 <div className={styles.langTabs} style={{ marginBottom: "12px" }}>
                   {selectedLanguages.map((lang) => {
@@ -1865,7 +2252,11 @@ export default function CodingPage() {
                         className={`${styles.langTab} ${activeTestLang === lang ? styles.langTabActive : ""}`}
                         onClick={() => setActiveTestLang(lang)}
                         type="button"
-                        style={activeTestLang === lang ? { backgroundColor: "#9F0FA7", color: "#fff" } : {}}
+                        style={
+                          activeTestLang === lang
+                            ? { backgroundColor: "#9F0FA7", color: "#fff" }
+                            : {}
+                        }
                       >
                         {info?.label || lang} {hasTests && `(${testCasesByLanguage[lang].length})`}
                       </button>
@@ -1873,44 +2264,78 @@ export default function CodingPage() {
                   })}
                 </div>
               )}
-              
+
               {(() => {
                 const lang = activeTestLang || selectedLanguages[0];
                 const currentTestCases = testCasesByLanguage[lang] || [];
                 const hasArgScheme = argumentScheme.length > 0;
                 const isTypedLang = ["java", "csharp", "golang", "cpp"].includes(lang);
-                
+
                 if (currentTestCases.length === 0) {
-                  return <p className={styles.emptyHint}>Добавьте тест-кейсы для языка {LANGUAGES.find(l => l.value === lang)?.label || lang}</p>;
+                  return (
+                    <p className={styles.emptyHint}>
+                      Добавьте тест-кейсы для языка{" "}
+                      {LANGUAGES.find((l) => l.value === lang)?.label || lang}
+                    </p>
+                  );
                 }
-                
+
                 return currentTestCases.map((tc, i) => (
                   <div key={i} className={styles.testCase}>
                     <div className={styles.testCaseHeader}>
-                      <span className={styles.testCaseTitle}>Тест #{i + 1} ({LANGUAGES.find(l => l.value === lang)?.label || lang})</span>
+                      <span className={styles.testCaseTitle}>
+                        Тест #{i + 1} ({LANGUAGES.find((l) => l.value === lang)?.label || lang})
+                      </span>
                       <button className={styles.deleteButton} onClick={() => deleteTestCase(i)}>
                         ✕
                       </button>
                     </div>
-                    
+
                     {hasArgScheme ? (
                       <div style={{ marginBottom: "8px" }}>
-                        <span style={{ fontWeight: "bold", marginBottom: "4px", display: "block" }}>Значения аргументов:</span>
+                        <span style={{ fontWeight: "bold", marginBottom: "4px", display: "block" }}>
+                          Значения аргументов:
+                        </span>
                         {argumentScheme.map((arg, argIdx) => (
                           <div key={argIdx} style={{ marginBottom: "8px", marginLeft: "8px" }}>
                             <span style={{ minWidth: "80px", display: "inline-block" }}>
-                              {arg.name}{isTypedLang && ` (${getTypeString(arg.type as ArgumentType, lang as CodeLanguage)})`}:
+                              {arg.name}
+                              {isTypedLang &&
+                                ` (${getTypeString(arg.type as ArgumentType, lang as CodeLanguage)})`}
+                              :
                             </span>
-                            
+
                             {arg.type === "object" && arg.objectFields && isTypedLang ? (
-                              <div style={{ marginLeft: "16px", padding: "4px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
+                              <div
+                                style={{
+                                  marginLeft: "16px",
+                                  padding: "4px",
+                                  backgroundColor: "#f5f5f5",
+                                  borderRadius: "4px",
+                                }}
+                              >
                                 {arg.objectFields.map((field, fieldIdx) => (
-                                  <div key={fieldIdx} style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
+                                  <div
+                                    key={fieldIdx}
+                                    style={{
+                                      display: "flex",
+                                      gap: "4px",
+                                      alignItems: "center",
+                                      marginBottom: "2px",
+                                    }}
+                                  >
                                     <span style={{ fontSize: "12px" }}>{field.name}:</span>
                                     <input
                                       className={styles.input}
                                       value={tc.args?.[argIdx]?.objectValues?.[field.name] ?? ""}
-                                      onChange={(e) => updateTestCaseArgObjectValue(i, argIdx, field.name, e.target.value)}
+                                      onChange={(e) =>
+                                        updateTestCaseArgObjectValue(
+                                          i,
+                                          argIdx,
+                                          field.name,
+                                          e.target.value
+                                        )
+                                      }
                                       placeholder={`значение ${field.type}`}
                                       style={{ width: "100px" }}
                                     />
@@ -1922,7 +2347,13 @@ export default function CodingPage() {
                                 className={styles.input}
                                 value={tc.args?.[argIdx]?.value ?? ""}
                                 onChange={(e) => updateTestCaseArgValue(i, argIdx, e.target.value)}
-                                placeholder={arg.type === "object" ? '{key: "value"}' : (isTypedLang ? arg.type : "")}
+                                placeholder={
+                                  arg.type === "object"
+                                    ? '{key: "value"}'
+                                    : isTypedLang
+                                      ? arg.type
+                                      : ""
+                                }
                                 style={{ width: "200px" }}
                               />
                             )}
@@ -1952,7 +2383,7 @@ export default function CodingPage() {
               <div className={styles.sectionHeader}>
                 <h3>Ограничения</h3>
                 <Button
-                 color="#9F0FA7"
+                  color="#9F0FA7"
                   width="300px"
                   textColor="#fff"
                   text="+ Добавить"
@@ -2011,7 +2442,10 @@ export default function CodingPage() {
                         updateConstraint(
                           i,
                           c.type,
-                          e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
+                          e.target.value
+                            .split(",")
+                            .map((s) => s.trim())
+                            .filter(Boolean)
                         )
                       }
                       placeholder="Через запятую: eval, exec"

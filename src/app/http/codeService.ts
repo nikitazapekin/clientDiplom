@@ -1,6 +1,16 @@
 import $api from "./api";
 
-export type CodeLanguage = "javascript" | "python" | "csharp" | "golang" | "java" | "cpp";
+export type CodeLanguage =
+  | "javascript"
+  | "typescript"
+  | "python"
+  | "php"
+  | "ruby"
+  | "rust"
+  | "csharp"
+  | "golang"
+  | "java"
+  | "cpp";
 
 export interface ExecuteCodeRequest {
   language: CodeLanguage;

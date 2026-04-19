@@ -36,7 +36,11 @@ import type { CodeLanguage } from "@/app/http/codeService";
 
 const FILL_TASK_LANGUAGES: { value: FillCodeLanguage; label: string }[] = [
   { value: "javascript", label: "JavaScript" },
+  { value: "typescript", label: "TypeScript" },
   { value: "python", label: "Python" },
+  { value: "php", label: "PHP" },
+  { value: "ruby", label: "Ruby" },
+  { value: "rust", label: "Rust" },
   { value: "csharp", label: "C#" },
   { value: "java", label: "Java" },
 ];
@@ -242,7 +246,14 @@ export function BlockEditor({
   }
 
   if (block.type === "codeTask") {
-    const typedLanguages: CodeLanguage[] = ["java", "csharp", "golang", "cpp"];
+    const typedLanguages: CodeLanguage[] = [
+      "typescript",
+      "java",
+      "rust",
+      "csharp",
+      "golang",
+      "cpp",
+    ];
     const isTypedLanguage = typedLanguages.includes(block.language);
     const hasArgumentScheme = (block.argumentScheme?.length ?? 0) > 0;
     const buildStarterCode = (

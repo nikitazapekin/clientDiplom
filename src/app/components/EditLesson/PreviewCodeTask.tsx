@@ -15,12 +15,15 @@ import {
   compareOutputs,
   extractFunctionName,
   formatArgsForDynamicLang,
+  formatArgsForGolang,
   formatArgsForJavaOrCSharp,
+  formatArgsForRust,
   generateObjectClasses,
   generateObjectClassesForPreview,
   getDefaultStarterCode,
   getDisplayInput,
   getExpectedOutputFromTestCase,
+  getSampleArgsForLanguage,
   stripMainMethod,
 } from "./codeUtils";
 import type { CodeTaskBlock } from "./types";
@@ -56,6 +59,16 @@ export function PreviewCodeTask({
     (testCase: NonNullable<CodeTaskBlock["testCases"]>[number]) =>
       getExpectedOutputFromTestCase(testCase, block.returnType, activeReturnSchema),
     [block.returnType, activeReturnSchema]
+  );
+  const hasConfiguredInput = useCallback(
+    (testCase: NonNullable<CodeTaskBlock["testCases"]>[number]) => {
+      if ((block.argumentScheme?.length ?? 0) > 0) {
+        return (testCase.args?.length ?? 0) >= (block.argumentScheme?.length ?? 0);
+      }
+
+      return (testCase.input ?? "").trim() !== "";
+    },
+    [block.argumentScheme]
   );
 
   useEffect(() => {
@@ -114,12 +127,22 @@ export function PreviewCodeTask({
         block.language ?? "javascript",
         activeReturnSchema
       );
+      const sampleArgs = getSampleArgsForLanguage(
+        block.language ?? "javascript",
+        block.argumentScheme ?? []
+      );
 
       if (block.language === "java" && funcName) {
-        codeToRun = addJavaMainMethod(currentCode, funcName, "5");
+        codeToRun = addJavaMainMethod(currentCode, funcName, sampleArgs);
         if (objectClasses) {
           codeToRun = `${codeToRun}\n\n${objectClasses}`;
         }
+      } else if (block.language === "golang" && funcName) {
+        codeToRun = buildTestCode(currentCode, "", "golang", funcName, sampleArgs);
+      } else if (block.language === "rust" && funcName) {
+        codeToRun = buildTestCode(currentCode, "", "rust", funcName, sampleArgs);
+      } else if (block.language === "typescript" && objectClasses) {
+        codeToRun = `${objectClasses}\n\n${codeToRun}`;
       }
 
       const res = await CodeService.executeCode({
@@ -222,6 +245,10 @@ export function PreviewCodeTask({
       code.includes("console.warn") ||
       code.includes("console.info") ||
       code.includes("print(") ||
+      code.includes("echo ") ||
+      code.includes("puts(") ||
+      code.includes("puts ") ||
+      code.includes("println!") ||
       code.includes("System.out.println") ||
       code.includes("Console.WriteLine")
     );
@@ -378,9 +405,27 @@ export function PreviewCodeTask({
           try {
             const funcName = extractFunctionName(code, block.language ?? "javascript");
             let codeToRun = code;
+            const objectClasses = generateObjectClasses(
+              block.argumentScheme ?? [],
+              block.language ?? "javascript",
+              activeReturnSchema
+            );
+            const sampleArgs = getSampleArgsForLanguage(
+              block.language ?? "javascript",
+              block.argumentScheme ?? []
+            );
 
             if (block.language === "java" && funcName) {
-              codeToRun = addJavaMainMethod(code, funcName, "5");
+              codeToRun = addJavaMainMethod(code, funcName, sampleArgs);
+              if (objectClasses) {
+                codeToRun = `${codeToRun}\n\n${objectClasses}`;
+              }
+            } else if (block.language === "golang" && funcName) {
+              codeToRun = buildTestCode(code, "", "golang", funcName, sampleArgs);
+            } else if (block.language === "typescript" && objectClasses) {
+              codeToRun = `${objectClasses}\n\n${codeToRun}`;
+            } else if (block.language === "rust" && funcName) {
+              codeToRun = buildTestCode(code, "", "rust", funcName, sampleArgs);
             }
 
             const startTime = performance.now();
@@ -680,7 +725,114 @@ export function PreviewCodeTask({
               allLogs.push(...testLogs);
             }
           }
-        } else if (block.language === "javascript" || block.language === "python") {
+        } else if (block.language === "golang") {
+          for (let i = 0; i < block.testCases.length; i++) {
+            const tc = block.testCases[i];
+            const argsInput = formatArgsForGolang(tc.args, block.argumentScheme ?? []);
+            const inputToUse = (block.argumentScheme?.length ?? 0) > 0 ? argsInput : tc.input || "";
+            const expectedOutput = getExpectedOutputValue(tc);
+
+            if (!hasConfiguredInput(tc)) {
+              setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
+              return;
+            }
+
+            const codeToRun = buildTestCode(currentCode, "", "golang", funcName, inputToUse);
+            const res = await CodeService.executeCode({
+              language: "golang",
+              code: codeToRun,
+            });
+
+            if (res.error) {
+              setTestError(`Ошибка выполнения: ${res.error}`);
+              return;
+            }
+
+            const output = res.output || "";
+            const lines = output.split("\n");
+
+            let inLogs = false;
+            let inResult = false;
+            let currentLogs: string[] = [];
+            let currentResult: string[] = [];
+            let testLogs: string[] = [];
+            const testNum = i + 1;
+
+            for (const line of lines) {
+              if (line.includes("===LOGS_START===")) {
+                inLogs = true;
+                currentLogs = [];
+                continue;
+              }
+              if (line.includes("===LOGS_END===")) {
+                inLogs = false;
+                if (currentLogs.length > 0) {
+                  testLogs.push(
+                    ` Логи теста #${testNum} (вход: ${getDisplayInput(block.testCases[i], block.argumentScheme, block.language)}):`
+                  );
+                  testLogs.push(currentLogs.join("\n"));
+                  testLogs.push("");
+                }
+                continue;
+              }
+              if (line.includes("===RESULT_START===")) {
+                inResult = true;
+                currentResult = [];
+                continue;
+              }
+              if (line.includes("===RESULT_END===")) {
+                inResult = false;
+                if (currentResult.length > 0) {
+                  const actual = currentResult.join("\n").trim();
+                  const expected = expectedOutput.trim();
+
+                  let actualParsed: any;
+                  let expectedParsed: any;
+
+                  try {
+                    actualParsed = JSON.parse(actual);
+                  } catch {
+                    actualParsed = actual;
+                  }
+
+                  try {
+                    expectedParsed = JSON.parse(expected);
+                  } catch {
+                    expectedParsed = expected;
+                  }
+
+                  results.push({
+                    input: getDisplayInput(
+                      block.testCases[i],
+                      block.argumentScheme,
+                      block.language
+                    ),
+                    expected,
+                    actual,
+                    passed: compareOutputs(actualParsed, expectedParsed),
+                  });
+                }
+                continue;
+              }
+
+              if (inLogs) {
+                currentLogs.push(line);
+              } else if (inResult) {
+                currentResult.push(line);
+              }
+            }
+
+            if (testLogs.length > 0) {
+              allLogs.push(...testLogs);
+            }
+          }
+        } else if (
+          block.language === "javascript" ||
+          block.language === "typescript" ||
+          block.language === "python" ||
+          block.language === "php" ||
+          block.language === "ruby"
+        ) {
           const lang = block.language;
 
           for (let i = 0; i < block.testCases.length; i++) {
@@ -690,7 +842,7 @@ export function PreviewCodeTask({
 
             const expectedOutput = getExpectedOutputValue(tc);
 
-            if (!inputToUse || !expectedOutput) {
+            if (!hasConfiguredInput(tc)) {
               setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
               return;
             }
@@ -796,11 +948,86 @@ export function PreviewCodeTask({
               allLogs.push(...testLogs);
             }
           }
+        } else if (block.language === "rust") {
+          for (let i = 0; i < block.testCases.length; i++) {
+            const tc = block.testCases[i];
+            const argsInput = formatArgsForRust(tc.args, block.argumentScheme ?? []);
+            const inputToUse = (block.argumentScheme?.length ?? 0) > 0 ? argsInput : tc.input || "";
+            const expectedOutput = getExpectedOutputValue(tc);
+
+            if (!hasConfiguredInput(tc)) {
+              setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
+              return;
+            }
+
+            const codeToRun = buildTestCode(currentCode, "", "rust", funcName, inputToUse);
+            const res = await CodeService.executeCode({
+              language: "rust",
+              code: codeToRun,
+            });
+
+            if (res.error) {
+              setTestError(`Ошибка выполнения: ${res.error}`);
+              return;
+            }
+
+            const output = res.output || "";
+            const lines = output.split("\n");
+
+            let inResult = false;
+            let currentResult: string[] = [];
+
+            for (const line of lines) {
+              if (line.includes("===RESULT_START===")) {
+                inResult = true;
+                currentResult = [];
+                continue;
+              }
+              if (line.includes("===RESULT_END===")) {
+                inResult = false;
+                if (currentResult.length > 0) {
+                  const actual = currentResult.join("\n").trim();
+                  const expected = expectedOutput.trim();
+
+                  let actualParsed: any;
+                  let expectedParsed: any;
+
+                  try {
+                    actualParsed = JSON.parse(actual);
+                  } catch {
+                    actualParsed = actual;
+                  }
+
+                  try {
+                    expectedParsed = JSON.parse(expected);
+                  } catch {
+                    expectedParsed = expected;
+                  }
+
+                  results.push({
+                    input: getDisplayInput(
+                      block.testCases[i],
+                      block.argumentScheme,
+                      block.language
+                    ),
+                    expected,
+                    actual,
+                    passed: compareOutputs(actualParsed, expectedParsed),
+                  });
+                }
+                continue;
+              }
+
+              if (inResult) {
+                currentResult.push(line);
+              }
+            }
+          }
         } else {
           for (const tc of block.testCases) {
             const expectedOutput = getExpectedOutputValue(tc);
 
-            if (!tc.input || !expectedOutput) {
+            if (!hasConfiguredInput(tc)) {
               setTestError("Заполните все тест-кейсы (входные данные и ожидаемый вывод)");
               return;
             }
@@ -969,7 +1196,9 @@ export function PreviewCodeTask({
     <div className={styles.codeTask}>
       <p className={styles.taskDescription}>{block.description}</p>
 
-      {(block.language === "java" || block.language === "csharp") &&
+      {(block.language === "java" ||
+        block.language === "csharp" ||
+        block.language === "typescript") &&
         generateObjectClassesForPreview(
           block.argumentScheme ?? [],
           block.language,

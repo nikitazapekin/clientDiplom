@@ -15,7 +15,7 @@ const Header = () => {
   const isAdminPath = pathname?.startsWith("/admin");
 
   const navItems = [
-    { id: "problems", label: "Coding", path: "/problems" },
+    { id: "problems", label: "Задачи", path: "/problems" },
     { id: "study", label: "Учиться", path: "/study" },
     { id: "articles", label: "Статьи", path: "/articles" },
     { id: "messages", label: "Сообщения", path: "/messages" },
@@ -75,7 +75,9 @@ const Header = () => {
                 ))}
 
             <li className={styles.header__item}>
-              <div className={styles.header__logout} onClick={() => handleNavigation("/login")}>Выход</div>
+              <div className={styles.header__logout} onClick={() => handleNavigation("/login")}>
+                Выход
+              </div>
             </li>
           </ul>
         </nav>

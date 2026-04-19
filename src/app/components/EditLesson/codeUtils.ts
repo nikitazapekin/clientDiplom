@@ -75,9 +75,7 @@ export const parseArguments = (input: string): any[] => {
     if (input.trim().startsWith("[") && input.trim().endsWith("]")) {
       return JSON.parse(input);
     }
-  } catch {
-   
-  }
+  } catch {}
 
   const args: any[] = [];
   let current = "";
@@ -135,9 +133,7 @@ export const parseValue = (value: string): any => {
 
   try {
     return JSON.parse(value);
-  } catch {
- 
-  }
+  } catch {}
 
   if (/^-?\d+(\.\d+)?$/.test(value)) {
     return Number(value);
@@ -182,10 +178,14 @@ export const formatArgumentsForCode = (args: any[]): string => {
 };
 
 export const getTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
-  const typeMap: Record<ArgumentType, Record<CodeLanguage, string>> = {
+  const typeMap: Record<ArgumentType, Partial<Record<CodeLanguage, string>>> = {
     int: {
       javascript: "",
+      typescript: "number",
       python: "int",
+      php: "int",
+      ruby: "",
+      rust: "i32",
       csharp: "int",
       java: "int",
       golang: "int",
@@ -193,7 +193,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     string: {
       javascript: "",
+      typescript: "string",
       python: "str",
+      php: "string",
+      ruby: "",
+      rust: "String",
       csharp: "string",
       java: "String",
       golang: "string",
@@ -201,7 +205,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     number: {
       javascript: "number",
+      typescript: "number",
       python: "float",
+      php: "float",
+      ruby: "",
+      rust: "f64",
       csharp: "double",
       java: "double",
       golang: "float64",
@@ -209,7 +217,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     boolean: {
       javascript: "",
+      typescript: "boolean",
       python: "bool",
+      php: "bool",
+      ruby: "",
+      rust: "bool",
       csharp: "bool",
       java: "boolean",
       golang: "bool",
@@ -217,7 +229,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     double: {
       javascript: "",
+      typescript: "number",
       python: "float",
+      php: "float",
+      ruby: "",
+      rust: "f64",
       csharp: "double",
       java: "double",
       golang: "float64",
@@ -225,7 +241,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     float: {
       javascript: "",
+      typescript: "number",
       python: "float",
+      php: "float",
+      ruby: "",
+      rust: "f32",
       csharp: "float",
       java: "float",
       golang: "float32",
@@ -233,7 +253,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     long: {
       javascript: "",
+      typescript: "number",
       python: "int",
+      php: "int",
+      ruby: "",
+      rust: "i64",
       csharp: "long",
       java: "long",
       golang: "int64",
@@ -241,7 +265,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     char: {
       javascript: "",
+      typescript: "string",
       python: "str",
+      php: "string",
+      ruby: "",
+      rust: "char",
       csharp: "char",
       java: "char",
       golang: "rune",
@@ -249,7 +277,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     byte: {
       javascript: "",
+      typescript: "number",
       python: "bytes",
+      php: "int",
+      ruby: "",
+      rust: "u8",
       csharp: "byte",
       java: "byte",
       golang: "byte",
@@ -257,7 +289,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     short: {
       javascript: "",
+      typescript: "number",
       python: "int",
+      php: "int",
+      ruby: "",
+      rust: "i16",
       csharp: "short",
       java: "short",
       golang: "int16",
@@ -265,7 +301,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     object: {
       javascript: "",
+      typescript: "Record<string, unknown>",
       python: "",
+      php: "array",
+      ruby: "",
+      rust: "std::collections::HashMap<String, String>",
       csharp: "object",
       java: "Object",
       golang: "interface{}",
@@ -273,7 +313,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     array: {
       javascript: "",
+      typescript: "number[]",
       python: "list",
+      php: "array",
+      ruby: "",
+      rust: "Vec<i32>",
       csharp: "object",
       java: "int[]",
       golang: "[]int",
@@ -281,7 +325,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     array_int: {
       javascript: "",
+      typescript: "number[]",
       python: "list",
+      php: "array",
+      ruby: "",
+      rust: "Vec<i32>",
       csharp: "int[]",
       java: "int[]",
       golang: "[]int",
@@ -289,7 +337,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     array_string: {
       javascript: "",
+      typescript: "string[]",
       python: "list",
+      php: "array",
+      ruby: "",
+      rust: "Vec<String>",
       csharp: "string[]",
       java: "String[]",
       golang: "[]string",
@@ -297,7 +349,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     array_double: {
       javascript: "",
+      typescript: "number[]",
       python: "list",
+      php: "array",
+      ruby: "",
+      rust: "Vec<f64>",
       csharp: "double[]",
       java: "double[]",
       golang: "[]float64",
@@ -305,7 +361,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     array_float: {
       javascript: "",
+      typescript: "number[]",
       python: "list",
+      php: "array",
+      ruby: "",
+      rust: "Vec<f32>",
       csharp: "float[]",
       java: "float[]",
       golang: "[]float32",
@@ -313,7 +373,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     array_long: {
       javascript: "",
+      typescript: "number[]",
       python: "list",
+      php: "array",
+      ruby: "",
+      rust: "Vec<i64>",
       csharp: "long[]",
       java: "long[]",
       golang: "[]int64",
@@ -321,7 +385,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     array_boolean: {
       javascript: "",
+      typescript: "boolean[]",
       python: "list",
+      php: "array",
+      ruby: "",
+      rust: "Vec<bool>",
       csharp: "bool[]",
       java: "boolean[]",
       golang: "[]bool",
@@ -329,7 +397,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     array_char: {
       javascript: "",
+      typescript: "string[]",
       python: "list",
+      php: "array",
+      ruby: "",
+      rust: "Vec<char>",
       csharp: "char[]",
       java: "char[]",
       golang: "[]rune",
@@ -337,7 +409,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     list: {
       javascript: "",
+      typescript: "Array<unknown>",
       python: "list",
+      php: "array",
+      ruby: "",
+      rust: "Vec<String>",
       csharp: "List<object>",
       java: "List<Object>",
       golang: "[]interface{}",
@@ -345,7 +421,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     map: {
       javascript: "Object",
+      typescript: "Record<string, unknown>",
       python: "dict",
+      php: "array",
+      ruby: "",
+      rust: "std::collections::HashMap<String, String>",
       csharp: "Dictionary<string, object>",
       java: "Map<String, Object>",
       golang: "map[string]interface{}",
@@ -353,7 +433,11 @@ export const getTypeString = (type_: ArgumentType, language: CodeLanguage): stri
     },
     void: {
       javascript: "void",
+      typescript: "void",
       python: "None",
+      php: "void",
+      ruby: "",
+      rust: "()",
       csharp: "void",
       java: "void",
       golang: "",
@@ -401,7 +485,11 @@ const getCollectionElementTypeString = (
     return getJavaCollectionElementTypeString(type_, objectClassName);
   }
 
-  if (type_ === "object" && objectClassName) {
+  if (
+    type_ === "object" &&
+    objectClassName &&
+    (language === "csharp" || language === "typescript")
+  ) {
     return objectClassName;
   }
 
@@ -435,19 +523,28 @@ export const getReturnTypeString = (
   preferSchemaClassName = false
 ): string => {
   if (type_ === "void") {
-    return language === "java" || language === "csharp" || language === "cpp" ? "void" : "";
+    if (language === "rust") {
+      return "()";
+    }
+    return language === "python" || language === "golang" || language === "ruby" ? "" : "void";
   }
   if (type_ === "object") {
     const objectReturnMode = getEffectiveReturnObjectMode(returnSchema);
     if (
       preferSchemaClassName &&
       objectReturnMode === "concrete" &&
-      (language === "java" || language === "csharp") &&
+      (language === "java" || language === "csharp" || language === "typescript") &&
       (returnSchema?.className || returnSchema?.objectFields)
     ) {
       return getReturnClassName(returnSchema);
     }
-    return language === "java" ? "Object" : language === "golang" ? "interface{}" : "object";
+    if (language === "java") return "Object";
+    if (language === "golang") return "interface{}";
+    if (language === "typescript") return "Record<string, unknown>";
+    if (language === "php") return "array";
+    if (language === "rust") return "std::collections::HashMap<String, String>";
+    if (language === "ruby" || language === "python" || language === "javascript") return "";
+    return "object";
   }
   if (type_ === "list") {
     const elementType = returnSchema?.arrayElementType ?? "object";
@@ -465,7 +562,13 @@ export const getReturnTypeString = (
             ? `List<${objectClassName}>`
             : language === "golang"
               ? "[]interface{}"
-              : "object";
+              : language === "typescript"
+                ? "Array<Record<string, unknown>>"
+                : language === "php"
+                  ? "array"
+                  : language === "rust"
+                    ? "Vec<std::collections::HashMap<String, String>>"
+                    : "object";
       }
       return language === "csharp"
         ? "System.Collections.IEnumerable"
@@ -473,7 +576,13 @@ export const getReturnTypeString = (
           ? "List<?>"
           : language === "golang"
             ? "[]interface{}"
-            : "object";
+            : language === "typescript"
+              ? "Array<Record<string, unknown>>"
+              : language === "php"
+                ? "array"
+                : language === "rust"
+                  ? "Vec<std::collections::HashMap<String, String>>"
+                  : "object";
     }
 
     return language === "csharp"
@@ -482,7 +591,15 @@ export const getReturnTypeString = (
         ? `List<${getCollectionElementTypeString(elementType, "java", objectClassName)}>`
         : language === "golang"
           ? "[]interface{}"
-          : "object";
+          : language === "typescript"
+            ? `${getCollectionElementTypeString(elementType, "typescript", objectClassName)}[]`
+            : language === "php"
+              ? "array"
+              : language === "rust"
+                ? `Vec<${getCollectionElementTypeString(elementType, "rust", objectClassName)}>`
+                : language === "ruby"
+                  ? ""
+                  : "object";
   }
   return getTypeString(type_, language);
 };
@@ -490,6 +607,10 @@ export const getReturnTypeString = (
 export const getDefaultReturnValue = (type_: ArgumentType, language?: CodeLanguage): string => {
   const isPython = language === "python";
   const isGo = language === "golang";
+  const isRuby = language === "ruby";
+  const isPhp = language === "php";
+  const isRust = language === "rust";
+  const isTypeScript = language === "typescript";
 
   switch (type_) {
     case "int":
@@ -505,32 +626,71 @@ export const getDefaultReturnValue = (type_: ArgumentType, language?: CodeLangua
     case "array_char":
       if (isPython) return "return None";
       if (isGo) return "return 0";
+      if (isRuby) return "return nil";
+      if (isPhp) return "return 0;";
+      if (isRust) return "return 0;";
+      if (isTypeScript) return "return 0;";
       return "return null;";
     case "string":
       if (isPython || isGo) return 'return ""';
+      if (isRuby) return 'return ""';
+      if (isPhp) return 'return "";';
+      if (isRust) return "return String::new();";
+      if (isTypeScript) return 'return "";';
       return 'return "";';
     case "boolean":
     case "array_boolean":
       if (isPython) return "return False";
       if (isGo) return "return false";
+      if (isRuby) return "return false";
+      if (isPhp) return "return false;";
+      if (isRust) return "return false;";
+      if (isTypeScript) return "return false;";
       return "return false;";
     case "char":
       if (isPython) return 'return ""';
       if (isGo) return "return ''";
+      if (isRuby) return 'return ""';
+      if (isPhp) return 'return "a";';
+      if (isRust) return "return 'a';";
+      if (isTypeScript) return 'return "a";';
       return "return 'a';";
     case "object":
-    case "array":
-    case "array_string":
-    case "list":
-    case "map":
+      if (isRust) return "return std::collections::HashMap::new();";
+      if (isRuby) return "return {}";
+      if (isPhp) return "return [];";
+      if (isTypeScript) return "return {};";
       if (isPython) return "return None";
       if (isGo) return "return nil";
       return "return null;";
+    case "array":
+    case "array_string":
+    case "list":
+      if (isPython) return "return None";
+      if (isGo) return "return nil";
+      if (isRuby) return "return []";
+      if (isPhp) return "return [];";
+      if (isRust) return "return vec![];";
+      if (isTypeScript) return "return [];";
+      return "return null;";
+    case "map":
+      if (isPython) return "return None";
+      if (isGo) return "return nil";
+      if (isRuby) return "return {}";
+      if (isPhp) return "return [];";
+      if (isRust) return "return std::collections::HashMap::new();";
+      if (isTypeScript) return "return {};";
+      return "return null;";
     case "void":
+      if (isRust) return "return;";
       return "";
     default:
       if (isPython) return "return None";
       if (isGo) return "return nil";
+      if (isRuby) return "return nil";
+      if (isPhp) return "return null;";
+      if (isRust) return "return Default::default();";
+      if (isTypeScript) return "return null;";
       return "return null;";
   }
 };
@@ -607,6 +767,9 @@ export const getArrayTypeString = (scheme: ArgumentSchema, language: CodeLanguag
     if (language === "java" || language === "csharp") {
       return `${className}[]`;
     }
+    if (language === "typescript") {
+      return `${className}[]`;
+    }
   }
 
   if (language === "java") {
@@ -617,6 +780,12 @@ export const getArrayTypeString = (scheme: ArgumentSchema, language: CodeLanguag
   }
   if (language === "golang") {
     return `[]${getTypeString(elementType, "golang")}`;
+  }
+  if (language === "typescript") {
+    return `${getTypeString(elementType, "typescript")}[]`;
+  }
+  if (language === "rust") {
+    return `Vec<${getTypeString(elementType, "rust")}>`;
   }
   return "array";
 };
@@ -637,6 +806,12 @@ export const getListTypeString = (scheme: ArgumentSchema, language: CodeLanguage
   if (language === "csharp") {
     return `List<${getCollectionElementTypeString(elementType, "csharp", objectClassName)}>`;
   }
+  if (language === "typescript") {
+    return `Array<${getCollectionElementTypeString(elementType, "typescript", objectClassName)}>`;
+  }
+  if (language === "rust") {
+    return `Vec<${getCollectionElementTypeString(elementType, "rust", objectClassName)}>`;
+  }
   return "List";
 };
 
@@ -653,7 +828,11 @@ export const getDefaultStarterCode = (
         typeStr = getArrayTypeString(arg, language);
       } else if (arg.type === "list") {
         typeStr = getListTypeString(arg, language);
-      } else if (arg.type === "object" && arg.className) {
+      } else if (
+        arg.type === "object" &&
+        arg.className &&
+        (language === "java" || language === "csharp" || language === "typescript")
+      ) {
         typeStr = arg.className;
       } else {
         typeStr = getTypeString(arg.type, language);
@@ -693,6 +872,65 @@ public class Program
     # Ваш код здесь
     print("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""})
     ${returnValue}`;
+    }
+    case "typescript": {
+      const tsArgs = args
+        .map((arg) => {
+          let typeStr: string;
+          if (arg.type === "array") {
+            typeStr = getArrayTypeString(arg, "typescript");
+          } else if (arg.type === "list") {
+            typeStr = getListTypeString(arg, "typescript");
+          } else if (arg.type === "object" && arg.className) {
+            typeStr = arg.className;
+          } else {
+            typeStr = getTypeString(arg.type, "typescript") || "unknown";
+          }
+          return `${arg.name}: ${typeStr}`;
+        })
+        .join(", ");
+      return `function yourFunction(${tsArgs})${retTypeStr ? `: ${retTypeStr}` : ""} {
+    // Ваш код здесь
+    console.log("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""});
+    ${returnValue}
+}`;
+    }
+    case "php": {
+      const phpArgs = args.map((arg) => `$${arg.name}`).join(", ");
+      return `<?php
+
+function yourFunction(${phpArgs})${retTypeStr ? `: ${retTypeStr}` : ""} {
+    // Ваш код здесь
+    echo "HELLO";
+    ${returnValue}
+}`;
+    }
+    case "ruby": {
+      const rubyArgs = args.map((arg) => arg.name).join(", ");
+      return `def your_function(${rubyArgs})
+  # Ваш код здесь
+  puts("HELLO")
+  ${returnValue}
+end`;
+    }
+    case "rust": {
+      const rustArgs = args
+        .map(
+          (arg) =>
+            `${arg.name}: ${arg.type === "array" ? getArrayTypeString(arg, "rust") : arg.type === "list" ? getListTypeString(arg, "rust") : getTypeString(arg.type, "rust")}`
+        )
+        .join(", ");
+      const rustReturnType = getReturnTypeString(returnType, "rust", returnSchema, true);
+      const needsHashMap =
+        args.some((arg) => arg.type === "object" || arg.type === "map") ||
+        returnType === "object" ||
+        returnType === "map";
+
+      return `${needsHashMap ? "use std::collections::HashMap;\n\n" : ""}fn your_function(${rustArgs})${rustReturnType ? ` -> ${rustReturnType}` : ""} {
+    // Ваш код здесь
+    println!("HELLO");
+    ${returnValue}
+}`;
     }
     case "golang": {
       const goArgsStr = args
@@ -872,6 +1110,19 @@ class ${className} {
     constructor(${constructorParams}) {
         ${constructorBody}
     }
+}`
+          : `
+class ${className} {
+}`;
+      }
+      if (language === "typescript") {
+        const constructorParams = objectFields
+          .map((f) => `public ${f.name}: ${getTypeString(f.type, language) || "unknown"}`)
+          .join(", ");
+        return objectFields.length > 0
+          ? `
+class ${className} {
+    constructor(${constructorParams}) {}
 }`
           : `
 class ${className} {
@@ -1302,9 +1553,7 @@ export const formatArgsForJavaOrCSharp = (
               });
               return `new ${typeToUse}[] { ${formatted.join(", ")} }`;
             }
-          } catch {
-          
-          }
+          } catch {}
         }
 
         if (arg.objectValues && Object.keys(arg.objectValues).length > 0) {
@@ -1362,9 +1611,7 @@ export const formatArgsForJavaOrCSharp = (
               });
               return `new ${getTypeString(arrayElementType, language)}[] { ${formatted.join(", ")} }`;
             }
-          } catch {
-           
-          }
+          } catch {}
         }
 
         return arg.value;
@@ -1383,9 +1630,7 @@ export const formatArgsForJavaOrCSharp = (
                 .join(", ");
               return `new java.util.HashMap<>() {{ put(${entries}); }}`;
             }
-          } catch {
-         
-          }
+          } catch {}
         }
       }
 
@@ -1402,9 +1647,7 @@ export const formatArgsForJavaOrCSharp = (
                 .join(", ");
               return `new java.util.HashMap<>() {{ put(${entries}); }}`;
             }
-          } catch {
-          
-          }
+          } catch {}
         }
       }
 
@@ -1415,6 +1658,137 @@ export const formatArgsForJavaOrCSharp = (
   return args.join(", ");
 };
 
+const cleanQuotedValue = (val: string) => {
+  if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+    return val.slice(1, -1);
+  }
+  return val;
+};
+
+const escapeDoubleQuotedString = (value: string) =>
+  value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
+const escapeSingleQuotedString = (value: string) =>
+  value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+
+const formatDynamicBoolean = (value: string, language: CodeLanguage) => {
+  if (language === "python") {
+    return value.toLowerCase() === "true" ? "True" : "False";
+  }
+  return value.toLowerCase() === "true" ? "true" : "false";
+};
+
+const formatDynamicScalar = (
+  rawValue: string,
+  type_: ArgumentType,
+  language: CodeLanguage
+): string => {
+  const cleanValue = cleanQuotedValue(rawValue);
+
+  if (type_ === "string" || type_ === "char") {
+    return `"${escapeDoubleQuotedString(cleanValue)}"`;
+  }
+
+  if (type_ === "boolean") {
+    return formatDynamicBoolean(cleanValue, language);
+  }
+
+  return cleanValue;
+};
+
+const parseJsonIfPossible = (value: string): unknown => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+const getSamplePrimitiveValue = (type_: ArgumentType): string | number | boolean => {
+  switch (type_) {
+    case "string":
+      return "sample";
+    case "char":
+      return "a";
+    case "boolean":
+      return true;
+    case "number":
+    case "double":
+    case "float":
+      return 12.5;
+    default:
+      return 12;
+  }
+};
+
+const buildSampleObjectValues = (fields?: ObjectField[]): Record<string, string> =>
+  Object.fromEntries(
+    (fields ?? []).map((field) => [field.name, String(getSamplePrimitiveValue(field.type))])
+  );
+
+const buildSampleTestCaseArgs = (argumentScheme: ArgumentSchema[]): TestCaseArgument[] =>
+  argumentScheme.map((scheme, index) => {
+    if (scheme.type === "object" || scheme.type === "map") {
+      return {
+        index,
+        value: "{}",
+        objectValues: buildSampleObjectValues(scheme.objectFields),
+      };
+    }
+
+    if (scheme.type.startsWith("array_")) {
+      const elementType = scheme.type.replace("array_", "") as ArgumentType;
+      return {
+        index,
+        value: JSON.stringify([getSamplePrimitiveValue(elementType)]),
+      };
+    }
+
+    if (scheme.type === "array" || scheme.type === "list") {
+      if (scheme.arrayElementObjectFields?.length) {
+        return {
+          index,
+          value: "[]",
+        };
+      }
+
+      return {
+        index,
+        value: JSON.stringify([getSamplePrimitiveValue(scheme.arrayElementType ?? "int")]),
+      };
+    }
+
+    return {
+      index,
+      value: String(getSamplePrimitiveValue(scheme.type)),
+    };
+  });
+
+const formatDynamicObjectLiteral = (
+  entries: Array<[string, string]>,
+  language: CodeLanguage
+): string => {
+  if (language === "php") {
+    return `[${entries
+      .map(([key, value]) => `"${escapeDoubleQuotedString(key)}" => ${value}`)
+      .join(", ")}]`;
+  }
+
+  if (language === "python") {
+    return `{${entries
+      .map(([key, value]) => `"${escapeDoubleQuotedString(key)}": ${value}`)
+      .join(", ")}}`;
+  }
+
+  if (language === "ruby") {
+    return `{ ${entries
+      .map(([key, value]) => `"${escapeDoubleQuotedString(key)}" => ${value}`)
+      .join(", ")} }`;
+  }
+
+  return `{ ${entries.map(([key, value]) => `${key}: ${value}`).join(", ")} }`;
+};
+
 export const formatArgsForDynamicLang = (
   testCaseArgs: TestCaseArgument[] | undefined,
   argumentScheme: ArgumentSchema[],
@@ -1422,31 +1796,56 @@ export const formatArgsForDynamicLang = (
 ): string => {
   if (!testCaseArgs || !argumentScheme) return "";
 
-  const cleanValue = (val: string) => {
-    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-      return val.slice(1, -1);
-    }
-    return val;
-  };
-
   const args = testCaseArgs
     .map((arg, idx) => {
       const scheme = argumentScheme[idx];
       if (!scheme) return null;
 
-      const cleanVal = cleanValue(arg.value);
+      const cleanVal = cleanQuotedValue(arg.value);
 
-      if (scheme.type === "string") return `"${cleanVal}"`;
+      if (scheme.type === "string") return `"${escapeDoubleQuotedString(cleanVal)}"`;
       if (scheme.type === "number") return cleanVal;
-      if (scheme.type === "char") return `'${cleanVal}'`;
+      if (scheme.type === "char") return `"${escapeDoubleQuotedString(cleanVal)}"`;
       if (scheme.type === "boolean") {
-        if (language === "python") {
-          return cleanVal.toLowerCase() === "true" ? "True" : "False";
-        }
-        return cleanVal.toLowerCase() === "true" ? "true" : "false";
+        return formatDynamicBoolean(cleanVal, language);
       }
       if (scheme.type === "object") {
-        return arg.value || "{}";
+        if (scheme.objectFields?.length) {
+          return formatDynamicObjectLiteral(
+            scheme.objectFields.map((field) => [
+              field.name,
+              formatDynamicScalar(arg.objectValues?.[field.name] ?? "", field.type, language),
+            ]),
+            language
+          );
+        }
+
+        if (arg.value?.trim().startsWith("{")) {
+          const parsedValue = parseJsonIfPossible(arg.value);
+          if (parsedValue && typeof parsedValue === "object" && !Array.isArray(parsedValue)) {
+            return formatDynamicObjectLiteral(
+              Object.entries(parsedValue as Record<string, unknown>).map(([key, value]) => [
+                key,
+                typeof value === "string"
+                  ? `"${escapeDoubleQuotedString(value)}"`
+                  : typeof value === "boolean"
+                    ? language === "python"
+                      ? value
+                        ? "True"
+                        : "False"
+                      : value
+                        ? "true"
+                        : "false"
+                    : Array.isArray(value)
+                      ? `[${value.map((item) => JSON.stringify(item)).join(", ")}]`
+                      : String(value),
+              ]),
+              language
+            );
+          }
+        }
+
+        return language === "php" ? "[]" : "{}";
       }
 
       if (scheme.type && scheme.type.startsWith("array_")) {
@@ -1466,9 +1865,7 @@ export const formatArgsForDynamicLang = (
               });
               return `[${formatted.join(", ")}]`;
             }
-          } catch {
-          
-          }
+          } catch {}
         }
         return arg.value;
       }
@@ -1482,38 +1879,26 @@ export const formatArgsForDynamicLang = (
             scheme.name.charAt(0).toUpperCase() + scheme.name.slice(1);
           const elements = Object.entries(arrayObjValues).map(([, val]) => {
             const objFields = scheme.arrayElementObjectFields!;
-            const fields = objFields.map((f) => {
-              const fieldVal = cleanValue(
-                (val as unknown as Record<string, string>)?.[f.name] ?? ""
-              );
-              if (f.type === "string") return `${f.name}: "${fieldVal}"`;
-              if (f.type === "boolean") {
-                if (language === "python") {
-                  return `${f.name}=${fieldVal.toLowerCase() === "true" ? "True" : "False"}`;
-                }
-                return `${f.name}: ${fieldVal.toLowerCase() === "true" ? "true" : "false"}`;
-              }
-              if (f.type === "char") return `${f.name}: '${fieldVal}'`;
-              return `${f.name}: ${fieldVal}`;
-            });
+            const entries = objFields.map((f) => [
+              f.name,
+              formatDynamicScalar(
+                cleanQuotedValue((val as unknown as Record<string, string>)?.[f.name] ?? ""),
+                f.type,
+                language
+              ),
+            ]) as Array<[string, string]>;
 
-            if (language === "javascript") {
-              return `new ${className}({ ${fields.join(", ")} })`;
+            if (
+              language === "javascript" ||
+              language === "typescript" ||
+              language === "python" ||
+              language === "php" ||
+              language === "ruby"
+            ) {
+              return formatDynamicObjectLiteral(entries, language);
             }
-            if (language === "python") {
-              const pyFields = objFields.map((f) => {
-                const fieldVal = cleanValue(
-                  (val as unknown as Record<string, string>)?.[f.name] ?? ""
-                );
-                if (f.type === "string") return `${f.name}="${fieldVal}"`;
-                if (f.type === "boolean") {
-                  return `${f.name}=${fieldVal.toLowerCase() === "true" ? "True" : "False"}`;
-                }
-                return `${f.name}=${fieldVal}`;
-              });
-              return `${className}(${pyFields.join(", ")})`;
-            }
-            return arg.value;
+
+            return `${className}(${entries.map(([, entryValue]) => entryValue).join(", ")})`;
           });
           return `[${elements.join(", ")}]`;
         }
@@ -1532,14 +1917,408 @@ export const formatArgsForDynamicLang = (
               });
               return `[${formatted.join(", ")}]`;
             }
-          } catch {
-         
-          }
+          } catch {}
         }
         return arg.value;
       }
 
       return arg.value;
+    })
+    .filter(Boolean);
+
+  return args.join(", ");
+};
+
+export const getSampleArgsForLanguage = (
+  language: CodeLanguage,
+  argumentScheme: ArgumentSchema[]
+): string => {
+  if (!argumentScheme.length) return "";
+
+  const sampleArgs = buildSampleTestCaseArgs(argumentScheme);
+
+  if (language === "java" || language === "csharp") {
+    return formatArgsForJavaOrCSharp(sampleArgs, argumentScheme, language);
+  }
+
+  if (
+    language === "javascript" ||
+    language === "typescript" ||
+    language === "python" ||
+    language === "php" ||
+    language === "ruby"
+  ) {
+    return formatArgsForDynamicLang(sampleArgs, argumentScheme, language);
+  }
+
+  if (language === "golang") {
+    return formatArgsForGolang(sampleArgs, argumentScheme);
+  }
+
+  if (language === "rust") {
+    return formatArgsForRust(sampleArgs, argumentScheme);
+  }
+
+  return sampleArgs.map((arg) => arg.value).join(", ");
+};
+
+const formatGoPrimitive = (rawValue: string, type_: ArgumentType): string => {
+  const cleanValue = cleanQuotedValue(rawValue);
+
+  switch (type_) {
+    case "string":
+      return `"${escapeDoubleQuotedString(cleanValue)}"`;
+    case "char":
+      return `'${escapeSingleQuotedString(cleanValue)}'`;
+    case "boolean":
+      return cleanValue.toLowerCase() === "true" ? "true" : "false";
+    default:
+      return cleanValue;
+  }
+};
+
+const formatGoObjectLiteral = (
+  values: Record<string, string>,
+  objectFields?: ObjectField[]
+): string => {
+  const sourceEntries =
+    objectFields?.map(
+      (field) =>
+        [field.name, formatGoPrimitive(values[field.name] ?? "", field.type)] as [string, string]
+    ) ??
+    Object.entries(values).map(([key, value]) => [
+      key,
+      `"${escapeDoubleQuotedString(cleanQuotedValue(value))}"`,
+    ]);
+
+  return `map[string]interface{}{${sourceEntries
+    .map(([key, value]) => `"${escapeDoubleQuotedString(key)}": ${value}`)
+    .join(", ")}}`;
+};
+
+export const formatArgsForGolang = (
+  testCaseArgs: TestCaseArgument[] | undefined,
+  argumentScheme: ArgumentSchema[]
+): string => {
+  if (!testCaseArgs || !argumentScheme) return "";
+
+  const args = testCaseArgs
+    .map((arg, idx) => {
+      const scheme = argumentScheme[idx];
+      if (!scheme) return null;
+
+      if (scheme.type === "object" || scheme.type === "map") {
+        if (arg.objectValues && Object.keys(arg.objectValues).length > 0) {
+          return formatGoObjectLiteral(arg.objectValues, scheme.objectFields);
+        }
+
+        const parsedValue = parseJsonIfPossible(arg.value);
+        if (parsedValue && typeof parsedValue === "object" && !Array.isArray(parsedValue)) {
+          return formatGoObjectLiteral(
+            Object.fromEntries(
+              Object.entries(parsedValue as Record<string, unknown>).map(([key, value]) => [
+                key,
+                String(value),
+              ])
+            ),
+            scheme.objectFields
+          );
+        }
+
+        return "map[string]interface{}{}";
+      }
+
+      if (scheme.type && scheme.type.startsWith("array_")) {
+        const elementType = scheme.type.replace("array_", "") as ArgumentType;
+        const parsedValue = parseJsonIfPossible(arg.value);
+        if (Array.isArray(parsedValue)) {
+          return `[]${getTypeString(elementType, "golang")}{${parsedValue
+            .map((item) => formatGoPrimitive(String(item), elementType))
+            .join(", ")}}`;
+        }
+        return `[]${getTypeString(elementType, "golang")}{}`;
+      }
+
+      if (scheme.type === "array" || scheme.type === "list") {
+        const elementType = scheme.arrayElementType ?? "int";
+
+        if (scheme.arrayElementObjectFields) {
+          const elements = Object.values(arg.objectValues ?? {}).map((value) =>
+            formatGoObjectLiteral(
+              value as unknown as Record<string, string>,
+              scheme.arrayElementObjectFields
+            )
+          );
+          return `[]map[string]interface{}{${elements.join(", ")}}`;
+        }
+
+        const parsedValue = parseJsonIfPossible(arg.value);
+        if (Array.isArray(parsedValue)) {
+          const goElementType =
+            scheme.type === "list" ? "interface{}" : getTypeString(elementType, "golang");
+          return `[]${goElementType}{${parsedValue
+            .map((item) => formatGoPrimitive(String(item), elementType))
+            .join(", ")}}`;
+        }
+
+        const goElementType =
+          scheme.type === "list" ? "interface{}" : getTypeString(elementType, "golang");
+        return `[]${goElementType}{}`;
+      }
+
+      return formatGoPrimitive(arg.value, scheme.type);
+    })
+    .filter(Boolean);
+
+  return args.join(", ");
+};
+
+const formatRustFloatLiteral = (value: string, suffix: "f32" | "f64"): string => {
+  if (!value) {
+    return suffix === "f32" ? "0.0_f32" : "0.0_f64";
+  }
+
+  if (/_f32$|_f64$/.test(value)) {
+    return value;
+  }
+
+  if (!/^[+-]?(?:\d+\.?\d*|\d*\.\d+)(?:[eE][+-]?\d+)?$/.test(value)) {
+    return value;
+  }
+
+  const normalizedValue = /^[+-]?\d+$/.test(value) ? `${value}.0` : value;
+  return `${normalizedValue}_${suffix}`;
+};
+
+const formatRustPrimitive = (rawValue: string, type_: ArgumentType): string => {
+  const cleanValue = cleanQuotedValue(rawValue);
+
+  switch (type_) {
+    case "string":
+      return `String::from("${escapeDoubleQuotedString(cleanValue)}")`;
+    case "char":
+      return `'${escapeSingleQuotedString(cleanValue)}'`;
+    case "boolean":
+      return cleanValue.toLowerCase() === "true" ? "true" : "false";
+    case "number":
+    case "double":
+      return formatRustFloatLiteral(cleanValue, "f64");
+    case "float":
+      return formatRustFloatLiteral(cleanValue, "f32");
+    default:
+      return cleanValue;
+  }
+};
+
+const formatRustMapLiteral = (values: Record<string, string>) => {
+  const entries = Object.entries(values).map(
+    ([key, value]) =>
+      `("${escapeDoubleQuotedString(key)}".to_string(), "${escapeDoubleQuotedString(
+        cleanQuotedValue(value)
+      )}".to_string())`
+  );
+
+  return `std::collections::HashMap::from([${entries.join(", ")}])`;
+};
+
+const splitTopLevel = (value: string): string[] => {
+  const parts: string[] = [];
+  let current = "";
+  let inString = false;
+  let stringChar = "";
+  let angleDepth = 0;
+  let parenDepth = 0;
+  let bracketDepth = 0;
+  let braceDepth = 0;
+
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    const prevChar = value[i - 1];
+
+    if ((char === '"' || char === "'" || char === "`") && prevChar !== "\\") {
+      if (!inString) {
+        inString = true;
+        stringChar = char;
+      } else if (stringChar === char) {
+        inString = false;
+      }
+      current += char;
+      continue;
+    }
+
+    if (!inString) {
+      if (char === "<") angleDepth++;
+      if (char === ">") angleDepth = Math.max(0, angleDepth - 1);
+      if (char === "(") parenDepth++;
+      if (char === ")") parenDepth = Math.max(0, parenDepth - 1);
+      if (char === "[") bracketDepth++;
+      if (char === "]") bracketDepth = Math.max(0, bracketDepth - 1);
+      if (char === "{") braceDepth++;
+      if (char === "}") braceDepth = Math.max(0, braceDepth - 1);
+
+      if (
+        char === "," &&
+        angleDepth === 0 &&
+        parenDepth === 0 &&
+        bracketDepth === 0 &&
+        braceDepth === 0
+      ) {
+        const trimmed = current.trim();
+        if (trimmed) {
+          parts.push(trimmed);
+        }
+        current = "";
+        continue;
+      }
+    }
+
+    current += char;
+  }
+
+  const trimmed = current.trim();
+  if (trimmed) {
+    parts.push(trimmed);
+  }
+
+  return parts;
+};
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const extractRustParameterTypes = (code: string, funcName: string): string[] => {
+  const signatureMatch = code.match(
+    new RegExp(`fn\\s+${escapeRegex(funcName)}\\s*\\(([^)]*)\\)`, "m")
+  );
+
+  if (!signatureMatch?.[1]?.trim()) {
+    return [];
+  }
+
+  return splitTopLevel(signatureMatch[1])
+    .map((param) => param.split(":").slice(1).join(":").trim())
+    .filter(Boolean);
+};
+
+const formatRustValueBySignature = (value: any, rustType: string): string => {
+  const normalizedType = rustType.replace(/\s+/g, "");
+
+  if (normalizedType.startsWith("&str")) {
+    return `"${escapeDoubleQuotedString(String(value ?? ""))}"`;
+  }
+
+  if (normalizedType.includes("String")) {
+    return `String::from("${escapeDoubleQuotedString(String(value ?? ""))}")`;
+  }
+
+  if (normalizedType === "bool") {
+    return Boolean(value) ? "true" : "false";
+  }
+
+  if (normalizedType === "char") {
+    return `'${escapeSingleQuotedString(String(value ?? "").charAt(0) || "a")}'`;
+  }
+
+  if (normalizedType.includes("f64")) {
+    return formatRustFloatLiteral(String(value), "f64");
+  }
+
+  if (normalizedType.includes("f32")) {
+    return formatRustFloatLiteral(String(value), "f32");
+  }
+
+  const vecMatch = normalizedType.match(/^Vec<(.+)>$/);
+  if (vecMatch) {
+    const elementType = vecMatch[1];
+    const arrayValue = Array.isArray(value) ? value : [];
+    return `vec![${arrayValue
+      .map((item) => formatRustValueBySignature(item, elementType))
+      .join(", ")}]`;
+  }
+
+  if (
+    normalizedType.includes("HashMap") &&
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  ) {
+    return formatRustMapLiteral(
+      Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, String(item)])
+      )
+    );
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return String(value);
+};
+
+const formatRustArgumentsFromInput = (
+  input: string,
+  userCode: string,
+  funcName: string
+): string => {
+  const parsedArgs = parseArguments(input);
+  const rustTypes = extractRustParameterTypes(userCode, funcName);
+
+  if (!parsedArgs.length || rustTypes.length !== parsedArgs.length) {
+    return formatArgumentsForCode(parsedArgs);
+  }
+
+  return parsedArgs
+    .map((arg, index) => formatRustValueBySignature(arg, rustTypes[index]))
+    .join(", ");
+};
+
+export const formatArgsForRust = (
+  testCaseArgs: TestCaseArgument[] | undefined,
+  argumentScheme: ArgumentSchema[]
+): string => {
+  if (!testCaseArgs || !argumentScheme) return "";
+
+  const args = testCaseArgs
+    .map((arg, idx) => {
+      const scheme = argumentScheme[idx];
+      if (!scheme) return null;
+
+      if (scheme.type === "object" || scheme.type === "map") {
+        return formatRustMapLiteral(arg.objectValues ?? {});
+      }
+
+      if (scheme.type && scheme.type.startsWith("array_")) {
+        const elementType = scheme.type.replace("array_", "") as ArgumentType;
+        const parsedValue = parseJsonIfPossible(arg.value);
+        if (Array.isArray(parsedValue)) {
+          return `vec![${parsedValue
+            .map((item) => formatRustPrimitive(String(item), elementType))
+            .join(", ")}]`;
+        }
+        return "vec![]";
+      }
+
+      if (scheme.type === "array" || scheme.type === "list") {
+        const elementType = scheme.arrayElementType ?? "int";
+
+        if (scheme.arrayElementObjectFields) {
+          const elements = Object.values(arg.objectValues ?? {}).map((value) =>
+            formatRustMapLiteral(value as unknown as Record<string, string>)
+          );
+          return `vec![${elements.join(", ")}]`;
+        }
+
+        const parsedValue = parseJsonIfPossible(arg.value);
+        if (Array.isArray(parsedValue)) {
+          return `vec![${parsedValue
+            .map((item) => formatRustPrimitive(String(item), elementType))
+            .join(", ")}]`;
+        }
+
+        return "vec![]";
+      }
+
+      return formatRustPrimitive(arg.value, scheme.type);
     })
     .filter(Boolean);
 
@@ -1557,8 +2336,20 @@ export const getDisplayInput = (
     if (language === "java" || language === "csharp") {
       return formatArgsForJavaOrCSharp(testCase.args, argumentScheme, language);
     }
-    if (language === "javascript" || language === "python") {
+    if (
+      language === "javascript" ||
+      language === "typescript" ||
+      language === "python" ||
+      language === "php" ||
+      language === "ruby"
+    ) {
       return formatArgsForDynamicLang(testCase.args, argumentScheme, language);
+    }
+    if (language === "rust") {
+      return formatArgsForRust(testCase.args, argumentScheme);
+    }
+    if (language === "golang") {
+      return formatArgsForGolang(testCase.args, argumentScheme);
     }
   }
 
@@ -1663,6 +2454,19 @@ class ${className} {
 class ${className} {
 }`;
       }
+      if (language === "typescript") {
+        const constructorParams = objectFields
+          .map((f) => `public ${f.name}: ${getTypeString(f.type, language) || "unknown"}`)
+          .join(", ");
+        return objectFields.length > 0
+          ? `
+class ${className} {
+    constructor(${constructorParams}) {}
+}`
+          : `
+class ${className} {
+}`;
+      }
       if (language === "python") {
         const constructorParams = objectFields.map((f) => f.name).join(", ");
         const constructorBody = objectFields
@@ -1693,13 +2497,40 @@ export const extractFunctionName = (code: string, lang: CodeLanguage): string | 
         );
         return jsMatch ? jsMatch[1] || jsMatch[2] || jsMatch[3] || jsMatch[4] : null;
       }
+      case "typescript": {
+        const tsMatch = code.match(
+          /function\s+(\w+)|const\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*(?::[^=]+)?=>|let\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*(?::[^=]+)?=>|var\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*(?::[^=]+)?=>/
+        );
+        return tsMatch ? tsMatch[1] || tsMatch[2] || tsMatch[3] || tsMatch[4] : null;
+      }
       case "python": {
         const pyMatch = code.match(/def\s+(\w+)\s*\(/);
         return pyMatch ? pyMatch[1] : null;
       }
+      case "php": {
+        const phpMatch = code.match(/function\s+(\w+)\s*\(/);
+        return phpMatch ? phpMatch[1] : null;
+      }
+      case "ruby": {
+        const rubyTopLevelMatch = code.match(
+          /^def\s+(?:self\.)?([A-Za-z_][A-Za-z0-9_]*[!?=]?)\s*(?:\(|$)/m
+        );
+        if (rubyTopLevelMatch) {
+          return rubyTopLevelMatch[1];
+        }
+
+        const rubyMatch = code.match(
+          /^\s*def\s+(?:self\.)?([A-Za-z_][A-Za-z0-9_]*[!?=]?)\s*(?:\(|$)/m
+        );
+        return rubyMatch ? rubyMatch[1] : null;
+      }
+      case "rust": {
+        const rustMatches = Array.from(code.matchAll(/fn\s+(\w+)\s*\(/g));
+        return rustMatches.find((match) => match[1] !== "main")?.[1] ?? rustMatches[0]?.[1] ?? null;
+      }
       case "golang": {
-        const goMatch = code.match(/func\s+(\w+)\s*\(/);
-        return goMatch ? goMatch[1] : null;
+        const goMatches = Array.from(code.matchAll(/func\s+(\w+)\s*\(/g));
+        return goMatches.find((match) => match[1] !== "main")?.[1] ?? goMatches[0]?.[1] ?? null;
       }
       case "csharp": {
         const csMatch = code.match(/public\s+static\s+[\w<>\[\]]+\s+(\w+)\s*\([^)]*\)/);
@@ -1718,25 +2549,12 @@ export const extractFunctionName = (code: string, lang: CodeLanguage): string | 
   }
 };
 
-export const buildTestCode = (
+const buildJavaScriptLikeTestCode = (
   userCode: string,
-  input: string,
-  lang: CodeLanguage,
-  funcName: string | null,
-  preformattedArgs?: string
-): string => {
-  if (!funcName) return userCode;
-
-  const argsStr =
-    preformattedArgs ??
-    (() => {
-      const args = parseArguments(input);
-      return formatArgumentsForCode(args);
-    })();
-
-  switch (lang) {
-    case "javascript":
-      return `${userCode}
+  funcName: string,
+  argsStr: string,
+  lang: "javascript" | "typescript"
+) => `${userCode}
 
 const __originalConsole = {
   log: console.log,
@@ -1745,7 +2563,7 @@ const __originalConsole = {
   info: console.info
 };
 
-const __logs = [];
+const __logs${lang === "typescript" ? ": string[]" : ""} = [];
 
 console.log = function(...args) {
   const message = args.map(arg => 
@@ -1775,7 +2593,7 @@ console.info = function(...args) {
   const message = args.map(arg => 
     typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
   ).join(' ');
-  __logs.push('ℹ' + message);
+  __logs.push('' + message);
   __originalConsole.info.apply(console, args);
 };
 
@@ -1797,16 +2615,116 @@ try {
   console.log(JSON.stringify(result));
   console.log('===RESULT_END===');
   
-} catch (error) {
+} catch (error${lang === "typescript" ? ": unknown" : ""}) {
   console.log = __originalConsole.log;
   console.error = __originalConsole.error;
   console.warn = __originalConsole.warn;
   console.info = __originalConsole.info;
   
   console.log('===RESULT_START===');
-  console.log(JSON.stringify({ error: error.message }));
+  console.log(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }));
   console.log('===RESULT_END===');
 }`;
+
+const GO_RUNTIME_IMPORTS = ["bytes", "encoding/json", "fmt", "io", "os", "strings"];
+
+const extractGoImports = (code: string): string[] => {
+  const imports = new Set<string>();
+
+  const multilineImports = code.match(/import\s+\(([\s\S]*?)\)/m)?.[1];
+  if (multilineImports) {
+    for (const match of multilineImports.matchAll(/"([^"]+)"/g)) {
+      imports.add(match[1]);
+    }
+  }
+
+  for (const match of code.matchAll(/^\s*import\s+"([^"]+)"\s*$/gm)) {
+    imports.add(match[1]);
+  }
+
+  return Array.from(imports);
+};
+
+const stripGoPackageAndImports = (code: string): string =>
+  code
+    .replace(/^\s*package\s+\w+\s*/m, "")
+    .replace(/^\s*import\s+\(([\s\S]*?)\)\s*/m, "")
+    .replace(/^\s*import\s+"[^"]+"\s*$/gm, "")
+    .trim();
+
+const buildGoTestCode = (userCode: string, funcName: string, argsStr: string): string => {
+  const imports = Array.from(
+    new Set([...extractGoImports(userCode), ...GO_RUNTIME_IMPORTS])
+  ).sort();
+  const codeBody = stripGoPackageAndImports(userCode);
+
+  return `package main
+
+import (
+${imports.map((path) => `    "${path}"`).join("\n")}
+)
+
+${codeBody}
+
+func main() {
+    old := os.Stdout
+    r, w, _ := os.Pipe()
+    os.Stdout = w
+    
+    outC := make(chan string)
+    go func() {
+        var buf bytes.Buffer
+        io.Copy(&buf, r)
+        outC <- buf.String()
+    }()
+    
+    result := ${funcName}(${argsStr})
+    
+    w.Close()
+    os.Stdout = old
+    logs := <-outC
+    
+    if logs != "" {
+        fmt.Println("===LOGS_START===")
+        fmt.Print(logs)
+        if !strings.HasSuffix(logs, "\\n") {
+            fmt.Println()
+        }
+        fmt.Println("===LOGS_END===")
+    }
+    
+    fmt.Println("===RESULT_START===")
+    jsonResult, _ := json.Marshal(result)
+    fmt.Println(string(jsonResult))
+    fmt.Println("===RESULT_END===")
+}`;
+};
+
+export const buildTestCode = (
+  userCode: string,
+  input: string,
+  lang: CodeLanguage,
+  funcName: string | null,
+  preformattedArgs?: string
+): string => {
+  if (!funcName) return userCode;
+
+  const argsStr =
+    preformattedArgs ??
+    (() => {
+      if (lang === "rust") {
+        return formatRustArgumentsFromInput(input, userCode, funcName);
+      }
+      const args = parseArguments(input);
+      return formatArgumentsForCode(args);
+    })();
+
+  switch (lang) {
+    case "javascript":
+      return buildJavaScriptLikeTestCode(userCode, funcName, argsStr, "javascript");
+
+    case "typescript":
+      return buildJavaScriptLikeTestCode(userCode, funcName, argsStr, "typescript");
 
     case "python":
       return `${userCode}
@@ -1849,115 +2767,90 @@ except Exception as e:
     print(json.dumps({"error": str(e)}))
     print("===RESULT_END===")`;
 
+    case "php":
+      return `${userCode}
+
+ob_start();
+
+try {
+    $result = ${funcName}(${argsStr});
+    $logs = ob_get_clean();
+
+    if (!empty($logs)) {
+        echo "===LOGS_START===\\n";
+        echo $logs;
+        if (!str_ends_with($logs, PHP_EOL)) {
+            echo PHP_EOL;
+        }
+        echo "===LOGS_END===\\n";
+    }
+
+    echo "===RESULT_START===\\n";
+    echo json_encode($result);
+    echo "\\n===RESULT_END===\\n";
+} catch (Throwable $error) {
+    if (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
+    echo "===RESULT_START===\\n";
+    echo json_encode(["error" => $error->getMessage()]);
+    echo "\\n===RESULT_END===\\n";
+}`;
+
+    case "ruby":
+      return `${userCode}
+require "json"
+require "stringio"
+
+__original_stdout = $stdout
+__stdout_buffer = StringIO.new
+$stdout = __stdout_buffer
+
+begin
+  result = ${funcName}(${argsStr})
+  $stdout = __original_stdout
+  logs = __stdout_buffer.string
+
+  unless logs.empty?
+    puts "===LOGS_START==="
+    print logs
+    puts unless logs.end_with?("\\n")
+    puts "===LOGS_END==="
+  end
+
+  puts "===RESULT_START==="
+  puts JSON.generate(result)
+  puts "===RESULT_END==="
+rescue => error
+  $stdout = __original_stdout
+  puts "===RESULT_START==="
+  puts JSON.generate({ error: error.message })
+  puts "===RESULT_END==="
+end`;
+
+    case "rust":
+      return `${userCode}
+
+fn __codex_serialize<T: std::fmt::Debug>(value: &T) -> String {
+    format!("{:?}", value)
+}
+
+fn main() {
+    let result = ${funcName}(${argsStr});
+    println!("===RESULT_START===");
+    println!("{}", __codex_serialize(&result));
+    println!("===RESULT_END===");
+}`;
+
     case "java":
       return buildJavaTestSuiteWithLogs(userCode, [{ input, expectedOutput: "" }], funcName);
 
     case "csharp":
       return buildCSharpTestSuite(userCode, [{ input, expectedOutput: "" }], funcName);
 
-    case "golang": {
-      const hasImports = userCode.includes("import (");
-
-      if (hasImports) {
-        return (
-          userCode.replace(
-            /import\s+\(([\s\S]*?)\)/,
-            `import ($1
-    "encoding/json"
-    "fmt"
-    "os"
-    "bytes"
-    "io"
-    "strings")`
-          ) +
-          `
-
-func main() {
-    old := os.Stdout
-    r, w, _ := os.Pipe()
-    os.Stdout = w
-    
-    outC := make(chan string)
-    go func() {
-        var buf bytes.Buffer
-        io.Copy(&buf, r)
-        outC <- buf.String()
-    }()
-    
-    result := ${funcName}(${argsStr})
-    
-    w.Close()
-    os.Stdout = old
-    logs := <-outC
-    
-    if logs != "" {
-        fmt.Println("===LOGS_START===")
-        fmt.Print(logs)
-        if !strings.HasSuffix(logs, "\\n") {
-            fmt.Println()
-        }
-        fmt.Println("===LOGS_END===")
-    }
-    
-    fmt.Println("===RESULT_START===")
-    jsonResult, _ := json.Marshal(result)
-    fmt.Println(string(jsonResult))
-    fmt.Println("===RESULT_END===")
-}`
-        );
-      }
-
-      return (
-        userCode.replace(
-          /package main\n/,
-          `package main
-
-import (
-    "encoding/json"
-    "fmt"
-    "os"
-    "bytes"
-    "io"
-    "strings"
-)
-`
-        ) +
-        `
-
-func main() {
-    old := os.Stdout
-    r, w, _ := os.Pipe()
-    os.Stdout = w
-    
-    outC := make(chan string)
-    go func() {
-        var buf bytes.Buffer
-        io.Copy(&buf, r)
-        outC <- buf.String()
-    }()
-    
-    result := ${funcName}(${argsStr})
-    
-    w.Close()
-    os.Stdout = old
-    logs := <-outC
-    
-    if logs != "" {
-        fmt.Println("===LOGS_START===")
-        fmt.Print(logs)
-        if !strings.HasSuffix(logs, "\\n") {
-            fmt.Println()
-        }
-        fmt.Println("===LOGS_END===")
-    }
-    
-    fmt.Println("===RESULT_START===")
-    jsonResult, _ := json.Marshal(result)
-    fmt.Println(string(jsonResult))
-    fmt.Println("===RESULT_END===")
-}`
-      );
-    }
+    case "golang":
+      return buildGoTestCode(userCode, funcName, argsStr);
 
     default:
       return userCode;

@@ -9,8 +9,26 @@ export interface Slide {
   isPersisted?: boolean;
 }
 
-export type CodeLanguage = "javascript" | "python" | "csharp" | "java" | "golang" | "cpp";
-export type FillCodeLanguage = "javascript" | "python" | "csharp" | "java";
+export type CodeLanguage =
+  | "javascript"
+  | "typescript"
+  | "python"
+  | "php"
+  | "ruby"
+  | "rust"
+  | "csharp"
+  | "java"
+  | "golang"
+  | "cpp";
+export type FillCodeLanguage =
+  | "javascript"
+  | "typescript"
+  | "python"
+  | "php"
+  | "ruby"
+  | "rust"
+  | "csharp"
+  | "java";
 
 export interface TextBlock {
   id: string;

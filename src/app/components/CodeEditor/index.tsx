@@ -14,7 +14,7 @@ interface CodeEditorProps {
   readOnly?: boolean;
   height?: string | number;
   className?: string;
- 
+
   onRun?: () => void;
   runLoading?: boolean;
 }
@@ -56,6 +56,37 @@ const KEYWORDS: Record<CodeLanguage, string[]> = {
     "async",
     "await",
   ],
+  typescript: [
+    "function",
+    "const",
+    "let",
+    "type",
+    "interface",
+    "enum",
+    "implements",
+    "extends",
+    "readonly",
+    "keyof",
+    "typeof",
+    "infer",
+    "as",
+    "unknown",
+    "never",
+    "void",
+    "number",
+    "string",
+    "boolean",
+    "Array",
+    "Record",
+    "Promise",
+    "async",
+    "await",
+    "return",
+    "class",
+    "import",
+    "export",
+    "from",
+  ],
   python: [
     "def",
     "if",
@@ -92,6 +123,92 @@ const KEYWORDS: Record<CodeLanguage, string[]> = {
     "yield",
     "global",
     "nonlocal",
+  ],
+  php: [
+    "function",
+    "echo",
+    "print",
+    "if",
+    "elseif",
+    "else",
+    "for",
+    "foreach",
+    "while",
+    "return",
+    "class",
+    "public",
+    "private",
+    "protected",
+    "static",
+    "new",
+    "array",
+    "json_encode",
+    "json_decode",
+    "require",
+    "include",
+    "namespace",
+    "use",
+    "try",
+    "catch",
+    "finally",
+  ],
+  ruby: [
+    "def",
+    "end",
+    "if",
+    "elsif",
+    "else",
+    "unless",
+    "while",
+    "until",
+    "for",
+    "each",
+    "do",
+    "return",
+    "puts",
+    "print",
+    "class",
+    "module",
+    "attr_accessor",
+    "require",
+    "begin",
+    "rescue",
+    "ensure",
+    "yield",
+    "self",
+    "nil",
+    "true",
+    "false",
+  ],
+  rust: [
+    "fn",
+    "let",
+    "mut",
+    "if",
+    "else",
+    "match",
+    "loop",
+    "while",
+    "for",
+    "in",
+    "return",
+    "struct",
+    "enum",
+    "impl",
+    "trait",
+    "pub",
+    "use",
+    "mod",
+    "vec!",
+    "String",
+    "println!",
+    "format!",
+    "Option",
+    "Result",
+    "Some",
+    "None",
+    "Ok",
+    "Err",
   ],
   java: [
     "public",
@@ -265,7 +382,7 @@ export default function CodeEditor({
   const [cursorPosition, setCursorPosition] = useState({ line: 0, column: 0 });
   const [cursorVisible, setCursorVisible] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
- 
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCursorVisible((prev) => !prev);
@@ -273,7 +390,7 @@ export default function CodeEditor({
 
     return () => clearInterval(interval);
   }, []);
- 
+
   useEffect(() => {
     const handleContainerClick = (e: MouseEvent) => {
       if (
@@ -294,7 +411,7 @@ export default function CodeEditor({
       container?.removeEventListener("click", handleContainerClick);
     };
   }, []);
- 
+
   const getCurrentWord = useCallback((text: string, pos: number) => {
     const beforeCursor = text.slice(0, pos);
     const afterCursor = text.slice(pos);
@@ -304,7 +421,7 @@ export default function CodeEditor({
 
     return (beforeMatch ? beforeMatch[0] : "") + (afterMatch ? afterMatch[0] : "");
   }, []);
- 
+
   useEffect(() => {
     const word = getCurrentWord(value, selection.start);
 
@@ -323,7 +440,6 @@ export default function CodeEditor({
     }
   }, [value, selection.start, language, readOnly, isFocused, getCurrentWord]);
 
- 
   const insertSnippet = useCallback(
     (snippet: string) => {
       const beforeCursor = value.slice(0, selection.start);
@@ -348,7 +464,7 @@ export default function CodeEditor({
     },
     [value, selection, onChange, getCurrentWord]
   );
- 
+
   const handleSelectionChange = useCallback(
     (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
       const target = e.target as HTMLTextAreaElement;
@@ -357,7 +473,6 @@ export default function CodeEditor({
 
       setSelection({ start, end });
 
-     
       const textBeforeCursor = value.slice(0, start);
       const lines = textBeforeCursor.split("\n");
       const line = lines.length - 1;
@@ -367,11 +482,11 @@ export default function CodeEditor({
     },
     [value]
   );
- 
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       onChange(e.target.value);
- 
+
       setTimeout(() => {
         if (textareaRef.current) {
           const start = textareaRef.current.selectionStart;
@@ -388,7 +503,6 @@ export default function CodeEditor({
     [onChange]
   );
 
- 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (readOnly) return;
@@ -477,7 +591,6 @@ export default function CodeEditor({
     ]
   );
 
- 
   const handleFocus = useCallback(() => {
     setIsFocused(true);
   }, []);
@@ -486,7 +599,6 @@ export default function CodeEditor({
     setIsFocused(false);
   }, []);
 
- 
   useEffect(() => {
     const textarea = textareaRef.current;
     const scrollContainer = containerRef.current?.querySelector(`.${styles.editorScroll}`);
@@ -503,7 +615,6 @@ export default function CodeEditor({
     return () => textarea.removeEventListener("scroll", handleScroll);
   }, []);
 
- 
   const renderHighlightedCode = useCallback(() => {
     if (!value) {
       return (
@@ -630,7 +741,7 @@ export default function CodeEditor({
         );
         i++;
       }
- 
+
       const isCursorLine = lineIndex === cursorPosition.line;
       const showCursor = isCursorLine && isFocused && cursorVisible;
 

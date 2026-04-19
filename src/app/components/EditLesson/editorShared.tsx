@@ -9,7 +9,11 @@ import type { CodeLanguage } from "@/app/http/codeService";
 
 export const LANGUAGES: { value: CodeLanguage; label: string }[] = [
   { value: "javascript", label: "JavaScript" },
+  { value: "typescript", label: "TypeScript" },
   { value: "python", label: "Python" },
+  { value: "php", label: "PHP" },
+  { value: "ruby", label: "Ruby" },
+  { value: "rust", label: "Rust" },
   { value: "csharp", label: "C#" },
   { value: "java", label: "Java" },
   { value: "golang", label: "Go" },

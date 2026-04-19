@@ -121,8 +121,8 @@ const LoginForm = () => {
             <input
               className={styles.form__input}
               placeholder="Введите пароль"
-              //type="password"
-              type="text"
+              type="password"
+              //type="text"
               disabled={isLoading}
               {...register("password")}
             />

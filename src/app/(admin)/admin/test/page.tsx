@@ -9,10 +9,28 @@ const defaultSnippets: Record<CodeLanguage, string> = {
 let a = 11;
 let b = 444;
 console.log(a + b);`,
+  typescript: `// TypeScript
+const a: number = 11;
+const b: number = 444;
+console.log(a + b);`,
   python: `# Python
 a = 11
 b = 444
 print(a + b)`,
+  php: `<?php
+
+$a = 11;
+$b = 444;
+echo $a + $b;`,
+  ruby: `# Ruby
+a = 11
+b = 444
+puts(a + b)`,
+  rust: `fn main() {
+    let a = 11;
+    let b = 444;
+    println!("{}", a + b);
+}`,
   csharp: `// C#
 Console.WriteLine(11 + 444);`,
   golang: `// Go
@@ -31,7 +49,11 @@ int main() {
 
 const languages: { value: CodeLanguage; label: string }[] = [
   { value: "javascript", label: "JavaScript" },
+  { value: "typescript", label: "TypeScript" },
   { value: "python", label: "Python" },
+  { value: "php", label: "PHP" },
+  { value: "ruby", label: "Ruby" },
+  { value: "rust", label: "Rust" },
   { value: "csharp", label: "C#" },
   { value: "golang", label: "Go" },
   { value: "java", label: "Java" },
