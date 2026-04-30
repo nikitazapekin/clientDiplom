@@ -4,10 +4,17 @@
 .welcome {
   width: 100%;
   height: 100%;
+  padding: px($spacing-xl) px($spacing-md) px($spacing-vg);
 
   display: flex;
   align-items: center;
   justify-content: center;
+
+  @media (max-width: 768px) {
+    align-items: flex-start;
+    padding: px($spacing-lg) px($spacing-md) px($spacing-xl);
+  }
+
   &__container {
     max-width: $container-sm;
     width: 100%;
@@ -19,25 +26,56 @@
     justify-content: center;
     flex-direction: column;
   }
+
   &__preview {
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
+    text-align: center;
   }
-&__cards {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center; 
-  gap: px($spacing-lg);
-  margin-top: px($spacing-lg);
-   
-  & > * {
-    flex: 0 0 calc(33.333% - px($spacing-lg) * 2 / 3);
-    max-width: calc(33.333% - px($spacing-lg) * 2 / 3);
+
+  &__title {
+    @media (max-width: 768px) {
+      font-size: clamp(2rem, 8vw, 2.75rem);
+    }
   }
-}
+
+  &__description {
+    @media (max-width: 768px) {
+      font-size: clamp(1.25rem, 5vw, 1.75rem);
+    }
+  }
+
+  &__cards {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: px($spacing-lg);
+    margin-top: px($spacing-lg);
+    
+    & > * {
+      flex: 0 0 calc(33.333% - px($spacing-lg) * 2 / 3);
+      max-width: calc(33.333% - px($spacing-lg) * 2 / 3);
+    }
+
+    @media (max-width: 768px) {
+      gap: px($spacing-md);
+
+      & > * {
+        flex: 0 0 calc(50% - px($spacing-md) / 2);
+        max-width: calc(50% - px($spacing-md) / 2);
+      }
+    }
+
+    @media (max-width: 540px) {
+      & > * {
+        flex: 0 0 100%;
+        max-width: 100%;
+      }
+    }
+  }
 }
 
 /*

@@ -7,6 +7,7 @@
   display: flex;
   justify-content: space-between;
   background-color: $color-dark;
+  position: relative;
   
   &__container {
     max-width: px($container-md);
@@ -16,15 +17,32 @@
     justify-content: space-between;
     align-items: center;
     padding: px($spacing-sm) 0;
+
+    @media (max-width: 768px) {
+      padding: px($spacing-sm) px($spacing-md);
+    }
   }
   
   &__logo {
     cursor: pointer;
   }
+
+  &__logoButton {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+  }
   
   &__nav {
     display: flex;
     align-items: center;
+
+    @media (max-width: 768px) {
+      display: none;
+    }
   }
   
   &__item {
@@ -76,5 +94,155 @@
       opacity: 0.9;
       transform: translateY(-1px);
     }
+  }
+
+  &__burger {
+    display: none;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    border-radius: px($radius-medium);
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    z-index: 21;
+
+    span {
+      position: absolute;
+      left: 11px;
+      width: 20px;
+      height: 2px;
+      background: $color-white;
+      border-radius: 999px;
+      transition: transform 0.25s ease, opacity 0.25s ease, top 0.25s ease;
+
+      &:nth-child(1) {
+        top: 14px;
+      }
+
+      &:nth-child(2) {
+        top: 21px;
+      }
+
+      &:nth-child(3) {
+        top: 28px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &_active {
+      span {
+        &:nth-child(1) {
+          top: 21px;
+          transform: rotate(45deg);
+        }
+
+        &:nth-child(2) {
+          opacity: 0;
+        }
+
+        &:nth-child(3) {
+          top: 21px;
+          transform: rotate(-45deg);
+        }
+      }
+    }
+  }
+
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 18;
+
+    &_active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  &__sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(86vw, 340px);
+    height: 100vh;
+    background: $color-dark;
+    box-shadow: -24px 0 60px rgba(0, 0, 0, 0.28);
+    padding: px($spacing-lg) px($spacing-md);
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    z-index: 20;
+    display: none;
+
+    @media (max-width: 768px) {
+      display: block;
+      box-shadow: none;
+    }
+
+    &_active {
+      transform: translateX(0);
+    }
+  }
+
+  &__sidebarTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: px($spacing-md);
+    margin-bottom: px($spacing-xl);
+  }
+
+  &__close {
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: $color-white;
+    border-radius: px($radius-medium);
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  &__sidebarNav {
+    display: block;
+  }
+
+  &__sidebarList {
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-md);
+  }
+
+  &__sidebarItem {
+    color: $color-white;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    padding-bottom: px($spacing-sm);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    &_active {
+      color: #d9a4dc;
+    }
+  }
+
+  &__sidebarLogout {
+    display: inline-flex;
+    justify-content: center;
+    width: 100%;
+    padding: px($spacing-sm) px($spacing-md);
+    background-color: $color-purple;
+    border-radius: px($radius-small);
   }
 }

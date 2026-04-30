@@ -85,8 +85,8 @@
 
 .taskTag {
   font-size: 12px;
-  color: #836400;
-  background: #fff6da;
+  color: $color-gray-700;
+  background: $color-gray-100;
   padding: 5px 10px;
   border-radius: 999px;
   font-weight: 600;
@@ -146,14 +146,15 @@
 }
 
 .constraintsBox {
-  background: #fff8e1;
+  background: $color-white;
   border-radius: 12px;
   padding: px($spacing-md);
+  border: 1px solid $color-gray-200;
 
   h3 {
     font-size: 14px;
     font-weight: 600;
-    color: #e65100;
+    color: $color-gray-800;
     margin: 0 0 8px;
   }
 }
