@@ -542,14 +542,7 @@ const StudyLesson = ({
       <div className={styles.pageInner}>
         <div className={styles.header}>
           <div className={styles.headerMain}>
-            <button
-              type="button"
-            style={{width: "300px"}}
-              className={styles.secondaryButton}
-              onClick={() => router.push(`/study/${courseId}/map`)}
-            >
-              Назад к карте
-            </button>
+        
 
             <div className={styles.titleBlock}>
               <p className={styles.eyebrow}>

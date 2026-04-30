@@ -843,8 +843,7 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
           </div>
 
           <div className={styles.meta}>
-            <span>Этапов: {courseProgress.length}</span>
-            <span>Элементов: {elements.length}</span>
+    
             <span>
               Прогресс:{" "}
               {isProgressLoading

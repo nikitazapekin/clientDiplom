@@ -524,9 +524,11 @@ const UserProfile: React.FC = () => {
               </div>
             )}
 
-            <div className={styles.cameraBadge}>
-              <span className={styles.cameraBadgeText}>📷</span>
-            </div>
+            {!profile.avatar && !uploadingAvatar && (
+              <div className={styles.cameraBadge}>
+                <span className={styles.cameraBadgeText}>+</span>
+              </div>
+            )}
           </div>
 
           <h1 className={styles.name}>
@@ -663,18 +665,6 @@ const UserProfile: React.FC = () => {
           </div>
         ) : null}
 
-    
-        <div className={styles.statusContainer}>
-          <div
-            className={`${styles.statusBadge} ${profile.isActive ? styles.statusActive : styles.statusInactive}`}
-          >
-            <span className={styles.statusText}>
-              {profile.isActive ? 'В сети' : 'Не в сети'}
-            </span>
-          </div>
-        </div>
-
-      
         <div className={styles.logoutButton}>
           <button
             className={styles.logoutButtonInner}
