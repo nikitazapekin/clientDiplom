@@ -420,7 +420,7 @@ const StudentProfilePage = () => {
             </div>
           )}
           <div className={styles.infoItem}>
-            <span className={styles.infoItemLabel}>ID (Auditory)</span>
+            <span className={styles.infoItemLabel}>ID</span>
             <span className={styles.infoItemValue}>{profile.auditoryId}</span>
           </div>
         </div>

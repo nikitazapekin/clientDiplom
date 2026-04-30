@@ -293,14 +293,21 @@ column-gap: 10px;
 }
 
 .codeOutput {
-  background: $color-darkLight;
-  color: $color-white;
-  padding: px($spacing-sm);
-  border-radius: px($radius-small);
-  font-size: 12px;
+  margin-top: px($spacing-md);
+  padding: px($spacing-md);
+  border-radius: px($radius-medium);
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)) padding-box,
+    linear-gradient(180deg, #1f2937 0%, #111827 100%) border-box;
+  color: #d1fae5;
+  font-family: "Fira Code", "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
   white-space: pre-wrap;
-  max-height: 200px;
+  max-height: 240px;
   overflow: auto;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
 }
 
 .table {
@@ -548,6 +555,231 @@ column-gap: 10px;
   margin: 0;
   color: #1d7c35;
   font-weight: 600;
+}
+
+.resultEyebrow {
+  display: inline-block;
+  margin-bottom: 4px;
+  color: rgba(17, 24, 39, 0.56);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summaryPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(159, 15, 167, 0.08);
+  color: $color-purple;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statusPassed {
+  background: rgba(16, 185, 129, 0.14);
+  color: #127a49;
+}
+
+.statusFailed {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b42318;
+}
+
+.consoleOutput,
+.testResults,
+.constraintResults,
+.testError {
+  width: 100%;
+  margin-top: px($spacing-md);
+  border-radius: px($radius-medium);
+}
+
+.consoleOutput {
+  padding: px($spacing-md);
+ /* background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 38%),
+    linear-gradient(180deg, #1f2937 0%, #111827 100%); */
+
+    background-color:  black;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 20px 46px rgba(15, 23, 42, 0.24);
+}
+
+.consoleHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: px($spacing-sm);
+  margin-bottom: px($spacing-sm);
+}
+
+.consoleTitle {
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.resultBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(134, 239, 172, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: #86efac;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.consoleBody {
+  margin: 0;
+  padding: px($spacing-md);
+  border-radius: px($radius-small);
+  background: rgba(2, 6, 23, 0.42);
+  color: #d1fae5;
+  font-family: "Fira Code", "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.testResults,
+.constraintResults {
+  padding: px($spacing-md);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(159, 15, 167, 0.06), transparent 42%),
+    linear-gradient(180deg, #ffffff 0%, #fcf8fd 100%);
+}
+
+.resultsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: px($spacing-sm);
+  margin-bottom: px($spacing-md);
+
+  h4 {
+    margin: 0;
+    color: $color-dark;
+    font-size: 20px;
+    line-height: 1.2;
+  }
+}
+
+.testCasesList,
+.constraintsList {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-sm);
+}
+
+.testCaseResult,
+.constraintResult {
+  padding: px($spacing-md);
+  border-radius: px($radius-medium);
+  border: 1px solid transparent;
+}
+
+.passed {
+  background: linear-gradient(180deg, #f3fff8 0%, #ebf9ef 100%);
+  border-color: rgba(16, 185, 129, 0.18);
+}
+
+.failed {
+  background: linear-gradient(180deg, #fff7f7 0%, #fff0f0 100%);
+  border-color: rgba(239, 68, 68, 0.18);
+}
+
+.testCaseResultHeader,
+.constraintResultHeader,
+.errorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: px($spacing-sm);
+  margin-bottom: px($spacing-sm);
+}
+
+.testNumber,
+.constraintName,
+.errorTitle {
+  color: $color-dark;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.testCaseDetails,
+.constraintDetails {
+  display: grid;
+  gap: px($spacing-sm);
+}
+
+.resultField {
+  display: grid;
+  gap: 6px;
+}
+
+.resultFieldLabel {
+  color: rgba(17, 24, 39, 0.62);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.resultFieldValue {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: px($radius-small);
+  background: rgba(15, 23, 42, 0.045);
+  color: $color-dark;
+  font-family: "Fira Code", "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.testError {
+  padding: px($spacing-md);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: linear-gradient(180deg, #fff7f7 0%, #fff0f0 100%);
+
+  pre {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: px($radius-small);
+    background: rgba(255, 255, 255, 0.72);
+    color: #9f1239;
+    font-family: "Fira Code", "JetBrains Mono", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
 }
 
 .previewTop {

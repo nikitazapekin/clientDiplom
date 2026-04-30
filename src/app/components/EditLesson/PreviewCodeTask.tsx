@@ -100,6 +100,9 @@ export function PreviewCodeTask({
   ]);
 
   const displayCode = stripMainMethod(getCurrentCode(), block.language ?? "javascript");
+  const passedTestsCount = testResults?.filter((result) => result.passed).length ?? 0;
+  const passedConstraintsCount =
+    constraintResults?.filter((constraint) => constraint.passed).length ?? 0;
 
   const handleCodeChange = useCallback(
     (code: string) => {
@@ -1236,7 +1239,13 @@ export function PreviewCodeTask({
 
       {consoleOutput !== null && (
         <div className={styles.consoleOutput}>
-          <div className={styles.consoleHeader}>Консоль</div>
+          <div className={styles.consoleHeader}>
+            <div>
+           
+              <div className={styles.consoleTitle}>Консоль</div>
+            </div>
+       
+          </div>
           <pre className={styles.consoleBody}>{consoleOutput}</pre>
         </div>
       )}
@@ -1244,9 +1253,12 @@ export function PreviewCodeTask({
       {testResults && (
         <div className={styles.testResults}>
           <div className={styles.resultsHeader}>
-            <h4> Результаты тестирования</h4>
-            <span className={styles.testSummary}>
-              Пройдено: {testResults.filter((r) => r.passed).length} / {testResults.length}
+            <div>
+              <span className={styles.resultEyebrow}>Проверка решения</span>
+              <h4>Результаты тестирования</h4>
+            </div>
+            <span className={styles.summaryPill}>
+              Пройдено: {passedTestsCount} / {testResults.length}
             </span>
           </div>
           <div className={styles.testCasesList}>
@@ -1257,14 +1269,27 @@ export function PreviewCodeTask({
               >
                 <div className={styles.testCaseResultHeader}>
                   <span className={styles.testNumber}>Тест #{index + 1}</span>
-                  <span className={styles.testStatus}>
+                  <span
+                    className={`${styles.statusBadge} ${
+                      result.passed ? styles.statusPassed : styles.statusFailed
+                    }`}
+                  >
                     {result.passed ? "Пройден" : "Провален"}
                   </span>
                 </div>
                 <div className={styles.testCaseDetails}>
-                  <div>Вход: {result.input}</div>
-                  <div>Ожидалось: {result.expected}</div>
-                  <div>Получено: {result.actual}</div>
+                  <div className={styles.resultField}>
+                    <span className={styles.resultFieldLabel}>Вход</span>
+                    <pre className={styles.resultFieldValue}>{result.input}</pre>
+                  </div>
+                  <div className={styles.resultField}>
+                    <span className={styles.resultFieldLabel}>Ожидалось</span>
+                    <pre className={styles.resultFieldValue}>{result.expected}</pre>
+                  </div>
+                  <div className={styles.resultField}>
+                    <span className={styles.resultFieldLabel}>Получено</span>
+                    <pre className={styles.resultFieldValue}>{result.actual}</pre>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1275,10 +1300,12 @@ export function PreviewCodeTask({
       {constraintResults && constraintResults.length > 0 && (
         <div className={styles.constraintResults}>
           <div className={styles.resultsHeader}>
-            <h4> Проверка ограничений</h4>
-            <span className={styles.constraintSummary}>
-              Выполнено: {constraintResults.filter((c) => c.passed).length} /{" "}
-              {constraintResults.length}
+            <div>
+              <span className={styles.resultEyebrow}>Анализ кода</span>
+              <h4>Проверка ограничений</h4>
+            </div>
+            <span className={styles.summaryPill}>
+              Выполнено: {passedConstraintsCount} / {constraintResults.length}
             </span>
           </div>
           <div className={styles.constraintsList}>
@@ -1289,13 +1316,23 @@ export function PreviewCodeTask({
               >
                 <div className={styles.constraintResultHeader}>
                   <span className={styles.constraintName}>{constraint.name}</span>
-                  <span className={styles.constraintStatus}>
+                  <span
+                    className={`${styles.statusBadge} ${
+                      constraint.passed ? styles.statusPassed : styles.statusFailed
+                    }`}
+                  >
                     {constraint.passed ? "Пройден" : "Провален"}
                   </span>
                 </div>
                 <div className={styles.constraintDetails}>
-                  <div>Ожидалось: {constraint.expected}</div>
-                  <div>Получено: {constraint.actual}</div>
+                  <div className={styles.resultField}>
+                    <span className={styles.resultFieldLabel}>Ожидалось</span>
+                    <pre className={styles.resultFieldValue}>{constraint.expected}</pre>
+                  </div>
+                  <div className={styles.resultField}>
+                    <span className={styles.resultFieldLabel}>Получено</span>
+                    <pre className={styles.resultFieldValue}>{constraint.actual}</pre>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1305,6 +1342,10 @@ export function PreviewCodeTask({
 
       {testError && (
         <div className={styles.testError}>
+          <div className={styles.errorHeader}>
+            <span className={styles.statusBadge + " " + styles.statusFailed}>Ошибка</span>
+            <span className={styles.errorTitle}>Есть проблемы в результате проверки</span>
+          </div>
           <pre>{testError}</pre>
         </div>
       )}

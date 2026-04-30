@@ -50,12 +50,12 @@ const AvatarPicker: React.FC<AvatarPickerProps> = ({
 
           if (uploadResponse && uploadResponse.imageUrl) {
             onAvatarUploaded(uploadResponse.imageUrl);
-            alert('Аватар успешно загружен!');
+           
             onClose();
           }
         } catch (error: any) {
           console.error('Upload error:', error);
-          alert('Ошибка: ' + (error.message || 'Не удалось загрузить аватар'));
+        
         } finally {
           setLoading(false);
         }
@@ -63,14 +63,14 @@ const AvatarPicker: React.FC<AvatarPickerProps> = ({
 
       reader.onerror = () => {
         setLoading(false);
-        alert('Ошибка при чтении файла');
+  
       };
 
       reader.readAsDataURL(file);
     } catch (error: any) {
       console.error('File error:', error);
       setLoading(false);
-      alert('Ошибка: ' + (error.message || 'Не удалось загрузить файл'));
+    
     }
  
     if (fileInputRef.current) {
@@ -84,12 +84,12 @@ const AvatarPicker: React.FC<AvatarPickerProps> = ({
       ProfileService.deleteAvatarByAuditoryId(auditoryId)
         .then(() => {
           onAvatarUploaded('');
-          alert('Аватар успешно удален!');
+       
           onClose();
         })
         .catch((error: any) => {
           console.error('Remove error:', error);
-          alert('Ошибка: ' + (error.message || 'Не удалось удалить аватар'));
+      
         })
         .finally(() => {
           setLoading(false);

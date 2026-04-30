@@ -268,7 +268,7 @@ const AdminDetailPage = () => {
             <span className={styles.infoItemValue}>{formatDate(profile.registeredAt)}</span>
           </div>
           <div className={styles.infoItem}>
-            <span className={styles.infoItemLabel}>ID (Auditory)</span>
+            <span className={styles.infoItemLabel}>ID</span>
             <span className={styles.infoItemValue}>{profile.auditoryId}</span>
           </div>
           <div className={styles.infoItem}>

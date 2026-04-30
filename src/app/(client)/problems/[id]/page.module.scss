@@ -149,7 +149,6 @@
   background: #fff8e1;
   border-radius: 12px;
   padding: px($spacing-md);
-  border-left: 4px solid #ff9800;
 
   h3 {
     font-size: 14px;
@@ -380,17 +379,14 @@
 .testResult {
   border-radius: 8px;
   padding: 10px 12px;
-  border-left: 4px solid;
 }
 
 .testPassed {
   background: #f0fdf4;
-  border-left-color: #4caf50;
 }
 
 .testFailed {
   background: #fef2f2;
-  border-left-color: #f44336;
 }
 
 .testResultHeader {

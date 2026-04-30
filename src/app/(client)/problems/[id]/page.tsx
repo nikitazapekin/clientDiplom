@@ -1092,11 +1092,7 @@ export default function SolveProblemPage() {
     if (!validateConstraints()) {
       setResult(null);
 
-      if (constraintErrors.length > 0) {
-        alert(
-          `Ограничения не пройдены:\n\n${constraintErrors.join("\n")}\n\nИсправьте код и попробуйте снова.`
-        );
-      }
+   
 
       return;
     }
@@ -1185,7 +1181,7 @@ export default function SolveProblemPage() {
       }
     } catch (e: any) {
       console.error("Submit error:", e);
-      alert(e?.message || "Ошибка отправки решения");
+    
     } finally {
       setSubmitLoading(false);
     }
@@ -1376,14 +1372,7 @@ export default function SolveProblemPage() {
               ))}
             </div>
             <div className={styles.editorActions}>
-              <Button
-                color="#374151"
-                textColor="#fff"
-                text={runLoading ? "..." : "▶ Запустить"}
-                onClick={handleRun}
-                disabled={runLoading}
-                width="auto"
-              />
+             
               <Button
                 color="#9F0FA7"
                 textColor="#fff"
@@ -1402,8 +1391,6 @@ export default function SolveProblemPage() {
               onChange={setCode}
               language={selectedLang}
               height={400}
-              onRun={handleRun}
-              runLoading={runLoading}
             />
           </div>
 

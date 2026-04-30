@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import styles from "./page.module.scss";
 
+import { ProfileService } from "@/app/http/profile";
 import type { StudentResponse} from "@/app/http/students";
 import {StudentsService } from "@/app/http/students";
 
@@ -29,7 +30,28 @@ const StudentsPage = () => {
         search: search || searchQuery,
       });
 
-      setStudents(response.students);
+      const studentsWithEmail = await Promise.all(
+        response.students.map(async (student) => {
+          if (student.email?.trim()) {
+            return student;
+          }
+
+          try {
+            const profile = await ProfileService.getFullProfileByAuditoryId(student.auditoryId);
+
+            return {
+              ...student,
+              email: profile.email || "",
+            };
+          } catch (profileError) {
+            console.warn(`Failed to load email for student ${student.auditoryId}`, profileError);
+
+            return student;
+          }
+        })
+      );
+
+      setStudents(studentsWithEmail);
       setTotal(response.total);
       setTotalPages(response.totalPages);
       setPage(response.page);
@@ -74,7 +96,7 @@ const StudentsPage = () => {
           onClick={() => handlePageChange(page - 1)}
           disabled={page === 1}
         >
-          ← Пред.
+          Пред.
         </button>
 
         <span className={styles.pagination__info}>
@@ -86,7 +108,7 @@ const StudentsPage = () => {
           onClick={() => handlePageChange(page + 1)}
           disabled={page === totalPages}
         >
-          След. →
+          След. 
         </button>
       </div>
     );
@@ -137,8 +159,8 @@ const StudentsPage = () => {
               <th>Email</th>
               <th>Телефон</th>
               <th>Страна</th>
-              <th>Статус</th>
-              <th>Последний вход</th>
+           
+         
             </tr>
           </thead>
           <tbody>
@@ -162,20 +184,7 @@ const StudentsPage = () => {
                   <td>{student.email}</td>
                   <td>{student.phone || "-"}</td>
                   <td>{student.country || "-"}</td>
-                  <td>
-                    <span
-                      className={`${styles.status} ${
-                        student.isActive ? styles.status_active : styles.status_inactive
-                      }`}
-                    >
-                      {student.isActive ? "Активен" : "Не активен"}
-                    </span>
-                  </td>
-                  <td>
-                    {student.lastLoginAt
-                      ? new Date(student.lastLoginAt).toLocaleDateString("ru-RU")
-                      : "-"}
-                  </td>
+                  
                 </tr>
               ))
             )}

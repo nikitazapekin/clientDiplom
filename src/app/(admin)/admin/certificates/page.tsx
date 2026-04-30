@@ -143,7 +143,7 @@ const CertificatesPage = () => {
           onClick={() => handlePageChange(page - 1)}
           disabled={page === 1}
         >
-          ← Пред.
+          Пред.
         </button>
 
         <span className={styles.pagination__info}>
@@ -155,7 +155,7 @@ const CertificatesPage = () => {
           onClick={() => handlePageChange(page + 1)}
           disabled={page === totalPages}
         >
-          След. →
+          След. 
         </button>
       </div>
     );

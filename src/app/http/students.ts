@@ -31,6 +31,28 @@ export interface GetStudentsParams {
   search?: string;
 }
 
+const normalizeStudent = (student: any): StudentResponse => ({
+  id: student.id,
+  auditoryId: student.auditoryId || student.auditory?.auditoryId || "",
+  email: student.email || student.auditory?.email || student.user?.email || "",
+  role: student.role || student.auditory?.role || "student",
+  firstName: student.firstName || student.auditory?.firstName || "",
+  lastName: student.lastName || student.auditory?.lastName || "",
+  middleName: student.middleName || student.auditory?.middleName,
+  phone: student.phone || student.auditory?.phone || "",
+  country: student.country || student.auditory?.country || "",
+  description: student.description || student.auditory?.description,
+  registeredAt: student.registeredAt || student.createdAt || student.auditory?.registeredAt || "",
+  updatedAt: student.updatedAt || student.auditory?.updatedAt || "",
+  lastLoginAt: student.lastLoginAt || student.auditory?.lastLoginAt,
+  isActive:
+    typeof student.isActive === "boolean"
+      ? student.isActive
+      : typeof student.auditory?.isActive === "boolean"
+        ? student.auditory.isActive
+        : true,
+});
+
 export class StudentsService {
   /**
    * Get students list with pagination and search
@@ -50,7 +72,12 @@ export class StudentsService {
 
       const response = await $api.get(url);
 
-      return response.data;
+      return {
+        ...response.data,
+        students: Array.isArray(response.data?.students)
+          ? response.data.students.map(normalizeStudent)
+          : [],
+      };
     } catch (error: any) {
       console.error("Get students error:", error.response?.data || error.message);
       throw new Error(error.response?.data?.message || "Failed to fetch students");
@@ -75,7 +102,7 @@ export class StudentsService {
     try {
       const response = await $api.get(`/students/auditory/${auditoryId}`);
 
-      return response.data;
+      return normalizeStudent(response.data);
     } catch (error: any) {
       console.error("Get student error:", error.response?.data || error.message);
       throw new Error(error.response?.data?.message || "Failed to fetch student");

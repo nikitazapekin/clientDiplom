@@ -28,7 +28,7 @@ const Header = () => {
     { id: "certificates", label: "Сертификаты", path: "/admin/certificates" },
     { id: "profile", label: "Профиль", path: "/admin/profile" },
     { id: "mentorship", label: "Для менторов", path: "/admin/mentorship" },
-    { id: "coding", label: "Coding", path: "/admin/coding" },
+    { id: "coding", label: "Задачи", path: "/admin/coding" },
   ];
 
   const handleNavigation = (path: string) => {

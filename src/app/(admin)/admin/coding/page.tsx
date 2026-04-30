@@ -678,8 +678,7 @@ export default function CodingPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Удалить задачу?")) return;
-
+ 
     try {
       await CodingTasksService.deleteTask(id);
       setTasks((prev) => prev.filter((t) => t.id !== id));
@@ -747,9 +746,7 @@ export default function CodingPage() {
 
     if (missingCode.length > 0) {
       const labels = missingCode.map((l) => LANGUAGES.find((ll) => ll.value === l)?.label || l);
-
-      alert(`Напишите стартовый код для: ${labels.join(", ")}`);
-
+ 
       return;
     }
 
@@ -803,7 +800,7 @@ export default function CodingPage() {
       resetForm();
     } catch (e) {
       console.error("Save failed:", e);
-      alert("Ошибка при сохранении");
+ 
     } finally {
       setSaving(false);
     }

@@ -553,6 +553,8 @@ const MentorshipPage = () => {
                           )}
                           <button
                             onClick={() => handleAnnouncementPageChange(page)}
+
+                            style={{backgroundColor: "#9F0FA7"}}
                             className={`${styles.pagination__btn} ${
                               announcementsPage === page ? styles.pagination__btn_active : ""
                             }`}
@@ -623,7 +625,9 @@ const MentorshipPage = () => {
                 </select>
               </div>
               <button
-                className={styles.users__createBtn}
+                className={styles.users__createBtn} 
+
+                style={{backgroundColor: "#9F0FA7"}}
                 onClick={() => setShowCreateAdminModal(true)}
               >
                 Создать админа
@@ -707,6 +711,7 @@ const MentorshipPage = () => {
                           )}
                           <button
                             onClick={() => handlePageChange(page)}
+                            style={{backgroundColor: "#9F0FA7"}}
                             className={`${styles.pagination__btn} ${
                               currentPage === page ? styles.pagination__btn_active : ""
                             }`}
