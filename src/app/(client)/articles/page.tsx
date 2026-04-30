@@ -1,5 +1,7 @@
-const Articles = () => {
-  return <>articles</>;
+import ArticlesHub from "@/app/components/ArticlesHub";
+
+const ArticlesPage = () => {
+  return <ArticlesHub />;
 };
 
-export default Articles;
+export default ArticlesPage;

@@ -18,8 +18,9 @@ const Header = () => {
     { id: "problems", label: "Задачи", path: "/problems" },
     { id: "study", label: "Учиться", path: "/study" },
     { id: "articles", label: "Статьи", path: "/articles" },
+       { id: "forum", label: "Форум", path: "/forum" },
     { id: "messages", label: "Сообщения", path: "/messages" },
-    { id: "account", label: "Аккаунт", path: "/account" },
+    { id: "account", label: "Профиль", path: "/account" },
   ];
 
   const adminNavItems = [
