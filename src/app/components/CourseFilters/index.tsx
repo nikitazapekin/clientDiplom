@@ -30,9 +30,12 @@ const CourseFilters = ({
 
           <div className={styles.courses__actions}>
             {typeof totalCount === "number" ? (
-              <div className={styles.courses__count}>
-                <span className={styles.courses__countLabel}>Найдено</span>
-                <strong className={styles.courses__countValue}>{totalCount}</strong>
+              <div className={styles.courses__count} 
+              
+              //style={{ display: "flex", alignItems: "center", justifyContent: "center",  background: "red"}}
+              >
+          
+                <p className={styles.courses__countValue}  > Найдено {totalCount}</p>
               </div>
             ) : null}
 

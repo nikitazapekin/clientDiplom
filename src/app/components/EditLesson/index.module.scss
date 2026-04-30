@@ -19,7 +19,18 @@
     row-gap: px($spacing-lg);
   }
 }
+.modalFooter  {
+display:  flex;
 
+column-gap: 10px;
+
+}
+
+.buttons {
+  display: flex;
+  column-gap: 20px;
+  margin-bottom: 20px;
+}
 .runButtons {
   margin-top: 20px;
   width: 100%;
@@ -549,6 +560,7 @@
 
 .previewNav {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: px($spacing-md);
 }

@@ -1136,24 +1136,28 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
           </div>
 
           <div className={styles.previewNav}>
-            <span>
+            <div style={{whiteSpace: "nowrap"}}>
               {previewCurrentIndex + 1} / {orderedSlides.length}
-            </span>
+            </div>
+
+            <div className={styles.buttons}>
+
             <Button
               color="#9F0FA7"
-              width="120px"
+              width="220px"
               textColor="#fff"
               text="Назад"
               onClick={goPrev}
               disabled={previewCurrentIndex === 0}
-            />
+              />
             <Button
               color="#9F0FA7"
-              width="120px"
+              width="220px"
               textColor="#fff"
               text={previewCurrentIndex === orderedSlides.length - 1 ? "Завершить" : "Вперёд"}
               onClick={goNext}
             />
+              </div>
           </div>
         </div>
 
@@ -1403,8 +1407,8 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
                           }
                         >
                           {pendingReviews.length > 0
-                            ? `Review (${pendingReviews.length})`
-                            : "Review"}
+                            ? `Правки (${pendingReviews.length})`
+                            : "Правки"}
                         </button>
                         {selectedSlide.isPersisted &&
                           (reviews.length > 0 || reviewsLoading[selectedSlide.id]) && (

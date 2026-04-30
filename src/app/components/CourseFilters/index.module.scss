@@ -11,7 +11,20 @@
     border: 1px solid $color-gray;
     background-color: $color-white;
   }
+&__count {
+  
+  display: flex;
+align-items: center;
+justify-content: center;
+column-gap: 10px;
+ 
+       //style={{ display: "flex", alignItems: "center", justifyContent: "center",  background: "red"}}
+}
 
+&__countLabel {
+ 
+  align-self: center;
+}
   &__preview {
     display: flex;
     flex-direction: column;
@@ -78,20 +91,42 @@
   }
 
   &__countLabel {
-    display: block;
+   /* display: block;
     margin-bottom: 6px;
     font-size: px(12);
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: rgba($color-dark, 0.64);
+
+
+    */
+
+
+        min-height: 52px;
+    border: none;
+    padding: 0 px($spacing-xl);
+    border-radius: px($radius-medium);
+    background-color: $color-purple;
+    color: $color-white;
+    font-size: px($font-xs);
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s ease;
+    
   }
 
   &__countValue {
-    display: block;
+   /* display: block;
     color: $color-dark;
-    font-size: px($font-md);
+    font-size: 14px;
     line-height: 1;
+     min-height: 52px;
+         font-size: px($font-xs);
+    font-weight: 700;
+    */
+
+     
   }
 
   &__create {

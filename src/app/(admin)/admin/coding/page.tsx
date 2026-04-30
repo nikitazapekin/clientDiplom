@@ -726,22 +726,20 @@ export default function CodingPage() {
 
   const handleSave = async () => {
     if (!title.trim() || !description.trim()) {
-      alert("Заполните название и описание задачи");
+     
 
       return;
     }
 
     if (selectedLanguages.length === 0) {
-      alert("Выберите хотя бы один язык программирования");
-
+     
       return;
     }
 
     const hasTestsInAnyLang = Object.values(testCasesByLanguage).some((tcs) => tcs.length > 0);
 
     if (!hasTestsInAnyLang) {
-      alert("Добавьте хотя бы один тест-кейс для одного из языков");
-
+ 
       return;
     }
 
@@ -1113,7 +1111,7 @@ export default function CodingPage() {
       <div className={styles.page}>
         <div className={styles.container}>
           <div className={styles.header}>
-            <h1>Coding Tasks</h1>
+            <h1>Задачи</h1>
             <Button
               color="#9F0FA7"
               width="300px"

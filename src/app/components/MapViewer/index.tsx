@@ -536,12 +536,7 @@ const MapViewer: React.FC = () => {
 
       
       <div className={styles.mapInfo}>
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>Размер карты:</span>
-          <span className={styles.infoValue}>
-            {mapSize.width} × {mapSize.height}px
-          </span>
-        </div>
+         
         <div className={styles.infoRow}>
           <span className={styles.infoLabel}>Элементов:</span>
           <span className={styles.infoValue}>{elements.length}</span>

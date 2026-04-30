@@ -365,7 +365,7 @@ export function BlockReviewModal({
             disabled={isSubmitting}
           />
           <Button
-            color="#2196f3"
+            color="#9F0FA7"
             width="180px"
             textColor="#fff"
             text={isSubmitting ? "Отправка..." : "Предложить"}
@@ -483,6 +483,8 @@ export function BlockReviewsModal({
                         type="button"
                         className={`${styles.reviewItemActionBtn} ${styles.accept}`}
                         onClick={() => onAccept(review)}
+
+                        style={{padding: "10px 0", width: "300px", fontSize: "14px", }}
                         disabled={actionLoading[review.id]}
                       >
                         {actionLoading[review.id] ? "..." : "Применить"}
@@ -504,7 +506,7 @@ export function BlockReviewsModal({
         </div>
 
         <div className={styles.modalFooter}>
-          <Button color="#2196f3" width="180px" textColor="#fff" text="Закрыть" onClick={onClose} />
+          <Button color="#9F0FA7" width="180px" textColor="#fff" text="Закрыть" onClick={onClose} />
         </div>
       </div>
     </div>

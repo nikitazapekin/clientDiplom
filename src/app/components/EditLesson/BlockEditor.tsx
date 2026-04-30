@@ -1387,11 +1387,11 @@ export function BlockEditor({
             />
 
             <div className={styles.section}>
-              <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeader} style={{marginBottom: "10px"}}>
                 <h4>Тест-кейсы</h4>
                 <Button
                   color="#9F0FA7"
-                  width="auto"
+                width="300px"
                   textColor="#fff"
                   text="+ Добавить тест-кейс"
                   onClick={addTestCase}
@@ -1530,11 +1530,11 @@ export function BlockEditor({
             </div>
 
             <div className={styles.section}>
-              <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeader} style={{marginBottom: "10px"}}>
                 <h4>Ограничения</h4>
                 <Button
                   color="#9f0fa7"
-                  width="auto"
+                   width="300px"
                   textColor="#fff"
                   text="+ Добавить ограничение"
                   onClick={addConstraint}
@@ -1633,7 +1633,7 @@ export function BlockEditor({
 
                     {constraint.type === "noComments" && (
                       <div className={styles.checkboxWrapper}>
-                        <label>
+                        <label style={{display: "flex", columnGap: "10px"}}>
                           <input
                             type="checkbox"
                             checked={constraint.value === true}
@@ -1641,7 +1641,10 @@ export function BlockEditor({
                               updateConstraint(constraintIndex, "noComments", e.target.checked)
                             }
                           />
+                          <p>
+
                           Запретить комментарии
+                          </p>
                         </label>
                       </div>
                     )}
@@ -2039,10 +2042,10 @@ export function BlockEditor({
             />
           </div>
           {block.options.map((option, optionIndex) => (
-            <div key={optionIndex} className={styles.option}>
+            <div key={optionIndex} className={styles.option} >
               <div className={styles.optionHeader}>
                 <span className={styles.optionTitle}>Вариант {optionIndex + 1}</span>
-                <button className={styles.deleteButton} onClick={() => deleteOption(optionIndex)}>
+                <button className={styles.deleteButton} onClick={() => deleteOption(optionIndex)}   style={{marginLeft: "10px"}}>
                   ✕
                 </button>
               </div>
@@ -2053,7 +2056,7 @@ export function BlockEditor({
                   placeholder={`Вариант ${optionIndex + 1}`}
                   className={styles.form__input}
                 />
-                <label className={styles.radioLabel}>
+                <label className={styles.radioLabel} style={{display: "flex", columnGap: "10px"}}>
                   <input
                     type="radio"
                     name={`correct_${block.id}`}
@@ -2062,7 +2065,10 @@ export function BlockEditor({
                       updateBlock(slideIndex, block.id, { correctIndex: optionIndex })
                     }
                   />
+                  <p>
+                    
                   Правильный ответ
+                  </p>
                 </label>
               </div>
             </div>

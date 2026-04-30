@@ -54,8 +54,8 @@ const fields: Field[] = [
   { id: 7, label: "Логотип", placeholder: "Выберите логотип", type: "image", name: "logo" },
 ];
 
-const courseTypes = ["online", "offline", "hybrid"];
-const languages = ["ru", "en", "fr", "es", "de", "zh"];
+const courseTypes = ["Практический", "Теоритический", "Смешанный"];
+const languages = ["JavaScript", "TypeScript", "Python", "Go", "Ruby", "Rust", "Java", "PHP"];
 const courseStatuses: CourseStatus[] = ["draft", "published"];
 
 const CreateCourseModal = ({

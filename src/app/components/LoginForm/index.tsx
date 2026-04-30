@@ -134,7 +134,7 @@ const LoginForm = () => {
           disabled={isLoading}
           className={styles.submitButton}
           style={{
-            backgroundColor: "#9f0fa7",
+            backgroundColor: "#9F0FA7",
             color: "#fff",
             width: "413px",
             padding: "12px",

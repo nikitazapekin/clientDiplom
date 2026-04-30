@@ -61,7 +61,7 @@ export default function ProblemsPage() {
     <div className={styles.page}>
       <div className={styles.container}>
         <div className={styles.header}>
-          <h1>Coding Challenges</h1>
+          <h1>Задачи</h1>
           <p className={styles.subtitle}>Решайте задачи и набирайте опыт</p>
         </div>
 
