@@ -507,3 +507,104 @@
     gap: px($spacing-sm);
   }
 }
+
+@media (max-width: 768px) {
+  .container {
+    padding: px($spacing-sm);
+  }
+
+  .title,
+  .sectionTitle {
+    overflow-wrap: anywhere;
+  }
+
+  .header {
+    padding: px($spacing-lg) px($spacing-sm);
+    margin-bottom: px($spacing-md);
+  }
+
+  .name {
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .emailContainer {
+    width: 100%;
+  }
+
+  .email {
+    display: block;
+    overflow-wrap: anywhere;
+  }
+
+  .statsContainer {
+    padding: px($spacing-md);
+    margin-bottom: px($spacing-md);
+  }
+
+  .statItem {
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .statValue {
+    font-size: px($font-md);
+  }
+
+  .section {
+    padding: px($spacing-md);
+    margin-bottom: px($spacing-md);
+  }
+
+  .sectionTitle {
+    font-size: px($font-xs);
+  }
+
+  .courseCard {
+    padding: px($spacing-sm);
+  }
+
+  .courseHeader {
+    gap: px($spacing-sm);
+  }
+
+  .courseLogo {
+    height: 180px;
+  }
+
+  .courseTitle,
+  .courseDesc,
+  .courseMeta,
+  .courseDates,
+  .adminName,
+  .adminEmail,
+  .adminCountry,
+  .infoItemValue {
+    overflow-wrap: anywhere;
+  }
+
+  .courseFooter {
+    align-items: stretch;
+  }
+
+  .courseStatus {
+    align-self: flex-start;
+  }
+
+  .adminCard {
+    align-items: flex-start;
+    padding: px($spacing-sm);
+  }
+
+  .adminInfo {
+    gap: 4px;
+  }
+
+  .adminStatus {
+    align-self: center;
+  }
+
+  .emptyState {
+    padding: px($spacing-xl) px($spacing-sm);
+  }
+}

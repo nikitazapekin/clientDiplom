@@ -560,3 +560,194 @@ color: white
     }
   }
 }
+
+@media (max-width: 1024px) {
+  .container {
+    padding: 20px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 12px 18px;
+  }
+
+  .users {
+    &__search {
+      min-width: 0;
+      width: 100%;
+    }
+  }
+
+  .pagination {
+    align-items: flex-start;
+    flex-direction: column;
+
+    &__controls {
+      flex-wrap: wrap;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 14px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 16px;
+  }
+
+  .title {
+    font-size: 28px;
+    overflow-wrap: anywhere;
+  }
+
+  .addAnnouncementBtn {
+    width: 100%;
+  }
+
+  .tabs {
+    gap: 6px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+  }
+
+  .tab {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 140px;
+    padding: 10px 12px;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .content {
+    min-height: 0;
+  }
+
+  .card,
+  .structure,
+  .users__item,
+  .modal__content {
+    padding: 16px;
+  }
+
+  .card {
+    &__title,
+    &__content,
+    &__author,
+    &__date {
+      overflow-wrap: anywhere;
+    }
+
+    &__meta {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+  }
+
+  .treeNode {
+    flex-wrap: wrap;
+    align-items: flex-start;
+
+    &__name,
+    &__email {
+      overflow-wrap: anywhere;
+    }
+
+    &__email {
+      width: 100%;
+      margin-left: 28px;
+    }
+  }
+
+  .users {
+    &__header {
+      flex-direction: column;
+      align-items: stretch;
+      margin-bottom: 16px;
+    }
+
+    &__search {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    &__searchInput,
+    &__roleFilter,
+    &__createBtn {
+      width: 100%;
+    }
+
+    &__item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    &__itemRole {
+      margin-left: 0;
+    }
+
+    &__itemName,
+    &__itemEmail,
+    &__itemPhone,
+    &__itemCountry {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .pagination {
+    margin-top: 16px;
+    padding-top: 16px;
+
+    &__info {
+      width: 100%;
+    }
+
+    &__controls {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    &__select {
+      flex: 1 1 100%;
+      width: 100%;
+    }
+  }
+
+  .modal {
+    padding: 14px;
+
+    &__content {
+      width: 100%;
+      max-height: calc(100vh - 28px);
+      padding: 20px 16px;
+    }
+
+    &__title {
+      font-size: 22px;
+      margin-bottom: 16px;
+      overflow-wrap: anywhere;
+    }
+
+    &__form {
+      gap: 16px;
+    }
+
+    &__actions {
+      flex-direction: column;
+    }
+  }
+
+  .empty,
+  .loading,
+  .error {
+    overflow-wrap: anywhere;
+  }
+}

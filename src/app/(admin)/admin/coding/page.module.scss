@@ -476,3 +476,159 @@
   border-bottom-color: $color-purple;
   font-weight: 600;
 }
+
+@media (max-width: 1024px) {
+  .page {
+    padding: px($spacing-md) px($spacing-sm);
+  }
+
+  .header {
+    align-items: flex-start;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .taskFooter {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .taskActions {
+    flex-wrap: wrap;
+  }
+
+  .formRow {
+    flex-direction: column;
+  }
+
+  .langTabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sectionHeader,
+  .testCaseHeader,
+  .constraintHeader {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: px($spacing-sm);
+  }
+
+  .container {
+    gap: px($spacing-md);
+  }
+
+  .header {
+    flex-direction: column;
+    gap: px($spacing-md);
+
+    h1 {
+      font-size: 24px;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .headerActions {
+    flex-direction: column;
+    align-items: stretch;
+
+    > * {
+      width: 100%;
+      max-width: none;
+    }
+  }
+
+  .filters {
+    gap: px($spacing-xs);
+  }
+
+  .filterBtn {
+    flex: 1 1 calc(50% - #{px($spacing-xs) / 2});
+    min-width: 0;
+    text-align: center;
+  }
+
+  .taskCard {
+    padding: px($spacing-md);
+  }
+
+  .taskTitle,
+  .taskInfo {
+    overflow-wrap: anywhere;
+  }
+
+  .taskMeta,
+  .taskTags,
+  .taskActions,
+  .langChips,
+  .tagSelector {
+    gap: px($spacing-xs);
+  }
+
+  .taskActions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .editBtn,
+  .deleteBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .section {
+    padding: px($spacing-sm);
+  }
+
+  .sectionHeader {
+    align-items: stretch;
+
+    h3 {
+      overflow-wrap: anywhere;
+    }
+
+    > * {
+      width: 100%;
+      max-width: none;
+    }
+  }
+
+  .testCase,
+  .constraint {
+    padding: 8px;
+  }
+
+  .testCaseTitle {
+    overflow-wrap: anywhere;
+  }
+
+  .langChip,
+  .tagChip {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .langTab {
+    white-space: nowrap;
+    padding: 8px 14px;
+  }
+
+  .codeOutput {
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .emptyText {
+    padding: 24px 0;
+  }
+}
