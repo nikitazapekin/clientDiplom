@@ -177,13 +177,13 @@ const StudentsPage = () => {
                   onClick={() => handleRowClick(student.auditoryId)}
                   className={styles.clickableRow}
                 >
-                  <td className={styles.id}>{student.auditoryId}</td>
-                  <td>{student.lastName}</td>
-                  <td>{student.firstName}</td>
-                  <td>{student.middleName || "-"}</td>
-                  <td>{student.email}</td>
-                  <td>{student.phone || "-"}</td>
-                  <td>{student.country || "-"}</td>
+                  <td className={styles.id} data-label="ID">{student.auditoryId}</td>
+                  <td data-label="Фамилия">{student.lastName}</td>
+                  <td data-label="Имя">{student.firstName}</td>
+                  <td data-label="Отчество">{student.middleName || "-"}</td>
+                  <td data-label="Email">{student.email}</td>
+                  <td data-label="Телефон">{student.phone || "-"}</td>
+                  <td data-label="Страна">{student.country || "-"}</td>
                   
                 </tr>
               ))

@@ -19,6 +19,40 @@
     row-gap: px($spacing-lg);
   }
 }
+
+.unsupportedState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: calc(100vh - #{px($spacing-bg * 2)});
+  padding: px($spacing-lg);
+}
+
+.unsupportedCard {
+  width: min(100%, 520px);
+  padding: 32px 24px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  text-align: center;
+}
+
+.unsupportedTitle {
+  margin: 0 0 12px;
+  color: #171717;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.unsupportedText {
+  margin: 0;
+  color: #666;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
 .modalFooter  {
 display:  flex;
 

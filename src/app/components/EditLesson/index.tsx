@@ -107,6 +107,7 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
   const isCheckpointMode = mode === "checkpoint";
   const entityTitle = isCheckpointMode ? "контрольной точки" : "урока";
   const entityDisplayTitle = isCheckpointMode ? "Контрольная точка" : "Урок";
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
 
   const [slides, setSlides] = useState<Slide[]>([]);
   const [selectedSlideIndex, setSelectedSlideIndex] = useState<number | null>(null);
@@ -164,6 +165,21 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
     passedTestCases: 0,
     constraintsPassed: true,
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncViewport = () => {
+      setIsCompactViewport(window.innerWidth < 1024);
+    };
+
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -1180,6 +1196,21 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
           constraintsPassed={lessonResults.constraintsPassed}
           slides={slides}
         />
+      </section>
+    );
+  }
+
+  if (isCompactViewport) {
+    return (
+      <section className={styles.lesson}>
+        <div className={styles.unsupportedState}>
+          <div className={styles.unsupportedCard}>
+            <h2 className={styles.unsupportedTitle}>Редактирование курсов недоступно</h2>
+            <p className={styles.unsupportedText}>
+              Редактирование курсов не возможно с мобильных устройств.
+            </p>
+          </div>
+        </div>
       </section>
     );
   }

@@ -351,8 +351,130 @@
     flex-direction: column;
   }
 
+  .searchRow {
+    flex-direction: column;
+  }
+
+  .searchForm__input,
+  .searchForm__button,
+  .searchForm__clear {
+    width: 100%;
+  }
+
+  .tableWrapper {
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .table {
+    min-width: 0;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: flex;
+      flex-direction: column;
+      gap: px($spacing-md);
+
+      tr {
+        display: flex;
+        flex-direction: column;
+        gap: px($spacing-sm);
+        padding: px($spacing-md);
+        border: 1px solid $color-gray-200;
+        border-radius: px($radius-large);
+        background: $color-white;
+        box-shadow: 0 2px 8px rgba($color-black, 0.06);
+
+        td {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: px($spacing-md);
+          padding: 0;
+          border: none;
+          overflow-wrap: anywhere;
+
+          &::before {
+            content: attr(data-label);
+            flex: 0 0 92px;
+            color: $color-gray-600;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
+        }
+
+        .id {
+          max-width: none;
+          white-space: normal;
+        }
+
+        .url {
+          a {
+            overflow-wrap: anywhere;
+          }
+        }
+      }
+    }
+
+    .empty {
+      display: block;
+      text-align: center;
+      padding: px($spacing-xl) !important;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: px($spacing-xs);
+
+    &::before {
+      align-self: flex-start;
+    }
+  }
+
+  .editButton,
+  .deleteButton,
+  .saveButton,
+  .cancelButton,
+  .confirmDeleteButton {
+    width: 100%;
+  }
+
+  .editInput {
+    min-width: 0;
+  }
+
   .footer {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+  }
+
+  .total {
+    text-align: center;
+  }
+
+  .pagination {
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    &__button {
+      flex: 1 1 140px;
+    }
+
+    &__info {
+      order: -1;
+      width: 100%;
+    }
   }
 }

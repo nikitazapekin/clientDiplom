@@ -249,10 +249,10 @@ const CertificatesPage = () => {
             ) : (
               certificates.map((cert) => (
                 <tr key={cert.id}>
-                  <td className={styles.id}>{cert.id}</td>
+                  <td className={styles.id} data-label="ID">{cert.id}</td>
                   {editingId === cert.id ? (
                     <>
-                      <td>
+                      <td data-label="Имя">
                         <input
                           type="text"
                           className={styles.editInput}
@@ -261,7 +261,7 @@ const CertificatesPage = () => {
                           placeholder="Имя"
                         />
                       </td>
-                      <td>
+                      <td data-label="Фамилия">
                         <input
                           type="text"
                           className={styles.editInput}
@@ -270,7 +270,7 @@ const CertificatesPage = () => {
                           placeholder="Фамилия"
                         />
                       </td>
-                      <td>
+                      <td data-label="Отчество">
                         <input
                           type="text"
                           className={styles.editInput}
@@ -279,7 +279,7 @@ const CertificatesPage = () => {
                           placeholder="Отчество"
                         />
                       </td>
-                      <td>
+                      <td data-label="Курс">
                         <input
                           type="text"
                           className={styles.editInput}
@@ -288,7 +288,7 @@ const CertificatesPage = () => {
                           placeholder="Курс"
                         />
                       </td>
-                      <td>
+                      <td data-label="Дата">
                         <input
                           type="date"
                           className={styles.editInput}
@@ -299,14 +299,14 @@ const CertificatesPage = () => {
                     </>
                   ) : (
                     <>
-                      <td>{cert.firstName}</td>
-                      <td>{cert.lastName}</td>
-                      <td>{cert.middleName}</td>
-                      <td>{cert.courseName}</td>
-                      <td>{new Date(cert.date).toLocaleDateString("ru-RU")}</td>
+                      <td data-label="Имя">{cert.firstName}</td>
+                      <td data-label="Фамилия">{cert.lastName}</td>
+                      <td data-label="Отчество">{cert.middleName}</td>
+                      <td data-label="Курс">{cert.courseName}</td>
+                      <td data-label="Дата">{new Date(cert.date).toLocaleDateString("ru-RU")}</td>
                     </>
                   )}
-                  <td className={styles.url}>
+                  <td className={styles.url} data-label="URL">
                     {cert.digital ? (
                       <a href={cert.digital} target="_blank" rel="noopener noreferrer">
                         Ссылка
@@ -315,7 +315,7 @@ const CertificatesPage = () => {
                       "-"
                     )}
                   </td>
-                  <td className={styles.actions}>
+                  <td className={styles.actions} data-label="Действия">
                     {editingId === cert.id ? (
                       <>
                         <button

@@ -108,6 +108,7 @@ interface CheckpointData {
 
 const Map: React.FC = () => {
   const pathname = usePathname();
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
 
   const getCourseIdFromUrl = () => {
     if (!pathname) return null;
@@ -268,6 +269,21 @@ const Map: React.FC = () => {
   ];
 
  
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncViewport = () => {
+      setIsCompactViewport(window.innerWidth < 1024);
+    };
+
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
+
   useEffect(() => {
     if (courseId) {
       loadCourseMap();
@@ -1338,6 +1354,21 @@ const Map: React.FC = () => {
           }}
         >
           Курс не найден в URL
+        </div>
+      </div>
+    );
+  }
+
+  if (isCompactViewport) {
+    return (
+      <div className={styles.pageWrapper}>
+        <div className={styles.unsupportedState}>
+          <div className={styles.unsupportedCard}>
+            <h2 className={styles.unsupportedTitle}>Редактирование курсов недоступно</h2>
+            <p className={styles.unsupportedText}>
+              Редактирование курсов не возможно с мобильных устройств.
+            </p>
+          </div>
         </div>
       </div>
     );
