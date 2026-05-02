@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import Button from "../Button";
+
 import styles from "./index.module.scss";
 
 import {
@@ -555,9 +557,7 @@ const StudyLesson = ({
             </div>
           </div>
 
-          <div className={styles.progressBadge}>
-            {currentIndex + 1} / {orderedSlides.length}
-          </div>
+          <div className={styles.progressBadge}>{currentIndex + 1} / {orderedSlides.length}</div>
         </div>
 
         <div className={styles.surface}>
@@ -636,22 +636,33 @@ const StudyLesson = ({
           </div>
         </div>
 
-        <div className={styles.navigation}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={goToPrev}
-            disabled={currentIndex === 0}
-          >
-            Назад
-          </button>
-          <button type="button" className={styles.primaryButton} onClick={goToNext}>
-            {currentIndex === orderedSlides.length - 1
-              ? isCheckpointMode
-                ? "Завершить контрольную точку"
-                : "Завершить урок"
-              : "Следующий слайд"}
-          </button>
+        <div className={styles.previewNav}>
+          <div className={styles.previewCounter}>
+            {currentIndex + 1} / {orderedSlides.length}
+          </div>
+          <div className={styles.navigation}>
+            <Button
+              color="#9F0FA7"
+              width="200px"
+              textColor="#fff"
+              text="Назад"
+              onClick={goToPrev}
+              disabled={currentIndex === 0}
+            />
+            <Button
+              color="#9F0FA7"
+              width="200px"
+              textColor="#fff"
+              text={
+                currentIndex === orderedSlides.length - 1
+                  ? isCheckpointMode
+                    ? "Завершить контрольную точку"
+                    : "Завершить урок"
+                  : "Вперёд"
+              }
+              onClick={goToNext}
+            />
+          </div>
         </div>
       </div>
 
@@ -701,26 +712,29 @@ const StudyLesson = ({
                 ))}
             </div>
 
-            <div className={styles.summary}>
+            <div className={styles.resultsSummary}>
               <div className={styles.summaryItem}>
-                <span>Выполнено заданий</span>
-                <strong>
+                <span className={styles.summaryLabel}>Выполнено заданий:</span>
+                <span className={styles.summaryValue}>
                   {lessonResults.completedTasks}/{lessonResults.totalTasks}
-                </strong>
+                </span>
               </div>
               <div className={styles.summaryItem}>
-                <span>Пройдено тестов</span>
-                <strong>
+                <span className={styles.summaryLabel}>Пройдено тестов:</span>
+                <span className={styles.summaryValue}>
                   {lessonResults.passedTestCases}/{lessonResults.totalTestCases}
-                </strong>
+                </span>
               </div>
               <div className={styles.summaryItem}>
-                <span>Ограничения</span>
-                <strong>{lessonResults.constraintsPassed ? "Соблюдены" : "Нарушены"}</strong>
+                <span className={styles.summaryLabel}>Ограничения:</span>
+                <span className={styles.summaryValue}>
+                  {lessonResults.constraintsPassed ? "Пройдены" : "Не пройдены"}
+                </span>
               </div>
             </div>
 
-            <div className={styles.resultList}>
+            <div className={styles.resultsList}>
+              <h4>Детали по заданиям:</h4>
               {lessonResults.results.map((result) => (
                 <div
                   key={result.slideId}
@@ -728,10 +742,15 @@ const StudyLesson = ({
                     result.passed ? styles.resultPassed : styles.resultFailed
                   }`}
                 >
-                  <span>{result.title}</span>
-                  <strong>
-                    {result.testCasesPassed}/{result.testCasesTotal}
-                  </strong>
+                  <div className={styles.resultTitle}>{result.title}</div>
+                  <div className={styles.resultDetails}>
+                    <span>
+                      Тесты: {result.testCasesPassed}/{result.testCasesTotal}
+                    </span>
+                    <span>
+                      Ограничения: {result.constraintsPassed ? "Пройдены" : "Провалены"}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -750,22 +769,13 @@ const StudyLesson = ({
             ) : null}
 
             <div className={styles.modalActions}>
-              <button
-                type="button"
-                className={styles.secondaryButton}
+              <Button
+                color="#9F0FA7"
+                width="200px"
+                textColor="#fff"
+                text="Закрыть"
                 onClick={() => setResultsModalOpen(false)}
-              >
-                {isCheckpointMode
-                  ? "Остаться в контрольной точке"
-                  : "Остаться в уроке"}
-              </button>
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={() => router.push(`/study/${courseId}/map`)}
-              >
-                Вернуться к карте
-              </button>
+              />
             </div>
           </div>
         </div>

@@ -1274,7 +1274,7 @@ export function PreviewCodeTask({
                       result.passed ? styles.statusPassed : styles.statusFailed
                     }`}
                   >
-                    {result.passed ? "Пройден" : "Провален"}
+                    {result.passed ? "Пройдены" : "Провалены"}
                   </span>
                 </div>
                 <div className={styles.testCaseDetails}>
@@ -1321,7 +1321,7 @@ export function PreviewCodeTask({
                       constraint.passed ? styles.statusPassed : styles.statusFailed
                     }`}
                   >
-                    {constraint.passed ? "Пройден" : "Провален"}
+                    {constraint.passed ? "Пройдены" : "Провалены"}
                   </span>
                 </div>
                 <div className={styles.constraintDetails}>

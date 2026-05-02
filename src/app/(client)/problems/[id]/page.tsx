@@ -1431,7 +1431,7 @@ export default function SolveProblemPage() {
                   >
                     <div className={styles.testResultHeader}>
                       <span>Тест #{r.index + 1}</span>
-                      <span>{r.passed ? "Пройден" : "Провален"}</span>
+                      <span>{r.passed ? "Пройдены" : "Провалены"}</span>
                     </div>
                   </div>
                 ))}

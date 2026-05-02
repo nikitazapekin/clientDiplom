@@ -875,20 +875,22 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
 
       {modalData ? (
         <div className={styles.modalOverlay} onClick={() => setModalData(null)}>
-          <div className={styles.modalCard} onClick={(event) => event.stopPropagation()}>
+          <div className={styles.modalContent} onClick={(event) => event.stopPropagation()}>
             <button
               type="button"
-              className={styles.modalClose}
+              className={styles.closeButton}
               onClick={() => setModalData(null)}
             >
               ×
             </button>
 
-            <p className={styles.modalType}>
+            <h3 className={styles.modalTitle}>
               {modalData.type === "lesson" ? "Урок" : "Контрольная точка"}
-            </p>
-            <h2 className={styles.modalTitle}>{modalData.title}</h2>
-            <p className={styles.modalDescription}>{modalData.description}</p>
+            </h3>
+            <h4 className={styles.modalSubtitle}>{modalData.title}</h4>
+            <div className={styles.modalDescription}>
+              <p>{modalData.description}</p>
+            </div>
 
             {modalData.disabledReason ? (
               <div className={styles.modalHint}>{modalData.disabledReason}</div>
@@ -897,18 +899,18 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
             <div className={styles.modalActions}>
               <button
                 type="button"
-                className={styles.secondaryButton}
+                className={styles.cancelButton}
                 onClick={() => setModalData(null)}
               >
                 Закрыть
               </button>
               <button
                 type="button"
-                className={styles.primaryButton}
+                className={styles.navigateButton}
                 onClick={handleNavigate}
                 disabled={Boolean(modalData.disabledReason)}
               >
-                {modalData.type === "lesson" ? "Перейти к уроку" : "Открыть"}
+                {modalData.type === "lesson" ? "Перейти к уроку" : "Перейти к контрольной точке"}
               </button>
             </div>
           </div>

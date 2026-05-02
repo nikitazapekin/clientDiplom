@@ -1367,7 +1367,7 @@ export default function CodingPage() {
                     color: "#2e7d32",
                   }}
                 >
-                  ✅ Ограничения пройдены
+            Ограничения пройдены
                 </div>
               )}
               {testResults && (
