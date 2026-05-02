@@ -66,3 +66,41 @@
     border: 3px solid $color-green;
   }
 }
+
+@media (max-width: 768px) {
+  .card {
+    min-height: 160px;
+    padding: px($spacing-md);
+
+    &:hover {
+      transform: none;
+    }
+
+    &__subtitle {
+      text-align: center;
+      font-size: px($font-md);
+    }
+
+    &__wrapper {
+      width: 52px;
+      height: 52px;
+    }
+
+    &__icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    &__cubesWrapper {
+      width: 40px;
+      height: 40px;
+    }
+
+    &__cube1,
+    &__cube2 {
+      width: 16px;
+      height: 16px;
+      border-width: 2px;
+    }
+  }
+}

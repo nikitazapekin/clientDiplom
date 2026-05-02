@@ -178,3 +178,38 @@
     font-size: 12px;
   }
 }
+
+@media (max-width: 768px) {
+  .course {
+    &__media {
+      min-height: 180px;
+    }
+
+    &__initial {
+      font-size: px(56);
+    }
+
+    &__body {
+      gap: px($spacing-sm);
+      padding: px($spacing-md);
+    }
+
+    &__head {
+      gap: px($spacing-sm);
+    }
+
+    &__action {
+      width: 100%;
+      align-self: stretch;
+    }
+
+    &__stats {
+      gap: px($spacing-sm);
+    }
+
+    &__stat {
+      min-width: calc(50% - #{px($spacing-sm) / 2});
+      flex: 1 1 calc(50% - #{px($spacing-sm) / 2});
+    }
+  }
+}
