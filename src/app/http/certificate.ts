@@ -69,7 +69,9 @@ export interface CertificateSearchResponse {
 }
 
 export class CertificateService {
-  static async searchCertificates(params: CertificateSearchParams): Promise<CertificateSearchResponse> {
+  static async searchCertificates(
+    params: CertificateSearchParams
+  ): Promise<CertificateSearchResponse> {
     try {
       const queryParams = new URLSearchParams();
 
@@ -99,7 +101,10 @@ export class CertificateService {
     }
   }
 
-  static async updateCertificate(id: string, data: UpdateCertificateRequest): Promise<CertificateResponse> {
+  static async updateCertificate(
+    id: string,
+    data: UpdateCertificateRequest
+  ): Promise<CertificateResponse> {
     try {
       const response = await $api.put(`/certificates/${id}`, data);
 
@@ -132,64 +137,54 @@ export class CertificateService {
 
   static async createCertificate(data: CreateCertificateRequest): Promise<CertificateResponse> {
     try {
-      console.log("📝 Creating certificate:", {
+      console.log(" Creating certificate:", {
         auditoryId: data.auditoryId,
         studentName: data.studentName,
-        courseName: data.courseName
+        courseName: data.courseName,
       });
 
-      const response = await $api.post(
-        `/certificates`,
-        data
-      );
+      const response = await $api.post(`/certificates`, data);
 
-      console.log("✅ Certificate created:", response.data);
+      console.log(" Certificate created:", response.data);
 
       return response.data;
     } catch (error: any) {
-      console.error("❌ Create certificate error:", error.response?.data || error.message);
+      console.error(" Create certificate error:", error.response?.data || error.message);
       throw new Error(error.response?.data?.message || "Failed to create certificate");
     }
   }
 
   static async setIsViewed(id: string): Promise<CertificateResponse> {
     try {
-      const response = await $api.put(
-        `/certificates/setIsViewed`,
-        { id }
-      );
+      const response = await $api.put(`/certificates/setIsViewed`, { id });
 
       return response.data;
     } catch (error: any) {
-      console.error("❌ setIsViewed error:", error.response?.data || error.message);
+      console.error("setIsViewed error:", error.response?.data || error.message);
       throw new Error(error.response?.data?.message || "Failed to set isViewed");
     }
   }
 
   static async getCertificatesByAuditoryId(auditoryId: string): Promise<CertificateResponse[]> {
     try {
-      console.log("📥 Fetching certificates for auditory:", auditoryId);
+      console.log("Fetching certificates for auditory:", auditoryId);
 
-      const response = await $apiNoRedirect.get(
-        `/certificates/auditory/${auditoryId}`
-      );
+      const response = await $apiNoRedirect.get(`/certificates/auditory/${auditoryId}`);
 
       return response.data;
     } catch (error: any) {
-      console.error("❌ Get certificates error:", error.response?.data || error.message);
+      console.error("Get certificates error:", error.response?.data || error.message);
       throw new Error(error.response?.data?.message || "Failed to fetch certificates");
     }
   }
 
   static async getCertificatesByClientId(clientId: string): Promise<CertificateResponse[]> {
     try {
-      const response = await $apiNoRedirect.get(
-        `/certificates/client/${clientId}`
-      );
+      const response = await $apiNoRedirect.get(`/certificates/client/${clientId}`);
 
       return response.data;
     } catch (error: any) {
-      console.error("❌ Get certificates error:", error.response?.data || error.message);
+      console.error(" Get certificates error:", error.response?.data || error.message);
       throw new Error(error.response?.data?.message || "Failed to fetch certificates");
     }
   }
@@ -205,7 +200,7 @@ export class CertificateService {
       courseId,
       studentName,
       courseName,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split("T")[0],
     };
 
     return this.createCertificate(data);

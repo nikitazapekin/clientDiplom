@@ -1,0 +1,39 @@
+$site-color-black: #000;
+$site-color-white: #fff;
+$site-color-purple: #9f0fa7;
+$site-color-gray: #ffffff;
+$site-color-dim: #e0e0e0;
+$site-color-test-failed-bg: #f09f9f;
+$site-color-test-failed-text: #a81313;
+$site-color-test-passed-bg: #9af8a5;
+$site-color-test-passed-text: #06ad19;
+$site-color-difficulty-hard: #ad0606;
+$site-color-difficulty-medium: #e46409;
+$site-color-difficulty-easy: #00ba00;
+$site-color-tag-bg: #a4e0a4;
+$site-color-link-blue: #6a81dd;
+$site-color-star: #ebd909;
+$site-color-overlay: rgba(47, 45, 45, 0.72);
+$site-color-xp-gradient-start: $site-color-purple;
+$site-color-xp-gradient-end: $site-color-link-blue;
+
+:root {
+  --site-color-black: #{$site-color-black};
+  --site-color-white: #{$site-color-white};
+  --site-color-purple: #{$site-color-purple};
+  --site-color-gray: #{$site-color-gray};
+  --site-color-dim: #{$site-color-dim};
+  --site-color-test-failed-bg: #{$site-color-test-failed-bg};
+  --site-color-test-failed-text: #{$site-color-test-failed-text};
+  --site-color-test-passed-bg: #{$site-color-test-passed-bg};
+  --site-color-test-passed-text: #{$site-color-test-passed-text};
+  --site-color-difficulty-hard: #{$site-color-difficulty-hard};
+  --site-color-difficulty-medium: #{$site-color-difficulty-medium};
+  --site-color-difficulty-easy: #{$site-color-difficulty-easy};
+  --site-color-tag-bg: #{$site-color-tag-bg};
+  --site-color-link-blue: #{$site-color-link-blue};
+  --site-color-star: #{$site-color-star};
+  --site-color-overlay: #{$site-color-overlay};
+  --site-xp-gradient-start: #{$site-color-xp-gradient-start};
+  --site-xp-gradient-end: #{$site-color-xp-gradient-end};
+}

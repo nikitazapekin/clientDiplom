@@ -17,7 +17,7 @@ const AdminDetailPage = () => {
   const [profile, setProfile] = useState<AdminResponse | null>(null);
   const [avatar, setAvatar] = useState<AvatarResponse | null>(null);
   const [courses, setCourses] = useState<CourseResponse[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [coursesLoading, setCoursesLoading] = useState(false);
@@ -56,7 +56,7 @@ const AdminDetailPage = () => {
       setCoursesLoading(true);
       try {
         const allCourses = await CourseService.getCourses({ limit: 100 });
-        const adminCourses = allCourses.courses.filter(c => c.adminId === profileData.id);
+        const adminCourses = allCourses.courses.filter((c) => c.adminId === profileData.id);
 
         setCourses(adminCourses);
       } catch (coursesErr) {
@@ -64,7 +64,6 @@ const AdminDetailPage = () => {
       } finally {
         setCoursesLoading(false);
       }
-
     } catch (err: any) {
       console.error("loadProfile error:", err);
       setError(err.message || "Не удалось загрузить профиль");
@@ -101,13 +100,11 @@ const AdminDetailPage = () => {
       draft: { label: "Черновик", className: styles.statusDraft },
       archived: { label: "Архив", className: styles.statusArchived },
     };
-    
+
     const statusInfo = statusMap[status] || statusMap.draft;
 
     return (
-      <span className={`${styles.courseStatus} ${statusInfo.className}`}>
-        {statusInfo.label}
-      </span>
+      <span className={`${styles.courseStatus} ${statusInfo.className}`}>{statusInfo.label}</span>
     );
   };
 
@@ -118,7 +115,6 @@ const AdminDetailPage = () => {
   if (error) {
     return (
       <div className={styles.errorContainer}>
-     
         <div className={styles.errorText}>{error}</div>
         <button className={styles.retryButton} onClick={loadProfile}>
           Повторить
@@ -144,7 +140,7 @@ const AdminDetailPage = () => {
   return (
     <div className={styles.container}>
       <button className={styles.backButton} onClick={() => router.back()}>
-        ← Назад к списку администраторов
+        Назад к списку администраторов
       </button>
 
       <div className={styles.header}>
@@ -155,7 +151,8 @@ const AdminDetailPage = () => {
             ) : (
               <div className={styles.avatarPlaceholder}>
                 <span className={styles.avatarPlaceholderText}>
-                  {profile.firstName?.[0]}{profile.lastName?.[0]}
+                  {profile.firstName?.[0]}
+                  {profile.lastName?.[0]}
                 </span>
               </div>
             )}
@@ -170,8 +167,6 @@ const AdminDetailPage = () => {
         <div className={styles.emailContainer}>
           <span className={styles.email}>{profile.email}</span>
         </div>
-
-        
       </div>
 
       <div className={styles.statsContainer}>
@@ -207,12 +202,17 @@ const AdminDetailPage = () => {
                   </div>
                   <div className={styles.courseInfo}>
                     <h3 className={styles.courseTitle}>{course.title}</h3>
-                    <p className={styles.courseDesc} style={{ 
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}>{course.description}</p>
+                    <p
+                      className={styles.courseDesc}
+                      style={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {course.description}
+                    </p>
                     <div className={styles.courseMeta}>
                       <span className={styles.courseLang}>{course.language}</span>
                       {course.tags && course.tags.length > 0 && (
@@ -240,8 +240,9 @@ const AdminDetailPage = () => {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Курсы администратора</h2>
           <div className={styles.emptyState}>
-          
-            <span className={styles.emptyText}>У этого администратора пока нет созданных курсов</span>
+            <span className={styles.emptyText}>
+              У этого администратора пока нет созданных курсов
+            </span>
           </div>
         </div>
       )}

@@ -454,6 +454,7 @@ const MentorshipPage = () => {
         <h1 className={styles.title}>Для менторов</h1>
         {activeTab === "announcements" && (
           <button
+            style={{ backgroundColor: "#9F0FA7" }}
             className={styles.addAnnouncementBtn}
             onClick={() => setShowCreateAnnouncementModal(true)}
           >
@@ -553,8 +554,7 @@ const MentorshipPage = () => {
                           )}
                           <button
                             onClick={() => handleAnnouncementPageChange(page)}
-
-                            style={{backgroundColor: "#9F0FA7"}}
+                            style={{ backgroundColor: "#9F0FA7" }}
                             className={`${styles.pagination__btn} ${
                               announcementsPage === page ? styles.pagination__btn_active : ""
                             }`}
@@ -625,9 +625,8 @@ const MentorshipPage = () => {
                 </select>
               </div>
               <button
-                className={styles.users__createBtn} 
-
-                style={{backgroundColor: "#9F0FA7"}}
+                className={styles.users__createBtn}
+                style={{ backgroundColor: "#9F0FA7" }}
                 onClick={() => setShowCreateAdminModal(true)}
               >
                 Создать админа
@@ -711,7 +710,7 @@ const MentorshipPage = () => {
                           )}
                           <button
                             onClick={() => handlePageChange(page)}
-                            style={{backgroundColor: "#9F0FA7"}}
+                            style={{ backgroundColor: "#9F0FA7" }}
                             className={`${styles.pagination__btn} ${
                               currentPage === page ? styles.pagination__btn_active : ""
                             }`}
@@ -813,14 +812,17 @@ const MentorshipPage = () => {
                 <div className={styles.modal__actions}>
                   <button
                     type="button"
-
-                     style={{ padding: "10px 20px"}}
+                    style={{ padding: "10px 20px" }}
                     onClick={() => setShowCreateAdminModal(false)}
                     className={styles.modal__btn_secondary}
                   >
                     Отмена
                   </button>
-                  <button type="submit"  style={{color: "white", background: "#9f0fa7", padding: "10px 20px"}} className={styles.modal__btn_primary}>
+                  <button
+                    type="submit"
+                    style={{ color: "white", background: "#9f0fa7", padding: "10px 20px" }}
+                    className={styles.modal__btn_primary}
+                  >
                     Создать
                   </button>
                 </div>

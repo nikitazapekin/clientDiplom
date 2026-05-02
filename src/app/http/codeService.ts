@@ -19,7 +19,7 @@ export interface ExecuteCodeRequest {
 
 export interface ExecuteCodeResponse {
   output: string;
-  /** Compile or runtime error from server (stderr). */
+
   error?: string;
 }
 

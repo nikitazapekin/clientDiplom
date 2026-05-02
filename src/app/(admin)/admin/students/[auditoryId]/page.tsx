@@ -1,12 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef,useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import styles from "./page.module.scss";
 
-import { type CertificateResponse,CertificateService } from "@/app/http/certificate";
-import { type CodeTask, CodingTasksService, type StudentLevel } from "@/app/http/codingTasksService";
+import { type CertificateResponse, CertificateService } from "@/app/http/certificate";
+import {
+  type CodeTask,
+  CodingTasksService,
+  type StudentLevel,
+} from "@/app/http/codingTasksService";
 import { ProfileService } from "@/app/http/profile";
 import type { FullClientInfo } from "@/app/http/types/profile";
 
@@ -95,26 +99,27 @@ const StudentProfilePage = () => {
   const auditoryId = params.auditoryId as string;
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       console.log("StudentProfilePage rendered, params:", params);
       console.log("Current URL:", window.location.href);
-      console.log("Token in localStorage:", localStorage.getItem("accessToken") ? "exists" : "missing");
+      console.log(
+        "Token in localStorage:",
+        localStorage.getItem("accessToken") ? "exists" : "missing"
+      );
       console.log("User role:", localStorage.getItem("userRole"));
     }
   }, [params]);
-  
- 
 
   const [profile, setProfile] = useState<FullClientInfo | null>(null);
   const [certificates, setCertificates] = useState<CertificateResponse[]>([]);
   const [certificatesLoading, setCertificatesLoading] = useState(false);
   const [activeCertIndex, setActiveCertIndex] = useState(0);
-  
+
   const [allTasks, setAllTasks] = useState<CodeTask[]>([]);
   const [studentLevel, setStudentLevel] = useState<StudentLevel | null>(null);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [showAllTasks, setShowAllTasks] = useState(false);
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -249,7 +254,6 @@ const StudentProfilePage = () => {
   if (error) {
     return (
       <div className={styles.errorContainer}>
-
         <div className={styles.errorText}>{error}</div>
         <button className={styles.retryButton} onClick={loadProfile}>
           Повторить
@@ -275,7 +279,7 @@ const StudentProfilePage = () => {
   return (
     <div className={styles.container}>
       <button className={styles.backButton} onClick={() => router.back()}>
-        ← Назад к списку студентов
+        Назад к списку студентов
       </button>
 
       <div className={styles.header}>
@@ -286,7 +290,8 @@ const StudentProfilePage = () => {
             ) : (
               <div className={styles.avatarPlaceholder}>
                 <span className={styles.avatarPlaceholderText}>
-                  {profile.firstName?.[0]}{profile.lastName?.[0]}
+                  {profile.firstName?.[0]}
+                  {profile.lastName?.[0]}
                 </span>
               </div>
             )}
@@ -301,8 +306,6 @@ const StudentProfilePage = () => {
         <div className={styles.emailContainer}>
           <span className={styles.email}>{profile.email}</span>
         </div>
-
-       
       </div>
 
       {!tasksLoading && studentLevel && (
@@ -345,17 +348,14 @@ const StudentProfilePage = () => {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Сертификаты</h2>
           <div className={styles.certSliderContainer}>
-            <button 
-              className={styles.certNavButton} 
+            <button
+              className={styles.certNavButton}
               onClick={() => handleScroll("prev")}
               disabled={activeCertIndex === 0}
             >
               ←
             </button>
-            <div 
-              className={styles.certSlider} 
-              ref={certSliderRef}
-            >
+            <div className={styles.certSlider} ref={certSliderRef}>
               {certificates.map((cert) => (
                 <div key={cert.id} className={styles.certSlide}>
                   <img src={cert.url} alt="Certificate" className={styles.certImage} />
@@ -363,8 +363,8 @@ const StudentProfilePage = () => {
                 </div>
               ))}
             </div>
-            <button 
-              className={styles.certNavButton} 
+            <button
+              className={styles.certNavButton}
               onClick={() => handleScroll("next")}
               disabled={activeCertIndex === certificates.length - 1}
             >
@@ -436,7 +436,7 @@ const StudentProfilePage = () => {
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Решенные задачи</h2>
             {solvedTasks.length > 5 && (
-              <button 
+              <button
                 className={styles.viewAllButton}
                 onClick={() => setShowAllTasks(!showAllTasks)}
               >
@@ -452,16 +452,24 @@ const StudentProfilePage = () => {
                 <div key={task.id} className={styles.taskCard}>
                   <div className={styles.taskHeader}>
                     <span className={styles.taskTitle}> {task.title}</span>
-                    <span className={`${styles.taskBadge}`} style={{ backgroundColor: diffInfo.color }}>
+                    <span
+                      className={`${styles.taskBadge}`}
+                      style={{ backgroundColor: diffInfo.color }}
+                    >
                       {diffInfo.label}
                     </span>
                   </div>
-                  <p className={styles.taskDesc} style={{ 
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}>{task.description}</p>
+                  <p
+                    className={styles.taskDesc}
+                    style={{
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {task.description}
+                  </p>
                   <div className={styles.taskFooter}>
                     <span className={styles.taskMeta}>
                       {task.languages?.join(", ")} | {task.testCases?.length ?? 0} тестов

@@ -105,7 +105,7 @@ const ChatView = () => {
           prev.map((msg) => ({
             ...msg,
             read: msg.senderId === currentUserId ? true : msg.read,
-          })),
+          }))
         );
       }
     );
@@ -193,20 +193,13 @@ const ChatView = () => {
   return (
     <div className={styles.chatView}>
       <div className={styles.chatView__header}>
-        <button
-          className={styles.chatView__back}
-          onClick={() => router.back()}
-        >
-          ← Назад
+        <button className={styles.chatView__back} onClick={() => router.back()}>
+          Назад
         </button>
         <div className={styles.chatView__participant}>
-          <div className={styles.chatView__avatar}>
-            {participantInitials}
-          </div>
+          <div className={styles.chatView__avatar}>{participantInitials}</div>
           <div className={styles.chatView__info}>
-            <div className={styles.chatView__name}>
-              {participantName}
-            </div>
+            <div className={styles.chatView__name}>{participantName}</div>
           </div>
         </div>
       </div>
@@ -215,16 +208,12 @@ const ChatView = () => {
         {loading ? (
           <div className={styles.chatView__loading}>Загрузка...</div>
         ) : messages.length === 0 ? (
-          <div className={styles.chatView__empty}>
-            Нет сообщений. Начните диалог!
-          </div>
+          <div className={styles.chatView__empty}>Нет сообщений. Начните диалог!</div>
         ) : (
           messages.map((message, index) => (
             <div key={message.id}>
               {renderDateSeparator(index) && (
-                <div className={styles.chatView__date}>
-                  {formatDate(message.createdAt)}
-                </div>
+                <div className={styles.chatView__date}>{formatDate(message.createdAt)}</div>
               )}
               <div
                 className={`${styles.chatView__message} ${
@@ -233,9 +222,7 @@ const ChatView = () => {
                     : styles.chatView__message_other
                 }`}
               >
-                <div className={styles.chatView__messageContent}>
-                  {message.content}
-                </div>
+                <div className={styles.chatView__messageContent}>{message.content}</div>
                 <div className={styles.chatView__messageTime}>
                   {formatTime(message.createdAt)}
                   {message.senderId === currentUserId && message.read && (
@@ -257,11 +244,7 @@ const ChatView = () => {
           placeholder="Введите сообщение..."
           className={styles.chatView__inputField}
         />
-        <button
-          type="submit"
-          disabled={!newMessage.trim()}
-          className={styles.chatView__send}
-        >
+        <button type="submit" disabled={!newMessage.trim()} className={styles.chatView__send}>
           Отправить
         </button>
       </form>
