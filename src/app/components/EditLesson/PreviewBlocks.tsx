@@ -15,14 +15,16 @@ export function PreviewBlockStatic({ block }: { block: SlideBlock }) {
 
   if (block.type === "codeExample") {
     return (
-      <StableCodeEditor
-        key={`${block.id}_preview`}
-        value={block.code || ""}
-        onChange={() => {}}
-        language={block.language}
-        readOnly
-        height={200}
-      />
+      <div className={styles.codeEditorWrap}>
+        <StableCodeEditor
+          key={`${block.id}_preview`}
+          value={block.code || ""}
+          onChange={() => {}}
+          language={block.language}
+          readOnly
+          height={200}
+        />
+      </div>
     );
   }
 
@@ -173,7 +175,7 @@ export function PreviewBlock({
 
   if (block.type === "codeExample") {
     return (
-      <div>
+      <div className={styles.codeEditorWrap}>
         <StableCodeEditor
           key={`${block.id}_preview_example`}
           value={block.code || ""}

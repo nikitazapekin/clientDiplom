@@ -1136,28 +1136,27 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
           </div>
 
           <div className={styles.previewNav}>
-            <div style={{whiteSpace: "nowrap"}}>
+            <div style={{ whiteSpace: "nowrap" }}>
               {previewCurrentIndex + 1} / {orderedSlides.length}
             </div>
 
             <div className={styles.buttons}>
-
-            <Button
-              color="#9F0FA7"
-              width="220px"
-              textColor="#fff"
-              text="Назад"
-              onClick={goPrev}
-              disabled={previewCurrentIndex === 0}
+              <Button
+                color="#9F0FA7"
+                width="200px"
+                textColor="#fff"
+                text="Назад"
+                onClick={goPrev}
+                disabled={previewCurrentIndex === 0}
               />
-            <Button
-              color="#9F0FA7"
-              width="220px"
-              textColor="#fff"
-              text={previewCurrentIndex === orderedSlides.length - 1 ? "Завершить" : "Вперёд"}
-              onClick={goNext}
-            />
-              </div>
+              <Button
+                color="#9F0FA7"
+                width="200px"
+                textColor="#fff"
+                text={previewCurrentIndex === orderedSlides.length - 1 ? "Завершить" : "Вперёд"}
+                onClick={goNext}
+              />
+            </div>
           </div>
         </div>
 
@@ -1227,11 +1226,7 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
                   className={selectedSlideIndex === index ? styles.slideTabActive : styles.slideTab}
                   onClick={() => setSelectedSlideIndex(index)}
                 >
-                  {slide.type === "test"
-                    ? isCheckpointMode
-                      ? "Задание"
-                      : "Тест"
-                    : "Урок"}{" "}
+                  {slide.type === "test" ? (isCheckpointMode ? "Задание" : "Тест") : "Урок"}{" "}
                   {index + 1}: {slide.title || "—"}
                 </button>
                 <button
