@@ -46,3 +46,30 @@
     line-height: 1.6;
   }
 }
+
+@media (max-width: 1200px) {
+  .courses {
+    &__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .courses {
+    padding: px($spacing-md) px($spacing-sm) px($spacing-xl);
+
+    &__container {
+      gap: px($spacing-md);
+    }
+
+    &__grid {
+      gap: px($spacing-md);
+      grid-template-columns: 1fr;
+    }
+
+    &__empty {
+      padding: px($spacing-xl) px($spacing-md);
+    }
+  }
+}

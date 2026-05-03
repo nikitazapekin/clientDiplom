@@ -163,6 +163,32 @@ export const parseValue = (value: string): any => {
   return value;
 };
 
+const DEFAULT_FUNCTION_NAME_BY_LANGUAGE: Record<CodeLanguage, string> = {
+  javascript: "yourFunction",
+  typescript: "yourFunction",
+  python: "your_function",
+  php: "yourFunction",
+  ruby: "your_function",
+  rust: "your_function",
+  csharp: "YourFunction",
+  java: "yourFunction",
+  golang: "yourFunction",
+  cpp: "yourFunction",
+};
+
+export const getStarterFunctionName = (
+  language: CodeLanguage,
+  functionName?: string | null
+): string => {
+  const normalizedFunctionName = functionName?.trim();
+
+  if (normalizedFunctionName) {
+    return normalizedFunctionName;
+  }
+
+  return DEFAULT_FUNCTION_NAME_BY_LANGUAGE[language] ?? "yourFunction";
+};
+
 export const formatArgumentsForCode = (args: any[]): string => {
   return args
     .map((arg) => {
@@ -819,7 +845,8 @@ export const getDefaultStarterCode = (
   language: CodeLanguage,
   args: ArgumentSchema[] = [],
   returnType: ArgumentType = "int",
-  returnSchema?: ReturnSchema
+  returnSchema?: ReturnSchema,
+  functionName?: string | null
 ): string => {
   const argsStr = args
     .map((arg) => {
@@ -844,6 +871,7 @@ export const getDefaultStarterCode = (
   const retTypeStr = getReturnTypeString(returnType, language, returnSchema, true);
   const returnValue = getDefaultReturnValue(returnType, language);
   const hasListTypes = args.some((arg) => arg.type === "list") || returnType === "list";
+  const starterFunctionName = getStarterFunctionName(language, functionName);
 
   switch (language) {
     case "csharp":
@@ -851,7 +879,7 @@ export const getDefaultStarterCode = (
 
 public class Program
 {
-    public static ${retTypeStr} YourFunction(${argsStr})
+    public static ${retTypeStr} ${starterFunctionName}(${argsStr})
     {
         // Ваш код здесь
         Console.WriteLine("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""});
@@ -860,7 +888,7 @@ public class Program
 }`;
     case "java":
       return `${hasListTypes ? "import java.util.List;\n\n" : ""}public class Main {
-    public static ${retTypeStr} yourFunction(${argsStr}) {
+    public static ${retTypeStr} ${starterFunctionName}(${argsStr}) {
         // Ваш код здесь
         System.out.println("HELLO"${args.length > 0 ? ` + " " + ${args.map((a) => a.name).join(' + " " + ')}` : ""});
         ${returnValue}
@@ -868,7 +896,7 @@ public class Program
 }`;
     case "python": {
       const pythonArgs = args.map((a) => a.name).join(", ");
-      return `def your_function(${pythonArgs}):
+      return `def ${starterFunctionName}(${pythonArgs}):
     # Ваш код здесь
     print("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""})
     ${returnValue}`;
@@ -889,7 +917,7 @@ public class Program
           return `${arg.name}: ${typeStr}`;
         })
         .join(", ");
-      return `function yourFunction(${tsArgs})${retTypeStr ? `: ${retTypeStr}` : ""} {
+      return `function ${starterFunctionName}(${tsArgs})${retTypeStr ? `: ${retTypeStr}` : ""} {
     // Ваш код здесь
     console.log("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""});
     ${returnValue}
@@ -899,7 +927,7 @@ public class Program
       const phpArgs = args.map((arg) => `$${arg.name}`).join(", ");
       return `<?php
 
-function yourFunction(${phpArgs})${retTypeStr ? `: ${retTypeStr}` : ""} {
+function ${starterFunctionName}(${phpArgs})${retTypeStr ? `: ${retTypeStr}` : ""} {
     // Ваш код здесь
     echo "HELLO";
     ${returnValue}
@@ -907,7 +935,7 @@ function yourFunction(${phpArgs})${retTypeStr ? `: ${retTypeStr}` : ""} {
     }
     case "ruby": {
       const rubyArgs = args.map((arg) => arg.name).join(", ");
-      return `def your_function(${rubyArgs})
+      return `def ${starterFunctionName}(${rubyArgs})
   # Ваш код здесь
   puts("HELLO")
   ${returnValue}
@@ -926,7 +954,7 @@ end`;
         returnType === "object" ||
         returnType === "map";
 
-      return `${needsHashMap ? "use std::collections::HashMap;\n\n" : ""}fn your_function(${rustArgs})${rustReturnType ? ` -> ${rustReturnType}` : ""} {
+      return `${needsHashMap ? "use std::collections::HashMap;\n\n" : ""}fn ${starterFunctionName}(${rustArgs})${rustReturnType ? ` -> ${rustReturnType}` : ""} {
     // Ваш код здесь
     println!("HELLO");
     ${returnValue}
@@ -942,7 +970,7 @@ end`;
 
 import "fmt"
 
-func yourFunction(${goArgsStr}) ${goRetStr} {
+func ${starterFunctionName}(${goArgsStr}) ${goRetStr} {
     // Ваш код здесь
     fmt.Println("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""})
     ${returnValue}
@@ -950,7 +978,7 @@ func yourFunction(${goArgsStr}) ${goRetStr} {
     }
     default: {
       const jsArgs = args.map((a) => a.name).join(", ");
-      return `function yourFunction(${jsArgs}) {
+      return `function ${starterFunctionName}(${jsArgs}) {
     // Ваш код здесь
     console.log("HELLO"${args.length > 0 ? `, ${args.map((a) => a.name).join(", ")}` : ""});
     ${returnValue}
@@ -2547,6 +2575,20 @@ export const extractFunctionName = (code: string, lang: CodeLanguage): string | 
     console.error("Error extracting function name:", e);
     return null;
   }
+};
+
+export const resolveTargetFunctionName = (
+  explicitFunctionName: string | null | undefined,
+  code: string,
+  lang: CodeLanguage
+): string | null => {
+  const normalizedFunctionName = explicitFunctionName?.trim();
+
+  if (normalizedFunctionName) {
+    return normalizedFunctionName;
+  }
+
+  return extractFunctionName(code, lang);
 };
 
 const buildJavaScriptLikeTestCode = (

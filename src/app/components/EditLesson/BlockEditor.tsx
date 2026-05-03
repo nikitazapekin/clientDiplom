@@ -10,6 +10,7 @@ import {
   getDefaultStarterCode,
   getEffectiveReturnObjectMode,
   getExpectedOutputFromTestCase,
+  getStarterFunctionName,
   getTypeString,
   stripMainMethod,
 } from "./codeUtils";
@@ -260,11 +261,41 @@ export function BlockEditor({
       language: CodeLanguage = block.language ?? "javascript",
       argumentScheme: ArgumentSchema[] = block.argumentScheme ?? [],
       returnType: ArgumentType = block.returnType ?? "int",
-      returnSchema: ReturnSchema | undefined = block.returnSchema
-    ) => getDefaultStarterCode(language, argumentScheme, returnType, returnSchema);
+      returnSchema: ReturnSchema | undefined = block.returnSchema,
+      functionName: string | undefined = block.functionName
+    ) => getDefaultStarterCode(language, argumentScheme, returnType, returnSchema, functionName);
     const getReturnObjectMode = (
       returnSchema: ReturnSchema | undefined = block.returnSchema
     ): ReturnObjectMode => getEffectiveReturnObjectMode(returnSchema);
+    const displayedFunctionName = block.functionName?.trim()
+      ? block.functionName.trim()
+      : getStarterFunctionName(block.language ?? "javascript");
+
+    const updateFunctionName = (value: string) => {
+      const currentStartCode = block.startCode ?? "";
+      const currentGeneratedCode = buildStarterCode(
+        block.language ?? "javascript",
+        block.argumentScheme ?? [],
+        block.returnType ?? "int",
+        block.returnSchema,
+        block.functionName
+      );
+      const nextGeneratedCode = buildStarterCode(
+        block.language ?? "javascript",
+        block.argumentScheme ?? [],
+        block.returnType ?? "int",
+        block.returnSchema,
+        value
+      );
+
+      updateBlock(slideIndex, block.id, {
+        functionName: value,
+        startCode:
+          !currentStartCode.trim() || currentStartCode === currentGeneratedCode
+            ? nextGeneratedCode
+            : currentStartCode,
+      });
+    };
 
     const syncTestCasesWithReturnSchema = (
       testCases: CodeTaskTestCase[] | undefined,
@@ -854,6 +885,20 @@ export function BlockEditor({
               </option>
             ))}
           </select>
+        </div>
+
+        <div className={styles.form__wrapper}>
+          <span>Имя функции для проверки:</span>
+          <input
+            className={styles.form__input}
+            value={block.functionName ?? ""}
+            onChange={(e) => updateFunctionName(e.target.value)}
+            placeholder={displayedFunctionName}
+          />
+        </div>
+        <div style={{ fontSize: "12px", color: "#666", marginBottom: "12px" }}>
+          Если поле пустое, для старых задач будет использована первая найденная функция. Чтобы
+          можно было писать вспомогательные функции выше, укажите целевое имя явно.
         </div>
 
         <div className={styles.form__wrapper}>

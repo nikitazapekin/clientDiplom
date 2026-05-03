@@ -62,6 +62,7 @@ export const createCodeTaskBlock = (order: number): CodeTaskBlock => ({
   order,
   type: "codeTask",
   runnable: true,
+  functionName: "",
   language: "javascript",
   startCode: getDefaultStarterCode("javascript"),
   testCases: [],

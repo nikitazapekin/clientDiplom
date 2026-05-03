@@ -11,14 +11,15 @@ import {
   buildJavaTestSuite as buildSharedJavaTestSuite,
   buildTestCode as buildSharedTestCode,
   compareOutputs as compareSharedOutputs,
-  extractFunctionName as extractSharedFunctionName,
   formatArgsForDynamicLang as formatSharedDynamicArgs,
   formatArgsForGolang as formatSharedGolangArgs,
   formatArgsForJavaOrCSharp as formatSharedJavaOrCSharpArgs,
   formatArgsForRust as formatSharedRustArgs,
   generateObjectClasses as generateSharedObjectClasses,
   getDefaultStarterCode as getSharedDefaultStarterCode,
+  getStarterFunctionName as getSharedStarterFunctionName,
   getTypeString as getSharedTypeString,
+  resolveTargetFunctionName as resolveSharedTargetFunctionName,
 } from "@/app/components/EditLesson/codeUtils";
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";
@@ -329,8 +330,8 @@ const TAG_OPTIONS = [
   "Бинарное дерево",
 ];
 
-const getDefaultStarterCode = (lang: CodeLanguage): string => {
-  return getSharedDefaultStarterCode(lang);
+const getDefaultStarterCode = (lang: CodeLanguage, functionName?: string): string => {
+  return getSharedDefaultStarterCode(lang, [], "int", undefined, functionName);
 };
 
 const getTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
@@ -340,9 +341,10 @@ const getTypeString = (type_: ArgumentType, language: CodeLanguage): string => {
 const getDefaultStarterCodeWithSchema = (
   language: CodeLanguage,
   args: ArgumentSchema[] = [],
-  returnType: ArgumentType = "int"
+  returnType: ArgumentType = "int",
+  functionName?: string
 ): string => {
-  return getSharedDefaultStarterCode(language, args, returnType);
+  return getSharedDefaultStarterCode(language, args, returnType, undefined, functionName);
 };
 
 const getFormattedTestInput = (
@@ -591,6 +593,7 @@ export default function CodingPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [functionName, setFunctionName] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<CodeLanguage[]>(["javascript"]);
   const [startCodes, setStartCodes] = useState<Record<string, string>>({
@@ -635,6 +638,7 @@ export default function CodingPage() {
     setEditId(null);
     setTitle("");
     setDescription("");
+    setFunctionName("");
     setTags([]);
     setSelectedLanguages(["javascript"]);
     setStartCodes({ javascript: getDefaultStarterCode("javascript") });
@@ -662,6 +666,7 @@ export default function CodingPage() {
     setEditId(task.id);
     setTitle(task.title);
     setDescription(task.description);
+    setFunctionName(task.functionName || "");
     setTags(task.tags || []);
     setSelectedLanguages((task.languages || []) as CodeLanguage[]);
     setStartCodes(task.startCodes || {});
@@ -723,6 +728,35 @@ export default function CodingPage() {
     });
   };
 
+  const updateConfiguredFunctionName = (value: string) => {
+    setFunctionName(value);
+    setStartCodes((prev) => {
+      const nextCodes = { ...prev };
+
+      selectedLanguages.forEach((lang) => {
+        const currentCode = prev[lang] ?? "";
+        const currentGeneratedCode = getDefaultStarterCodeWithSchema(
+          lang,
+          argumentScheme,
+          returnType,
+          functionName
+        );
+        const nextGeneratedCode = getDefaultStarterCodeWithSchema(
+          lang,
+          argumentScheme,
+          returnType,
+          value
+        );
+
+        if (!currentCode.trim() || currentCode === currentGeneratedCode) {
+          nextCodes[lang] = nextGeneratedCode;
+        }
+      });
+
+      return nextCodes;
+    });
+  };
+
   const handleSave = async () => {
     if (!title.trim() || !description.trim()) {
      
@@ -774,6 +808,7 @@ export default function CodingPage() {
       const payload = {
         title,
         description,
+        functionName: functionName.trim() || undefined,
         tags,
         languages: selectedLanguages,
         startCodes,
@@ -826,10 +861,10 @@ export default function CodingPage() {
         return next;
       }
 
-      setStartCodes((codes) => ({
-        ...codes,
-        [lang]: codes[lang] || getDefaultStarterCode(lang),
-      }));
+        setStartCodes((codes) => ({
+          ...codes,
+          [lang]: codes[lang] || getDefaultStarterCode(lang, functionName),
+        }));
 
       return [...prev, lang];
     });
@@ -996,7 +1031,11 @@ export default function CodingPage() {
       }
 
       const results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
-      const funcName = extractSharedFunctionName(code, activeEditorLang);
+      const funcName = resolveSharedTargetFunctionName(
+        functionName,
+        code,
+        activeEditorLang
+      );
       const objectClasses =
         argumentScheme.length > 0
           ? generateSharedObjectClasses(argumentScheme, activeEditorLang)
@@ -1227,6 +1266,20 @@ export default function CodingPage() {
             </div>
 
             <div className={styles.formGroup}>
+              <label>Имя функции для проверки</label>
+              <input
+                className={styles.input}
+                value={functionName}
+                onChange={(e) => updateConfiguredFunctionName(e.target.value)}
+                placeholder={getSharedStarterFunctionName(activeEditorLang, functionName)}
+              />
+              <p style={{ marginTop: "6px", fontSize: "12px", color: "#666" }}>
+                Если поле пустое, для старых задач будет выбрана первая найденная функция.
+                Укажите имя явно, если в решении нужны вспомогательные функции выше основной.
+              </p>
+            </div>
+
+            <div className={styles.formGroup}>
               <label>Теги</label>
               <div className={styles.tagSelector}>
                 {TAG_OPTIONS.map((tag) => {
@@ -1454,7 +1507,8 @@ export default function CodingPage() {
                           newCodes[lang] = getDefaultStarterCodeWithSchema(
                             lang as CodeLanguage,
                             argumentScheme,
-                            newReturnType
+                            newReturnType,
+                            functionName
                           );
                         });
                         setStartCodes((prev) => ({ ...prev, ...newCodes }));
@@ -1908,7 +1962,8 @@ export default function CodingPage() {
                         newCodes[lang] = getDefaultStarterCodeWithSchema(
                           lang as CodeLanguage,
                           argumentScheme,
-                          returnType
+                          returnType,
+                          functionName
                         );
                       });
                       setStartCodes((prev) => ({ ...prev, ...newCodes }));

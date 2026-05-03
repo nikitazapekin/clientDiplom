@@ -13,7 +13,6 @@ import {
   buildJavaTestSuite,
   buildTestCode,
   compareOutputs,
-  extractFunctionName,
   formatArgsForDynamicLang,
   formatArgsForGolang,
   formatArgsForJavaOrCSharp,
@@ -24,6 +23,7 @@ import {
   getDisplayInput,
   getExpectedOutputFromTestCase,
   getSampleArgsForLanguage,
+  resolveTargetFunctionName,
   stripMainMethod,
 } from "./codeUtils";
 import type { CodeTaskBlock } from "./types";
@@ -88,11 +88,13 @@ export function PreviewCodeTask({
             block.language ?? "javascript",
             block.argumentScheme ?? [],
             block.returnType ?? "int",
-            activeReturnSchema
+            activeReturnSchema,
+            block.functionName
           ));
   }, [
     testAnswer,
     block.startCode,
+    block.functionName,
     block.language,
     block.argumentScheme,
     block.returnType,
@@ -122,7 +124,11 @@ export function PreviewCodeTask({
     setIsRunning(true);
     try {
       const currentCode = getCurrentCode();
-      const funcName = extractFunctionName(currentCode, block.language ?? "javascript");
+      const funcName = resolveTargetFunctionName(
+        block.functionName,
+        currentCode,
+        block.language ?? "javascript"
+      );
 
       let codeToRun = currentCode;
       const objectClasses = generateObjectClasses(
@@ -406,7 +412,11 @@ export function PreviewCodeTask({
           const maxTime = constraint.value as number;
 
           try {
-            const funcName = extractFunctionName(code, block.language ?? "javascript");
+            const funcName = resolveTargetFunctionName(
+              block.functionName,
+              code,
+              block.language ?? "javascript"
+            );
             let codeToRun = code;
             const objectClasses = generateObjectClasses(
               block.argumentScheme ?? [],
@@ -478,7 +488,11 @@ export function PreviewCodeTask({
 
     if (block.runnable) {
       if (block.testCases?.length) {
-        const funcName = extractFunctionName(currentCode, block.language ?? "javascript");
+        const funcName = resolveTargetFunctionName(
+          block.functionName,
+          currentCode,
+          block.language ?? "javascript"
+        );
 
         if (!funcName) {
           setTestError(
@@ -1198,6 +1212,11 @@ export function PreviewCodeTask({
   return (
     <div className={styles.codeTask}>
       <p className={styles.taskDescription}>{block.description}</p>
+      {block.functionName ? (
+        <p className={styles.taskDescription}>
+          Целевая функция: <code>{block.functionName}</code>
+        </p>
+      ) : null}
 
       {(block.language === "java" ||
         block.language === "csharp" ||

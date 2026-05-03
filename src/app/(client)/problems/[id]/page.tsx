@@ -7,16 +7,15 @@ import styles from "./page.module.scss";
 
 import Button from "@/app/components/Button";
 import CodeEditor from "@/app/components/CodeEditor";
+import type { ArgumentSchema as SharedArgumentSchema } from "@/app/components/EditLesson/types";
 import {
-  buildTestCode as buildSharedTestCode,
   compareOutputs as compareSharedOutputs,
-  extractFunctionName as extractSharedFunctionName,
   generateObjectClasses as generateSharedObjectClasses,
   getDisplayInput as getSharedDisplayInput,
   getTypeString as getSharedTypeString,
+  resolveTargetFunctionName as resolveSharedTargetFunctionName,
 } from "@/app/components/EditLesson/codeUtils";
 import type { CodeLanguage } from "@/app/http/codeService";
-import { CodeService } from "@/app/http/codeService";
 import {
   type CodeConstraint,
   type CodeTask,
@@ -97,15 +96,7 @@ interface TestCase {
   args?: TestCaseArgument[];
 }
 
-interface ArgumentSchema {
-  name: string;
-  type: string;
-  className?: string;
-  arrayElementType?: string;
-  objectFields?: { name: string; type: string; value: string }[];
-  arrayElementObjectFields?: { name: string; type: string; value: string }[];
-  arrayElementClassName?: string;
-}
+type ArgumentSchema = SharedArgumentSchema;
 
 const formatArgsForJavaOrCSharp = (
   testCaseArgs: TestCaseArgument[] | undefined,
@@ -352,10 +343,6 @@ interface ConstraintCheckResult {
   passed: boolean;
   errors: string[];
 }
-
-const extractFunctionName = (code: string, lang: CodeLanguage): string | null => {
-  return extractSharedFunctionName(code, lang);
-};
 
 const parseArguments = (input: string): any[] => {
   if (!input.trim()) return [];
@@ -962,7 +949,6 @@ export default function SolveProblemPage() {
   const [selectedLang, setSelectedLang] = useState<CodeLanguage>("javascript");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
-  const [runLoading, setRunLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [consoleOutput, setConsoleOutput] = useState("");
   const [result, setResult] = useState<SubmitSolutionResult | null>(null);
@@ -1032,60 +1018,6 @@ export default function SolveProblemPage() {
     setConstraintsPassed(null);
   };
 
-  const handleRun = async () => {
-    if (!task) return;
-
-    setRunLoading(true);
-    setConsoleOutput("");
-    try {
-      let codeToRun = code;
-      const argumentScheme = (task as any).argumentScheme;
-      const taskTestCases =
-        (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
-
-      if (selectedLang === "java" || selectedLang === "csharp") {
-        const funcName = extractFunctionName(code, selectedLang);
-
-        if (funcName && taskTestCases.length > 0) {
-          const firstTestCase = taskTestCases[0];
-
-          if (selectedLang === "java") {
-            codeToRun = buildJavaTestSuite(code, [firstTestCase], funcName, argumentScheme);
-          } else if (selectedLang === "csharp") {
-            codeToRun = buildCSharpTestSuite(code, [firstTestCase], funcName, argumentScheme);
-          }
-        }
-      } else if (taskTestCases.length > 0) {
-        const funcName = extractFunctionName(code, selectedLang);
-        const firstTestCase = taskTestCases[0];
-
-        if (funcName) {
-          const inputToUse = getSharedDisplayInput(firstTestCase, argumentScheme, selectedLang);
-          const objectClasses =
-            selectedLang === "typescript"
-              ? generateSharedObjectClasses(argumentScheme ?? [], "typescript")
-              : "";
-          const sourceCode =
-            selectedLang === "typescript" && objectClasses ? `${objectClasses}\n\n${code}` : code;
-
-          codeToRun = buildSharedTestCode(sourceCode, "", selectedLang, funcName, inputToUse);
-        }
-      }
-
-      const res = await CodeService.executeCode({ language: selectedLang, code: codeToRun });
-
-      if (selectedLang === "java" || selectedLang === "csharp") {
-        setConsoleOutput(res.output || "Код выполнен успешно (нет вывода)");
-      } else {
-        setConsoleOutput(res.error || res.output || "Нет вывода");
-      }
-    } catch (error: any) {
-      setConsoleOutput(`Ошибка выполнения: ${error.message || error}`);
-    } finally {
-      setRunLoading(false);
-    }
-  };
-
   const handleSubmit = async () => {
     if (!task) return;
 
@@ -1106,7 +1038,11 @@ export default function SolveProblemPage() {
       let codeToSubmit = code;
 
       if (selectedLang === "java" || selectedLang === "csharp") {
-        const funcName = extractFunctionName(code, selectedLang);
+        const funcName = resolveSharedTargetFunctionName(
+          task.functionName,
+          code,
+          selectedLang
+        );
 
         if (!funcName) {
           alert(
@@ -1236,6 +1172,15 @@ export default function SolveProblemPage() {
             <h3>Описание</h3>
             <p>{task.description}</p>
           </div>
+
+          {task.functionName && (
+            <div className={styles.constraintsBox}>
+              <h3>Целевая функция</h3>
+              <div className={styles.constraintItem}>
+                <code>{task.functionName}</code>
+              </div>
+            </div>
+          )}
 
           {(task as any).argumentScheme && (task as any).argumentScheme.length > 0 && (
             <div className={styles.constraintsBox}>

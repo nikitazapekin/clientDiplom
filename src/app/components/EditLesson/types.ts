@@ -171,6 +171,7 @@ export interface CodeTaskBlock {
   order: number;
   type: "codeTask";
   description?: string;
+  functionName?: string;
   language: CodeLanguage;
   startCode?: string;
   testCases?: CodeTaskTestCase[];

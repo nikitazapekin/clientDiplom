@@ -194,3 +194,118 @@
     opacity: 0.85;
   }
 }
+
+@media (max-width: 1024px) {
+  .tableHeader,
+  .tableRow {
+    grid-template-columns: minmax(0, 2fr) minmax(120px, 0.9fr) minmax(120px, 0.9fr) minmax(90px, 0.7fr) minmax(70px, 0.6fr) minmax(110px, 0.8fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: px($spacing-sm);
+  }
+
+  .container {
+    gap: px($spacing-md);
+  }
+
+  .header {
+    h1 {
+      font-size: 28px;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .subtitle {
+    overflow-wrap: anywhere;
+  }
+
+  .filters {
+    gap: px($spacing-xs);
+  }
+
+  .filterBtn {
+    flex: 1 1 calc(50% - #{px($spacing-xs) / 2});
+    min-width: 0;
+    text-align: center;
+  }
+
+  .taskTable {
+    background: transparent;
+    border: none;
+    overflow: visible;
+  }
+
+  .tableHeader {
+    display: none;
+  }
+
+  .tableRow {
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-sm);
+    padding: px($spacing-md);
+    margin-bottom: px($spacing-md);
+    border: 1px solid $color-gray-200;
+    border-radius: 12px;
+    background: $color-white;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .colDiff,
+  .colLang,
+  .colXp,
+  .colTests,
+  .colAction {
+    width: 100%;
+    justify-content: space-between;
+    gap: px($spacing-md);
+
+    &::before {
+      color: $color-gray-500;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  .colDiff::before {
+    content: "Сложность";
+  }
+
+  .colLang::before {
+    content: "Язык";
+  }
+
+  .colXp::before {
+    content: "Опыт";
+  }
+
+  .colTests::before {
+    content: "Тесты";
+  }
+
+  .colAction::before {
+    content: "Действие";
+  }
+
+  .taskName,
+  .taskAuthor,
+  .colLang {
+    overflow-wrap: anywhere;
+  }
+
+  .colAction {
+    align-items: stretch;
+
+    .solveBtn {
+      width: 100%;
+    }
+  }
+}
