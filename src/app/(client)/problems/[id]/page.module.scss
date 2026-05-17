@@ -249,7 +249,7 @@
 
 .xpFill {
   height: 100%;
-  background: $color-purple;
+  background: #48bb78;
   border-radius: 3px;
   transition: width 0.3s;
 }
@@ -265,15 +265,14 @@
 .langSelector {
   display: flex;
   gap: 0;
-  border: 1px solid $color-gray-200;
-  border-radius: 8px;
+ 
   overflow: hidden;
 }
 
 .langBtn {
   padding: 8px 16px;
   border: none;
-  background: $color-white;
+  
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
@@ -292,13 +291,8 @@
 }
 
 .langBtnActive {
-  background: $color-purple;
-  color: $color-white;
-
-  &:hover {
-    background: $color-purple;
-    color: $color-white;
-  }
+ 
+   
 }
 
 .editorActions {

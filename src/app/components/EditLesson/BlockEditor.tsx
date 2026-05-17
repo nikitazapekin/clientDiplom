@@ -2069,13 +2069,16 @@ export function BlockEditor({
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h4>Варианты ответа</h4>
+            <div style={{display: "flex", width: "100%", justifyContent: "center"}}>
+
             <Button
               color="#9F0FA7"
-              width="auto"
+              width="300px"
               textColor="#fff"
               text="+ Добавить вариант"
               onClick={addOption}
-            />
+              />
+              </div>
           </div>
           {block.options.map((option, optionIndex) => (
             <div key={optionIndex} className={styles.option} >

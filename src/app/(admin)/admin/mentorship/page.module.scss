@@ -19,8 +19,8 @@
   margin: 0;
 }
 .modal__btn_primary {
-background-color: #9f0fa7;
-color: white
+  background-color: #9f0fa7;
+  color: white;
 }
 .addAnnouncementBtn {
   padding: 12px 24px;
@@ -357,17 +357,12 @@ color: white
   }
 
   &__roleBadge {
-    padding: 6px 12px;
-    border-radius: 12px;
-    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 11px;
     font-weight: 600;
-    background: #e0e0e0;
-    color: #666;
-
-    &_admin {
-      background: #e3f2fd;
-      color: #1976d2;
-    }
+    background: #fafafa;
+    color: #111111;
   }
 }
 
@@ -529,11 +524,12 @@ color: white
     display: flex;
     gap: 12px;
     margin-top: 8px;
+    flex-wrap: wrap;
   }
 
   &__btn {
-    flex: 1;
     padding: 12px 24px;
+    min-width: 0;
     border: none;
     border-radius: 6px;
     font-size: 14px;
@@ -542,11 +538,11 @@ color: white
     transition: background-color 0.2s;
 
     &_primary {
-      background: #1a1a1a;
+      background: #9f0fa7;
       color: white;
 
       &:hover {
-        background: #333;
+        background: #870d8e;
       }
     }
 
@@ -750,4 +746,11 @@ color: white
   .error {
     overflow-wrap: anywhere;
   }
+}
+
+
+.modal__btn_secondary , .modal__btn_primary {
+ 
+padding: 12px 24px;
+border-radius: 6px;
 }

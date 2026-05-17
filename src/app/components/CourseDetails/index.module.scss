@@ -3,11 +3,13 @@
 
 .courses {
   width: 100%;
-  margin-top: px($spacing-lg);
+  min-height: 100vh;
+  box-sizing: border-box;
+  background-color: $color-grayLight;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 0 px($spacing-md) px($spacing-xl);
+  padding: px($spacing-lg) px($spacing-md) px($spacing-xl);
 
   &__container {
     max-width: $container-md;
@@ -279,8 +281,7 @@
 
 @media (max-width: 768px) {
   .courses {
-    margin-top: px($spacing-md);
-    padding: 0 px($spacing-sm) px($spacing-lg);
+    padding: px($spacing-md) px($spacing-sm) px($spacing-lg);
 
     &__container {
       gap: px($spacing-md);

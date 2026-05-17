@@ -118,6 +118,8 @@ const AdminProfilePage = () => {
     );
   };
 
+  const visibleCourses = courses.slice(0, 5);
+
   if (loading) {
     return <div className={styles.loading}>Загрузка профиля...</div>;
   }
@@ -194,7 +196,7 @@ const AdminProfilePage = () => {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Мои курсы</h2>
           <div className={styles.coursesList}>
-            {courses.map((course) => (
+            {visibleCourses.map((course) => (
               <div key={course.id} className={styles.courseCard}>
                 <div className={styles.courseHeader}>
                   <div className={styles.courseLogo}>
@@ -215,9 +217,11 @@ const AdminProfilePage = () => {
                     <div className={styles.courseMeta}>
                       <span className={styles.courseLang}>{course.language}</span>
                       {course.tags && course.tags.length > 0 && (
-                        <span className={styles.courseTags}>
-                          {course.tags.slice(0, 3).join(", ")}
-                        </span>
+                        course.tags.slice(0, 3).map((tag) => (
+                          <span key={tag} className={styles.courseTags}>
+                            #{tag}
+                          </span>
+                        ))
                       )}
                     </div>
                   </div>

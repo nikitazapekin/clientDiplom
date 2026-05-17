@@ -1,20 +1,9 @@
 "use client";
 
-import type { JSX } from "react";
 import { useEffect, useState } from "react";
 import React from "react";
 
 import styles from "./page.module.scss";
-
-type TreeNode = {
-  id: string;
-  name: string;
-  email: string;
-  role: "admin" | "student";
-  type: "admin" | "course" | "student";
-  children?: TreeNode[];
-  expanded?: boolean;
-};
 
 type Announcement = {
   id: string;
@@ -34,7 +23,7 @@ type Update = {
   createdAt: string;
 };
 
-type TabType = "announcements" | "updates" | "structure" | "users";
+type TabType = "announcements" | "updates" | "users";
 
 type User = {
   id: string;
@@ -55,8 +44,7 @@ type User = {
 };
 
 const MentorshipPage = () => {
-  const [activeTab, setActiveTab] = useState<TabType>("structure");
-  const [treeData, setTreeData] = useState<TreeNode[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>("announcements");
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [updates, setUpdates] = useState<Update[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -266,68 +254,6 @@ const MentorshipPage = () => {
     try {
       setLoading(true);
 
-      const [adminsRes, coursesRes] = await Promise.all([
-        fetch("http://localhost:3002/students/admins-list", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }),
-        fetch("http://localhost:3002/courses"),
-      ]);
-
-      const adminsData = await adminsRes.json();
-      const coursesData = await coursesRes.json();
-
-      const mainAdmin = adminsData.find((a: any) => a.auditory?.email === "admin@example.com");
-      const otherAdmins = adminsData.filter((a: any) => a.auditory?.email !== "admin@example.com");
-
-      const adminNodes: TreeNode[] = [];
-      const courses = coursesData.courses || [];
-
-      if (mainAdmin) {
-        const mainAdminCourses = courses.filter((c: any) => c.adminId === mainAdmin.id);
-        const mainAdminNode: TreeNode = {
-          id: mainAdmin.id,
-          name: `${mainAdmin.lastName} ${mainAdmin.firstName}`,
-          email: mainAdmin.auditory?.email || "",
-          role: "admin",
-          type: "admin",
-          children: mainAdminCourses.map((course: any) => ({
-            id: course.id,
-            name: course.title,
-            email: "",
-            role: "admin",
-            type: "course",
-            children: [],
-          })),
-        };
-
-        adminNodes.push(mainAdminNode);
-      }
-
-      otherAdmins.forEach((admin: any) => {
-        const adminCourses = courses.filter((c: any) => c.adminId === admin.id);
-        const adminNode: TreeNode = {
-          id: admin.id,
-          name: `${admin.lastName} ${admin.firstName}`,
-          email: admin.auditory?.email || "",
-          role: "admin",
-          type: "admin",
-          children: adminCourses.map((course: any) => ({
-            id: course.id,
-            name: course.title,
-            email: "",
-            role: "admin",
-            type: "course",
-            children: [],
-          })),
-        };
-
-        adminNodes.push(adminNode);
-      });
-
-      setTreeData(adminNodes);
-
       setUpdates([
         {
           id: "1",
@@ -342,102 +268,6 @@ const MentorshipPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleNode = (nodeId: string, nodes: TreeNode[]): TreeNode[] => {
-    return nodes.map((node) => {
-      if (node.id === nodeId) {
-        return { ...node, expanded: !node.expanded };
-      }
-
-      if (node.children) {
-        return { ...node, children: toggleNode(nodeId, node.children) };
-      }
-
-      return node;
-    });
-  };
-
-  const handleNodeClick = (nodeId: string) => {
-    setTreeData(toggleNode(nodeId, treeData));
-  };
-
-  const handleCourseClick = async (courseId: string) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3002/course-subscriptions/course/${courseId}/students`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const students = await response.json();
-
-        const updatedTree = treeData.map((node) => {
-          if (node.children) {
-            const updatedChildren = node.children.map((child) => {
-              if (child.id === courseId && child.type === "course") {
-                const studentNodes: TreeNode[] = students.map((student: any) => ({
-                  id: student.auditoryId,
-                  name: `${student.lastName} ${student.firstName}`,
-                  email: student.email,
-                  role: "student",
-                  type: "student",
-                }));
-
-                return { ...child, children: studentNodes, expanded: true };
-              }
-
-              return child;
-            });
-
-            return { ...node, children: updatedChildren };
-          }
-
-          return node;
-        });
-
-        setTreeData(updatedTree);
-      }
-    } catch (err) {
-      console.error("Failed to fetch students:", err);
-    }
-  };
-
-  const renderTree = (nodes: TreeNode[], level: number = 0): JSX.Element[] => {
-    return nodes.map((node) => (
-      <div key={node.id} style={{ marginLeft: level * 20 }}>
-        <div
-          className={`${styles.treeNode} ${
-            node.type === "admin" ? styles.treeNode_admin : ""
-          } ${node.type === "course" ? styles.treeNode_course : ""} ${
-            node.type === "student" ? styles.treeNode_student : ""
-          }`}
-          onClick={() => {
-            handleNodeClick(node.id);
-
-            if (node.type === "course") {
-              handleCourseClick(node.id);
-            }
-          }}
-        >
-          <span className={styles.treeNode__icon}>
-            {node.type === "admin" && ""}
-            {node.type === "course" && (node.expanded ? "" : "")}
-            {node.type === "student" && ""}
-          </span>
-          <span className={styles.treeNode__name}>{node.name}</span>
-          {node.email && <span className={styles.treeNode__email}>{node.email}</span>}
-          {node.children && node.children.length > 0 && !node.expanded && (
-            <span className={styles.treeNode__badge}>{node.children.length}</span>
-          )}
-        </div>
-        {node.expanded && node.children && renderTree(node.children, level + 1)}
-      </div>
-    ));
   };
 
   if (loading) {
@@ -475,12 +305,6 @@ const MentorshipPage = () => {
           onClick={() => setActiveTab("updates")}
         >
           Обновления
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === "structure" ? styles.tab_active : ""}`}
-          onClick={() => setActiveTab("structure")}
-        >
-          Структура
         </button>
         <button
           className={`${styles.tab} ${activeTab === "users" ? styles.tab_active : ""}`}
@@ -597,12 +421,6 @@ const MentorshipPage = () => {
           </div>
         )}
 
-        {activeTab === "structure" && (
-          <div className={styles.structure}>
-            <div className={styles.tree}>{renderTree(treeData)}</div>
-          </div>
-        )}
-
         {activeTab === "users" && (
           <div className={styles.users}>
             <div className={styles.users__header}>
@@ -655,11 +473,7 @@ const MentorshipPage = () => {
                         )}
                       </div>
                       <div className={styles.users__itemRole}>
-                        <span
-                          className={`${styles.users__roleBadge} ${
-                            user.role === "admin" ? styles.users__roleBadge_admin : ""
-                          }`}
-                        >
+                        <span className={styles.users__roleBadge}>
                           {user.role === "admin" ? "Админ" : "Клиент"}
                         </span>
                       </div>
@@ -812,7 +626,6 @@ const MentorshipPage = () => {
                 <div className={styles.modal__actions}>
                   <button
                     type="button"
-                    style={{ padding: "10px 20px" }}
                     onClick={() => setShowCreateAdminModal(false)}
                     className={styles.modal__btn_secondary}
                   >
@@ -820,7 +633,6 @@ const MentorshipPage = () => {
                   </button>
                   <button
                     type="submit"
-                    style={{ color: "white", background: "#9f0fa7", padding: "10px 20px" }}
                     className={styles.modal__btn_primary}
                   >
                     Создать

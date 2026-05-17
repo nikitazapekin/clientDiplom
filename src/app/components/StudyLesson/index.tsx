@@ -547,9 +547,7 @@ const StudyLesson = ({
         
 
             <div className={styles.titleBlock}>
-              <p className={styles.eyebrow}>
-                {isCheckpointMode ? "Прохождение контрольной точки" : "Прохождение урока"}
-              </p>
+              
               <h1 className={styles.title}>{lessonTitle}</h1>
               {lessonDescription ? (
                 <p className={styles.description}>{lessonDescription}</p>

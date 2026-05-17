@@ -137,8 +137,8 @@ const ArticlesHub = () => {
       <div className={styles.shell}>
         <section className={styles.hero}>
           <div className={styles.heroBlock}>
-            <span className={styles.eyebrow}>Статьи</span>
-            <h1 className={styles.title}>Публикации студентов и разборы решений.</h1>
+         
+            <h1 className={styles.title}>Публикации студентов и разборы решений</h1>
             <p className={styles.lead}>
               Собирай заметки по задачам, делись находками и поднимай полезные материалы реакциями.
             </p>

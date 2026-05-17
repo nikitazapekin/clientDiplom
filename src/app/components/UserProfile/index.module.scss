@@ -233,23 +233,23 @@ $danger-color: #dc3545;
 .expValue {
   font-size: 24px;
   font-weight: 700;
-  color: $accent-color;
+  color: #48bb78;
 }
 
 .expSeparator {
   font-size: 20px;
-  color: $text-secondary;
+  color: #48bb78;
 }
 
 .expTotal {
   font-size: 20px;
   font-weight: 600;
-  color: $text-primary;
+  color: #48bb78;
 }
 
 .expLabel {
   font-size: 14px;
-  color: $text-secondary;
+  color: #48bb78;
 }
 
  
@@ -471,15 +471,16 @@ $danger-color: #dc3545;
 
  
 .logoutButton {
-  max-width: 800px;
+  max-width: 300px;
   margin: 0 auto;
-  padding: 0 24px;
+  width: 100%;
+  padding: 0;
 }
 
 .logoutButtonInner {
   width: 100%;
   padding: 16px;
-  background-color: $danger-color;
+  background-color: #880000;
   color: white;
   border: none;
   border-radius: 12px;
@@ -489,7 +490,7 @@ $danger-color: #dc3545;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: darken($danger-color, 10%);
+    background-color: #760000;
   }
 }
  

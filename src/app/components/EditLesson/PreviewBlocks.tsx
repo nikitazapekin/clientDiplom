@@ -1,3 +1,5 @@
+import { useMemo, useState } from "react";
+
 import Button from "../Button";
 
 import { StableCodeEditor } from "./editorShared";
@@ -22,7 +24,7 @@ export function PreviewBlockStatic({ block }: { block: SlideBlock }) {
           onChange={() => {}}
           language={block.language}
           readOnly
-          height={200}
+          height={280}
         />
       </div>
     );
@@ -90,9 +92,30 @@ function PreviewTheoryQuestion({
   setTestAnswer: (v: string | number) => void;
   onCorrect: () => void;
 }) {
-  const selected = typeof testAnswer === "number" ? testAnswer : -1;
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const selected = useMemo(
+    () => (typeof testAnswer === "number" ? testAnswer : -1),
+    [testAnswer]
+  );
+
   const submit = () => {
-    if (selected === block.correctIndex) onCorrect();
+    if (selected < 0) {
+      setFeedback({ type: "error", message: "Выберите один вариант ответа." });
+
+      return;
+    }
+
+    if (selected === block.correctIndex) {
+      setFeedback({ type: "success", message: "Верно. Ответ принят." });
+      onCorrect();
+
+      return;
+    }
+
+    setFeedback({ type: "error", message: "Неверный ответ. Попробуйте ещё раз." });
   };
 
   return (
@@ -105,7 +128,7 @@ function PreviewTheoryQuestion({
           onChange={() => {}}
           language="javascript"
           readOnly
-          height={120}
+          height={240}
         />
       )}
       {block.imageUrl && <img src={block.imageUrl} alt="" className={styles.previewImg} />}
@@ -116,7 +139,10 @@ function PreviewTheoryQuestion({
               type="radio"
               name={`theory_${block.id}`}
               checked={selected === i}
-              onChange={() => setTestAnswer(i)}
+              onChange={() => {
+                setTestAnswer(i);
+                setFeedback(null);
+              }}
             />
             <span className={styles.optionText}>{opt}</span>
           </label>
@@ -130,6 +156,10 @@ function PreviewTheoryQuestion({
         onClick={submit}
         disabled={selected < 0}
       />
+      {feedback?.type === "success" ? (
+        <p className={styles.fillTaskSuccess}>{feedback.message}</p>
+      ) : null}
+      {feedback?.type === "error" ? <pre className={styles.codeOutput}>{feedback.message}</pre> : null}
     </div>
   );
 }
@@ -182,7 +212,7 @@ export function PreviewBlock({
           onChange={() => {}}
           language={block.language}
           readOnly
-          height={200}
+          height={280}
           onRun={block.runnable ? () => runCode(block.id, block.language, block.code) : undefined}
           runLoading={block.runnable && !!codeRunLoading}
         />

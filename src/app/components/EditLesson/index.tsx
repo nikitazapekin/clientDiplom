@@ -1303,7 +1303,7 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
 
               {selectedSlide.type === "lesson" && (
                 <div className={styles.blockAddRow}>
-                  <span className={styles.form__label}>Добавить блок:</span>
+                  <span className={`${styles.form__label} ${styles.blockAddLabel}`}>Добавить блок:</span>
                   <Button
                     color="#9F0FA7"
                     width="auto"
@@ -1345,7 +1345,7 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
               {selectedSlide.type === "test" && (
                 <>
                   <div className={styles.blockAddRow}>
-                    <span className={styles.form__label}>Добавить блок:</span>
+                    <span className={`${styles.form__label} ${styles.blockAddLabel}`}>Добавить блок:</span>
                     <Button
                       color="#9F0FA7"
                       width="auto"

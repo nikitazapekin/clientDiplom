@@ -2026,13 +2026,14 @@ const Map: React.FC = () => {
                     </div>
                   </div>
                 )}
-
+{/*
                 <button
-                  className={`${styles.elementButton} ${styles.saveButton}`}
-                  onClick={() => updateElement(selectedElement.id, selectedElement)}
+                className={`${styles.elementButton} ${styles.saveButton}`}
+                onClick={() => updateElement(selectedElement.id, selectedElement)}
                 >
-                  Сохранить изменения элемента
+                Сохранить изменения элемента
                 </button>
+                */}
 
                 <button
                   className={`${styles.elementButton} ${styles.deleteButton}`}

@@ -489,7 +489,7 @@ const StudentProfilePage = () => {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Решенные задачи</h2>
           <div className={styles.emptyState}>
-            <span className={styles.emptyIcon}>💻</span>
+            <span className={styles.emptyIcon}></span>
             <span className={styles.emptyText}>У студента пока нет решенных задач</span>
           </div>
         </div>

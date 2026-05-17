@@ -286,24 +286,18 @@
 
 .courseMeta {
   display: flex;
-  gap: px($spacing-sm);
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.courseLang {
-  font-size: 11px;
-  color: $color-gray-500;
-  padding: 2px 6px;
-  border-radius: 8px;
-  background-color: $color-gray-100;
-}
-
+.courseLang,
 .courseTags {
   font-size: 11px;
-  color: $color-purple;
-  padding: 2px 6px;
-  border-radius: 8px;
-  background-color: rgba($color-purple, 0.1);
+  font-weight: 600;
+  color: #111111;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background-color: #fafafa;
 }
 
 .courseFooter {

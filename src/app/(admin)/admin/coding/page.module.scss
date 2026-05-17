@@ -141,11 +141,11 @@
 }
 
 .taskTag {
-  padding: 5px 10px;
+  padding: 6px 10px;
   border-radius: 999px;
-  background: #fff6da;
-  color: #836400;
-  font-size: 12px;
+  background: #fafafa;
+  color: #374151;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -187,16 +187,15 @@
 .deleteBtn {
   padding: 6px 14px;
   border-radius: 6px;
-  border: 1px solid $color-red;
-  color: $color-red;
-  background: transparent;
+  border: none;
+  color: #fff;
+  background: #880000;
   cursor: pointer;
   font-size: 13px;
   transition: all 0.2s;
 
   &:hover {
-    background: $color-red;
-    color: $color-white;
+    background: #760000;
   }
 }
 
@@ -347,7 +346,7 @@
 .testCaseTitle {
   font-size: 13px;
   font-weight: 600;
-  color: $color-purple;
+  color: black;
 }
 
 .deleteButton {
@@ -432,26 +431,26 @@
 }
 
 .tagChip {
-  padding: 8px 14px;
+  padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid $color-gray-200;
-  background: $color-white;
-  color: $color-gray-700;
+  border: 1px solid transparent;
+  background: #fafafa;
+  color: #111111;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   transition: all 0.2s;
 
   &:hover {
-    border-color: $color-purple;
-    color: $color-purple;
+    background: #f3f4f6;
+    color: #111111;
   }
 }
 
 .tagChipActive {
-  background: rgba(159, 15, 167, 0.1);
-  border-color: $color-purple;
-  color: $color-purple;
+  background: #fafafa;
+  border-color: transparent;
+  color: #111111;
 }
 
 .langTab {

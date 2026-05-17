@@ -1242,7 +1242,7 @@ export function PreviewCodeTask({
         value={displayCode}
         onChange={handleCodeChange}
         language={block.language ?? "javascript"}
-        height={250}
+        height={360}
       />
 
       <div className={styles.runButtons}>

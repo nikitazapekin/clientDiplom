@@ -72,19 +72,31 @@ column-gap: 10px;
     flex: 0 0 200px;
     max-width: 200px;
   }
+
+  button {
+    width: min(100%, 300px) !important;
+  }
 }
 .runButtons {
   margin-top: 20px;
   width: 100%;
+  display: flex;
   justify-content: center;
 }
 .actions {
   display: flex;
   column-gap: 10px;
   margin-bottom: 20px;
+
+  button {
+    width: min(100%, 300px) !important;
+  }
 }
 .codeTask {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .objectDescriptions {
@@ -231,10 +243,10 @@ column-gap: 10px;
 
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     min-width: 0;
 
-    gap: px($spacing-lg);
+    gap: 20px;
   }
 }
 
@@ -242,6 +254,10 @@ column-gap: 10px;
   display: flex;
   gap: px($spacing-sm);
   flex-wrap: wrap;
+
+  button {
+    width: min(100%, 300px) !important;
+  }
 }
 
 .slideTabs {
@@ -271,6 +287,15 @@ column-gap: 10px;
   flex-wrap: wrap;
   align-items: center;
   gap: px($spacing-sm);
+  width: 100%;
+
+  button {
+    width: min(100%, 300px) !important;
+  }
+}
+
+.blockAddLabel {
+  flex: 0 0 100%;
   width: 100%;
 }
 
@@ -830,6 +855,7 @@ column-gap: 10px;
   align-items: center;
   width: 100%;
   max-width: $container-sm;
+  gap: 20px;
 }
 
 .previewNav {
@@ -863,11 +889,55 @@ column-gap: 10px;
   border: 1px solid $color-gray;
 }
 
+.theoryQuestion {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.questionText {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.6;
+  color: $color-dark;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.radioOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: px($radius-small);
+  background: rgba(248, 250, 252, 0.8);
+  cursor: pointer;
+
+  input {
+    margin-top: 3px;
+    flex: 0 0 auto;
+  }
+}
+
+.optionText {
+  line-height: 1.5;
+  color: $color-dark;
+}
+
 
 .previewTopActions {
   display: flex;
   gap: px($spacing-sm);
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .sourceButton {
@@ -1003,6 +1073,7 @@ column-gap: 10px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  min-height: 240px;
 }
 .tableControls {
   display: flex;
@@ -1285,14 +1356,14 @@ column-gap: 10px;
 }
 
 .deleteButton {
-  background: #f44336;
+  background: #880000;
   color: white;
   border: none;
   border-radius: 4px;
   padding: 4px 8px;
   cursor: pointer;
   font-size: 12px;
-
+margin-bottom: 10px;
   &:hover {
     background: #d32f2f;
   }
@@ -1845,4 +1916,12 @@ column-gap: 10px;
   margin-bottom: 8px;
   font-size: 12px;
   color: #6b7280;
+}
+
+.option {
+ // margin: 10px 0;
+margin-top: 10px;
+
+margin-bottom: 10px;
+
 }

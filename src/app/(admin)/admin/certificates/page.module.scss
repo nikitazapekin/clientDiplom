@@ -233,36 +233,29 @@
 .editButton {
   background-color: #9F0FA7;
   color: $color-white;
-
-  &:hover {
-    background-color: darken($color-info, 10%);
-  }
+ 
 }
 
 .deleteButton {
-  background-color: $color-error;
-  color: $color-white;
+  background-color: #880000;
+  color: #fff;
 
-  &:hover {
-    background-color: darken($color-error, 10%);
-  }
+  
 }
 
 .saveButton {
-  background-color: $color-success;
-  color: $color-white;
+  background-color: #9F0FA7;
+  color: white;
 
-  &:hover {
-    background-color: darken($color-success, 10%);
-  }
+  
 }
 
 .cancelButton {
-  background-color: $color-gray-400;
-  color: $color-white;
+  background-color: #880000;
+  color: #fff;
 
   &:hover {
-    background-color: $color-gray-500;
+    background-color: #880000;
   }
 }
 

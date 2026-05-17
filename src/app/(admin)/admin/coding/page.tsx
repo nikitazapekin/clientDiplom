@@ -1536,16 +1536,6 @@ export default function CodingPage() {
                   runLoading={runLoading}
                 />
               </div>
-              <div style={{ marginTop: "8px", display: "flex", gap: "8px" }}>
-                <Button
-                  color="#01398d"
-                  width="auto"
-                  textColor="#fff"
-                  text={runLoading ? "Проверка..." : "Тест (с ограничениями)"}
-                  onClick={handleTestCode}
-                  disabled={runLoading || testCases.length === 0}
-                />
-              </div>
               {constraintErrors.length > 0 && (
                 <div
                   style={{
@@ -1625,7 +1615,7 @@ export default function CodingPage() {
                 <label style={{ fontWeight: "bold" }}>Схема аргументов</label>
                 <Button
                   color="#9F0FA7"
-                  width="auto"
+                  width="300px"
                   textColor="#fff"
                   text="+ Добавить аргумент"
                   onClick={() => {
@@ -2238,8 +2228,8 @@ export default function CodingPage() {
                   })}
 
                   <Button
-                    color="#4CAF50"
-                    width="auto"
+                    color="#4caf50"
+                    width="300px"
                     textColor="#fff"
                     text="Обновить стартовый код"
                     onClick={() => {

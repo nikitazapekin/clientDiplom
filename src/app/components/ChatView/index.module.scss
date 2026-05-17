@@ -16,7 +16,7 @@
 
 .chatView__back {
   padding: 8px 16px;
-  background: #4a90e2;
+  background: #9f0fa7;
   color: white;
   border: none;
   border-radius: 8px;
@@ -144,14 +144,12 @@
   outline: none;
   transition: border-color 0.2s;
 
-  &:focus {
-    border-color: #4a90e2;
-  }
+  
 }
 
 .chatView__send {
   padding: 12px 24px;
-  background: #4a90e2;
+  background: #9f0fa7;
   color: white;
   border: none;
   border-radius: 24px;
