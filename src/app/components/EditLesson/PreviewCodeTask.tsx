@@ -1259,11 +1259,7 @@ export function PreviewCodeTask({
       {consoleOutput !== null && (
         <div className={styles.consoleOutput}>
           <div className={styles.consoleHeader}>
-            <div>
-           
-              <div className={styles.consoleTitle}>Консоль</div>
-            </div>
-       
+   
           </div>
           <pre className={styles.consoleBody}>{consoleOutput}</pre>
         </div>
@@ -1273,7 +1269,7 @@ export function PreviewCodeTask({
         <div className={styles.testResults}>
           <div className={styles.resultsHeader}>
             <div>
-              <span className={styles.resultEyebrow}>Проверка решения</span>
+           
               <h4>Результаты тестирования</h4>
             </div>
             <span className={styles.summaryPill}>
