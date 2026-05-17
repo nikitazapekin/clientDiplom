@@ -47,12 +47,16 @@ interface CodeTaskResultSummary {
 
 interface LessonResultsSummary {
   results: Array<{
+    id: string;
     slideId: string;
+    slideTitle: string;
     title: string;
+    taskNumber: number;
     passed: boolean;
-    testCasesPassed: number;
-    testCasesTotal: number;
-    constraintsPassed: boolean;
+    kind: "code" | "fill" | "theory";
+    testCasesPassed?: number;
+    testCasesTotal?: number;
+    constraintsPassed?: boolean;
   }>;
   totalTasks: number;
   completedTasks: number;
@@ -315,6 +319,7 @@ const StudyLesson = ({
     let totalTheoryQuestions = 0;
     let correctTheoryAnswers = 0;
     let allConstraintsPassed = true;
+    let taskNumber = 0;
 
     testSlides.forEach((slide) => {
       const slideCodeResult = codeTaskResults[slide.id];
@@ -329,7 +334,6 @@ const StudyLesson = ({
       ) as TheoryQuestionBlock[];
 
       let slideCodePassed = true;
-      let slideFillPassed = true;
       let slideTestCasesPassed = 0;
       let slideTestCasesTotal = 0;
 
@@ -358,7 +362,6 @@ const StudyLesson = ({
         ).length;
 
         passedFillTasks += passedFillOnSlide;
-        slideFillPassed = passedFillOnSlide === fillCodeTasks.length;
         slideTestCasesPassed += passedFillOnSlide;
         slideTestCasesTotal += fillCodeTasks.length;
       }
@@ -379,24 +382,48 @@ const StudyLesson = ({
 
       allConstraintsPassed = allConstraintsPassed && slideConstraintsPassed;
 
-      const slideTheoryPassed =
-        theoryQuestions.length === 0 ||
-        theoryQuestions.every(
-          (question) =>
-            typeof testAnswer[slide.id] === "number" &&
-            testAnswer[slide.id] === question.correctIndex
-        );
+      sortBlocks(slide.blocks).forEach((block) => {
+        if (block.type === "codeTask") {
+          taskNumber += 1;
+          results.push({
+            id: `${slide.id}-${block.id}`,
+            slideId: slide.id,
+            slideTitle: slide.title,
+            title: "Кодовая задача",
+            taskNumber,
+            passed: slideCodePassed,
+            kind: "code",
+            testCasesPassed: slideTestCasesPassed,
+            testCasesTotal: slideTestCasesTotal,
+            constraintsPassed: slideConstraintsPassed,
+          });
+        }
 
-      results.push({
-        slideId: slide.id,
-        title: slide.title,
-        passed:
-          (codeTasks.length === 0 || slideCodePassed) &&
-          (fillCodeTasks.length === 0 || slideFillPassed) &&
-          slideTheoryPassed,
-        testCasesPassed: slideTestCasesPassed,
-        testCasesTotal: slideTestCasesTotal,
-        constraintsPassed: slideConstraintsPassed,
+        if (block.type === "fillCodeTask") {
+          taskNumber += 1;
+          results.push({
+            id: `${slide.id}-${block.id}`,
+            slideId: slide.id,
+            slideTitle: slide.title,
+            title: "Задание с вставкой кода",
+            taskNumber,
+            passed: Boolean(fillTaskResults[block.id]?.passed),
+            kind: "fill",
+          });
+        }
+
+        if (block.type === "theoryQuestion") {
+          taskNumber += 1;
+          results.push({
+            id: `${slide.id}-${block.id}`,
+            slideId: slide.id,
+            slideTitle: slide.title,
+            title: "Задание с выбором ответа",
+            taskNumber,
+            passed: typeof testAnswer[slide.id] === "number" && testAnswer[slide.id] === block.correctIndex,
+            kind: "theory",
+          });
+        }
       });
     });
 
@@ -680,8 +707,7 @@ const StudyLesson = ({
             >
               ×
             </button>
-
-            <p className={styles.eyebrow}>Результаты</p>
+ 
             <h2 className={styles.modalTitle}>
               {isCheckpointMode ? "Контрольная точка завершена" : "Урок завершён"}
             </h2>
@@ -735,19 +761,29 @@ const StudyLesson = ({
               <h4>Детали по заданиям:</h4>
               {lessonResults.results.map((result) => (
                 <div
-                  key={result.slideId}
+                  key={result.id}
                   className={`${styles.resultItem} ${
                     result.passed ? styles.resultPassed : styles.resultFailed
                   }`}
                 >
-                  <div className={styles.resultTitle}>{result.title}</div>
+                  <div className={styles.resultTitle}>
+                    {result.taskNumber}. {result.title}
+                  </div>
+                  <div className={styles.resultSubtitle}>{result.slideTitle}</div>
                   <div className={styles.resultDetails}>
                     <span>
-                      Тесты: {result.testCasesPassed}/{result.testCasesTotal}
+                      Статус: {result.passed ? "Выполнено" : "Не выполнено"}
                     </span>
-                    <span>
-                      Ограничения: {result.constraintsPassed ? "Пройдены" : "Провалены"}
-                    </span>
+                    {result.kind === "code" ? (
+                      <>
+                        <span>
+                          Тесты: {result.testCasesPassed ?? 0}/{result.testCasesTotal ?? 0}
+                        </span>
+                        <span>
+                          Ограничения: {result.constraintsPassed ? "Пройдены" : "Провалены"}
+                        </span>
+                      </>
+                    ) : null}
                   </div>
                 </div>
               ))}

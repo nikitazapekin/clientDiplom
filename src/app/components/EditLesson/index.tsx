@@ -789,11 +789,23 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
     const testSlides = slides.filter((slide) => slide.type === "test");
     const currentTestResults = testResultsRef.current;
 
-    const results: any[] = [];
+    const results: Array<{
+      id: string;
+      slideId: string;
+      slideTitle: string;
+      title: string;
+      taskNumber: number;
+      passed: boolean;
+      kind: "code" | "fill" | "theory";
+      testCasesPassed?: number;
+      testCasesTotal?: number;
+      constraintsPassed?: boolean;
+    }> = [];
     let completedTasks = 0;
     let totalTestCases = 0;
     let passedTestCases = 0;
     let constraintsPassed = true;
+    let taskNumber = 0;
 
     testSlides.forEach((slide) => {
       const slideTestResult = currentTestResults[slide.id];
@@ -846,13 +858,50 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
         completedTasks += 1;
       }
 
-      results.push({
-        slideId: slide.id,
-        title: slide.title,
-        passed: slidePassed,
-        testCasesPassed: slideTestCasesPassed,
-        testCasesTotal: slideTestCasesTotal,
-        constraintsPassed: slideConstraintsPassed,
+      sortBlocks(slide.blocks).forEach((block) => {
+        if (block.type === "codeTask") {
+          taskNumber += 1;
+          results.push({
+            id: `${slide.id}-${block.id}`,
+            slideId: slide.id,
+            slideTitle: slide.title,
+            title: "Кодовая задача",
+            taskNumber,
+            passed: slidePassed,
+            kind: "code",
+            testCasesPassed: slideTestCasesPassed,
+            testCasesTotal: slideTestCasesTotal,
+            constraintsPassed: slideConstraintsPassed,
+          });
+        }
+
+        if (block.type === "fillCodeTask") {
+          taskNumber += 1;
+          results.push({
+            id: `${slide.id}-${block.id}`,
+            slideId: slide.id,
+            slideTitle: slide.title,
+            title: "Задание с вставкой кода",
+            taskNumber,
+            passed: Boolean(fillTaskResults[block.id]?.passed),
+            kind: "fill",
+          });
+        }
+
+        if (block.type === "theoryQuestion") {
+          taskNumber += 1;
+          results.push({
+            id: `${slide.id}-${block.id}`,
+            slideId: slide.id,
+            slideTitle: slide.title,
+            title: "Задание с выбором ответа",
+            taskNumber,
+            passed:
+              typeof testAnswer[slide.id] === "number" &&
+              testAnswer[slide.id] === block.correctIndex,
+            kind: "theory",
+          });
+        }
       });
 
       totalTestCases += slideTestCasesTotal;
@@ -872,62 +921,8 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
   }, [slides, testAnswer, fillTaskResults]);
 
   const handleLessonComplete = useCallback(() => {
-    const testSlides = slides.filter((slide) => slide.type === "test");
-    const currentTestResults = testResultsRef.current;
-
-    let allTasksSolved = true;
-    const unsolvedTasks: string[] = [];
-
-    for (const slide of testSlides) {
-      const slideTestResult = currentTestResults[slide.id];
-      const codeTasks = slide.blocks.filter(
-        (block) => block.type === "codeTask"
-      ) as CodeTaskBlock[];
-      const fillCodeTasks = slide.blocks.filter(
-        (block) => block.type === "fillCodeTask"
-      ) as FillCodeTaskBlock[];
-      const theoryQuestions = slide.blocks.filter(
-        (block) => block.type === "theoryQuestion"
-      ) as TheoryQuestionBlock[];
-
-      let slideSolved = codeTasks.length + fillCodeTasks.length + theoryQuestions.length > 0;
-
-      if (codeTasks.length > 0) {
-        if (!slideTestResult || !slideTestResult.allPassed) {
-          slideSolved = false;
-        }
-      }
-
-      if (fillCodeTasks.length > 0) {
-        const allFillTasksSolved = fillCodeTasks.every((task) => fillTaskResults[task.id]?.passed);
-        if (!allFillTasksSolved) {
-          slideSolved = false;
-        }
-      }
-
-      if (theoryQuestions.length > 0) {
-        const answer = testAnswer[slide.id];
-        const theoryPassed = theoryQuestions.every(
-          (question) => typeof answer === "number" && answer === question.correctIndex
-        );
-        if (!theoryPassed) {
-          slideSolved = false;
-        }
-      }
-
-      if (!slideSolved) {
-        allTasksSolved = false;
-        unsolvedTasks.push(slide.title);
-      }
-    }
-
-    if (!allTasksSolved) {
-      alert(`Не все задания выполнены!\n\nНе выполнены: ${unsolvedTasks.join(", ")}`);
-      return;
-    }
-
     calculateResults();
-  }, [calculateResults, slides, testAnswer, fillTaskResults]);
+  }, [calculateResults]);
 
   const saveLesson = useCallback(async () => {
     if (!entityId) {
@@ -1194,7 +1189,6 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
           totalTestCases={lessonResults.totalTestCases}
           passedTestCases={lessonResults.passedTestCases}
           constraintsPassed={lessonResults.constraintsPassed}
-          slides={slides}
         />
       </section>
     );

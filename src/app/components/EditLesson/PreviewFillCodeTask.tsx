@@ -152,7 +152,7 @@ export function PreviewFillCodeTask({
       />
 
       {successMessage && <p className={styles.fillTaskSuccess}>{successMessage}</p>}
-      {error && <pre className={styles.codeOutput}>{error}</pre>}
+      {error && <p className={styles.feedbackError}>{error}</p>}
     </div>
   );
 }

@@ -159,7 +159,7 @@ function PreviewTheoryQuestion({
       {feedback?.type === "success" ? (
         <p className={styles.fillTaskSuccess}>{feedback.message}</p>
       ) : null}
-      {feedback?.type === "error" ? <pre className={styles.codeOutput}>{feedback.message}</pre> : null}
+      {feedback?.type === "error" ? <p className={styles.feedbackError}>{feedback.message}</p> : null}
     </div>
   );
 }

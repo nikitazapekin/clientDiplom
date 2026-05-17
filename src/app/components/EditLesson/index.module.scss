@@ -363,18 +363,16 @@ column-gap: 10px;
   margin-top: px($spacing-md);
   padding: px($spacing-md);
   border-radius: px($radius-medium);
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)) padding-box,
-    linear-gradient(180deg, #1f2937 0%, #111827 100%) border-box;
-  color: #d1fae5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: #fff5f5;
+  color: #9f1239;
   font-family: "Fira Code", "JetBrains Mono", monospace;
   font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
   max-height: 240px;
   overflow: auto;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  box-shadow: none;
 }
 
 .table {
@@ -620,8 +618,16 @@ column-gap: 10px;
 
 .fillTaskSuccess {
   margin: 0;
-  color: #1d7c35;
+  color: #4caf50;
   font-weight: 600;
+}
+
+.feedbackError {
+  margin: 0;
+  color: #880000;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .resultEyebrow {
@@ -686,7 +692,7 @@ column-gap: 10px;
 
     background-color:  black;
   border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: 0 20px 46px rgba(15, 23, 42, 0.24);
+ 
 }
 
 .consoleHeader {
@@ -730,15 +736,15 @@ column-gap: 10px;
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-x: auto;
+ 
 }
+
 
 .testResults,
 .constraintResults {
   padding: px($spacing-md);
   border: 1px solid rgba(15, 23, 42, 0.08);
-  background:
-    radial-gradient(circle at top right, rgba(159, 15, 167, 0.06), transparent 42%),
-    linear-gradient(180deg, #ffffff 0%, #fcf8fd 100%);
+  
 }
 
 .resultsHeader {
@@ -1252,6 +1258,12 @@ column-gap: 10px;
 .resultTitle {
   font-weight: 500;
   margin-bottom: 5px;
+}
+
+.resultSubtitle {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #666;
 }
 
 .resultDetails {

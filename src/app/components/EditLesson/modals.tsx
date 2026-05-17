@@ -4,7 +4,7 @@ import Button from "../Button";
 
 import { BlockEditor } from "./BlockEditor";
 import styles from "./index.module.scss";
-import type { Slide, SlideBlock } from "./types";
+import type { SlideBlock } from "./types";
 
 import type { CodeLanguage } from "@/app/http/codeService";
 import { type BlockReview, ReviewStatus } from "@/app/http/reviewService";
@@ -110,25 +110,27 @@ export function ResultsModal({
   totalTestCases,
   passedTestCases,
   constraintsPassed,
-  slides,
 }: {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   results: {
+    id: string;
     slideId: string;
+    slideTitle: string;
     title: string;
+    taskNumber: number;
     passed: boolean;
-    testCasesPassed: number;
-    testCasesTotal: number;
-    constraintsPassed: boolean;
+    kind: "code" | "fill" | "theory";
+    testCasesPassed?: number;
+    testCasesTotal?: number;
+    constraintsPassed?: boolean;
   }[];
   totalTasks: number;
   completedTasks: number;
   totalTestCases: number;
   passedTestCases: number;
   constraintsPassed: boolean;
-  slides: Slide[];
 }) {
   const [stars, setStars] = useState(0);
   const [animatingStars, setAnimatingStars] = useState<number[]>([]);
@@ -140,11 +142,7 @@ export function ResultsModal({
       setAnimatingStars([]);
       setShowStars(false);
 
-      const theoryTasks = results.filter((r: { slideId: string }) => {
-        const slide = slides.find((s: Slide) => s.id === r.slideId);
-
-        return slide?.blocks.some((b: SlideBlock) => b.type === "theoryQuestion");
-      });
+      const theoryTasks = results.filter((r) => r.kind === "theory");
 
       const theoryPassed = theoryTasks.every((t: { passed: boolean }) => t.passed);
       const allTestsPassed = passedTestCases === totalTestCases && totalTestCases > 0;
@@ -191,7 +189,6 @@ export function ResultsModal({
     totalTestCases,
     passedTestCases,
     constraintsPassed,
-    slides,
   ]);
 
   if (!isOpen) return null;
@@ -255,15 +252,25 @@ export function ResultsModal({
             <h4>Детали по заданиям:</h4>
             {results.map((result) => (
               <div
-                key={result.slideId}
+                key={result.id}
                 className={`${styles.resultItem} ${result.passed ? styles.resultPassed : styles.resultFailed}`}
               >
-                <div className={styles.resultTitle}>{result.title}</div>
+                <div className={styles.resultTitle}>
+                  {result.taskNumber}. {result.title}
+                </div>
+                <div className={styles.resultSubtitle}>{result.slideTitle}</div>
                 <div className={styles.resultDetails}>
-                  <span>
-                    Тесты: {result.testCasesPassed}/{result.testCasesTotal}
-                  </span>
-                  <span>Ограничения: {result.constraintsPassed ? "Пройдены" : "Провалены"}</span>
+                  <span>Статус: {result.passed ? "Выполнено" : "Не выполнено"}</span>
+                  {result.kind === "code" ? (
+                    <>
+                      <span>
+                        Тесты: {result.testCasesPassed ?? 0}/{result.testCasesTotal ?? 0}
+                      </span>
+                      <span>
+                        Ограничения: {result.constraintsPassed ? "Пройдены" : "Провалены"}
+                      </span>
+                    </>
+                  ) : null}
                 </div>
               </div>
             ))}
