@@ -1,0 +1,339 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
+
+.search {
+  width: 100%;
+  display: grid;
+  gap: px($spacing-md);
+
+  @include breakpoint-md {
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.85fr);
+    align-items: center;
+  }
+
+  &__label {
+    @include visually-hidden;
+  }
+
+  &__topRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__field {
+    position: relative;
+    display: block;
+    flex: 1;
+  }
+
+  &__iconSearch {
+    position: absolute;
+    left: px($spacing-lg);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    opacity: 0.65;
+    pointer-events: none;
+  }
+
+  &__iconSort {
+    width: 16px;
+    height: 16px;
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  &__input {
+    width: 100%;
+    min-height: 60px;
+    border: 1px solid $color-gray;
+    outline: none;
+    padding: 0 px($spacing-lg) 0 px($spacing-bg);
+    border-radius: px($radius-medium);
+    background-color: $color-white;
+    font-size: px($font-xs);
+    color: $color-dark;
+
+    &::placeholder {
+      color: rgba($color-dark, 0.48);
+    }
+
+    &:focus {
+      border-color: $color-purple;
+    }
+  }
+
+  &__wrapper {
+    display: block;
+  }
+
+  &__filterButton {
+    position: relative;
+    flex: 0 0 56px;
+    width: 56px;
+    height: 60px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid $color-gray;
+    border-radius: px($radius-medium);
+    background-color: $color-white;
+    cursor: pointer;
+  }
+
+  &__filterBadge {
+    position: absolute;
+    top: 8px;
+    right: 7px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: $color-purple;
+    color: $color-white;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &__filterIcon {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  &__filterLine {
+    display: block;
+    height: 2px;
+    border-radius: 999px;
+    background-color: rgba($color-dark, 0.72);
+  }
+
+  &__filterLineWide {
+    width: 18px;
+  }
+
+  &__filterLineMedium {
+    width: 14px;
+  }
+
+  &__filterLineShort {
+    width: 10px;
+  }
+
+  &__filterDotTop,
+  &__filterDotMiddle,
+  &__filterDotBottom {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background-color: rgba($color-dark, 0.72);
+  }
+
+  &__filterDotTop {
+    top: -2px;
+    right: 1px;
+  }
+
+  &__filterDotMiddle {
+    top: 6px;
+    left: 6px;
+  }
+
+  &__filterDotBottom {
+    top: 14px;
+    left: 1px;
+  }
+
+  &__sortWrapper {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    gap: px($spacing-sm);
+    border-radius: px($radius-medium);
+    padding: 0 px($spacing-lg);
+    border: 1px solid $color-gray;
+    background-color: $color-white;
+  }
+
+  &__sort {
+    width: 100%;
+    min-height: 58px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: $color-dark;
+    font-size: px($font-xs);
+    cursor: pointer;
+  }
+
+  &__modalOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 16px;
+    background-color: rgba(15, 23, 42, 0.42);
+  }
+
+  &__modalCard {
+    width: min(720px, 100%);
+    max-height: 88vh;
+    overflow: auto;
+    border-radius: 28px;
+    background-color: $color-white;
+    padding: 12px 18px 20px;
+  }
+
+  &__modalHandle {
+    width: 54px;
+    height: 5px;
+    margin: 0 auto 14px;
+    border-radius: 999px;
+    background-color: #d7d7d7;
+  }
+
+  &__modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: px($spacing-md);
+    margin-bottom: 18px;
+  }
+
+  &__modalTitle {
+    margin: 0;
+    color: $color-dark;
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  &__modalCloseButton {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 999px;
+    background-color: #f3f4f6;
+    color: rgba($color-dark, 0.72);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  &__filtersBody {
+    display: grid;
+    gap: 18px;
+  }
+
+  &__filterSection {
+    display: grid;
+    gap: 10px;
+  }
+
+  &__filterSectionTitle {
+    color: $color-dark;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  &__filterInput {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid #e7e7e7;
+    border-radius: 16px;
+    background-color: #f8f8f8;
+    padding: 0 14px;
+    outline: none;
+    color: $color-dark;
+    font-size: 14px;
+
+    &::placeholder {
+      color: rgba($color-dark, 0.48);
+    }
+
+    &:focus {
+      border-color: $color-purple;
+    }
+  }
+
+  &__rangeRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  &__modalActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  &__secondaryActionButton,
+  &__primaryActionButton {
+    min-height: 50px;
+    border: none;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  &__secondaryActionButton {
+    background-color: #f3f4f6;
+    color: rgba($color-dark, 0.72);
+  }
+
+  &__primaryActionButton {
+    background-color: $color-purple;
+    color: $color-white;
+  }
+}
+
+@media (max-width: 768px) {
+  .search {
+    &__topRow {
+      gap: 8px;
+    }
+
+    &__filterButton {
+      height: 56px;
+    }
+
+    &__sortWrapper {
+      min-height: 56px;
+    }
+
+    &__sort {
+      min-height: 54px;
+    }
+
+    &__input {
+      min-height: 56px;
+    }
+
+    &__modalCard {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    &__rangeRow,
+    &__modalActions {
+      grid-template-columns: 1fr;
+    }
+  }
+}

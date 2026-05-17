@@ -1,0 +1,190 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
+
+.courses {
+  width: 100%;
+  min-height: calc(100vh - #{px($spacing-bg * 2)});
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: px($spacing-xl) px($spacing-md) px($spacing-vg);
+  background-color: $color-grayLight;
+
+  &__container {
+    max-width: px($container-md);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-xl);
+  }
+
+  &__hero {
+    position: relative;
+    display: grid;
+    gap: px($spacing-xl);
+    padding: px($spacing-xl);
+    border-radius: px($radius-large);
+    border: 1px solid $color-gray;
+    background-color: $color-white;
+    color: $color-dark;
+
+    @include breakpoint-lg {
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.9fr);
+      align-items: start;
+    }
+  }
+ 
+  &__heroCopy,
+  &__stats {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+  }
+
+  &__eyebrow {
+    margin: 0 0 px($spacing-md);
+    display: inline-flex;
+    align-items: center;
+    padding: px($spacing-xs) px($spacing-md);
+    border-radius: px($radius-circle);
+    background-color: rgba($color-purple, 0.08);
+    color: $color-purple;
+    font-size: px($font-xs);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    margin: 0;
+    max-width: 640px;
+    font-size: px($font-lg);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  &__description {
+    margin: px($spacing-md) 0 0;
+    max-width: 640px;
+    color: rgba($color-dark, 0.72);
+    font-size: px($font-xs);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+
+  &__stats {
+    display: grid;
+    gap: px($spacing-md);
+
+    @include breakpoint-sm {
+      grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+  }
+
+  &__statCard {
+    padding: px($spacing-lg);
+    min-width: 0;
+    border-radius: px($radius-large);
+    background-color: $color-grayLight;
+    border: 1px solid $color-gray;
+  }
+
+  &__statLabel {
+    display: block;
+    margin-bottom: 10px;
+    color: rgba($color-dark, 0.64);
+    font-size: px(12);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  &__statValue {
+    display: block;
+    margin-bottom: 8px;
+    font-size: px($font-lg);
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+
+  &__statDescription {
+    margin: 0;
+    color: rgba($color-dark, 0.68);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  &__grid {
+    display: grid;
+    gap: px($spacing-lg);
+    grid-template-columns: repeat(3, minmax(320px, 1fr));
+  }
+
+  &__empty {
+    padding: px($spacing-bg);
+    border-radius: px($radius-large);
+    text-align: center;
+    background-color: $color-white;
+    border: 1px solid $color-gray;
+  }
+
+  &__emptyTitle {
+    margin: 0 0 px($spacing-sm);
+    color: $color-dark;
+    font-size: px($font-md);
+    line-height: 1.2;
+  }
+
+  &__emptyText {
+    margin: 0;
+    color: rgba($color-dark, 0.72);
+    font-size: px($font-xs);
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 1200px) {
+  .courses {
+    &__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .courses {
+    padding: px($spacing-md) px($spacing-sm) px($spacing-xl);
+
+    &__container {
+      gap: px($spacing-md);
+    }
+
+    &__hero {
+      padding: px($spacing-lg);
+      gap: px($spacing-lg);
+    }
+
+    &__title {
+      font-size: clamp(28px, 8vw, #{px($font-lg)});
+    }
+
+    &__stats {
+      grid-template-columns: 1fr;
+    }
+
+    &__statCard {
+      padding: px($spacing-md);
+    }
+
+    &__grid {
+      gap: px($spacing-md);
+      grid-template-columns: 1fr;
+    }
+
+    &__empty {
+      padding: px($spacing-xl) px($spacing-md);
+    }
+  }
+}

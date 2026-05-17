@@ -1,0 +1,139 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
+
+.courses {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0 px($spacing-md) px($spacing-xl);
+
+  &__container {
+    max-width: $container-md;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    row-gap: px($spacing-lg);
+  }
+
+  &__title {
+    margin-top: px($spacing-lg);
+    text-align: center;
+    font-size: clamp(28px, 4vw, #{px($font-lg)});
+    line-height: 1.1;
+  }
+
+  &__smileys {
+    display: flex;
+    column-gap: px($spacing-lg);
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    row-gap: px($spacing-md);
+  }
+
+  &__smiley {
+    border-radius: 50%;
+    border: 2px solid $color-purple;
+    width: 80px;
+    height: 80px;
+    font-size: px($font-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__text {
+    text-align: center;
+    font-size: px($font-md);
+    line-height: 1.45;
+  }
+
+  &__round {
+    border-radius: 50%;
+    background-color: $color-purple;
+    width: 15px;
+    height: 15px;
+    margin: 0 auto;
+    margin-top: px($spacing-lg);
+    margin-bottom: px($spacing-lg);
+  }
+
+  &__cards {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: px($spacing-lg);
+    margin-top: px($spacing-lg);
+    margin-bottom: px($spacing-lg);
+
+    & > * {
+      flex: 0 0 calc(33.333% - px($spacing-lg) * 2 / 3);
+      max-width: calc(33.333% - px($spacing-lg) * 2 / 3);
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .courses {
+    &__description {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    &__cards {
+      & > * {
+        flex: 0 0 calc(50% - px($spacing-lg) / 2);
+        max-width: calc(50% - px($spacing-lg) / 2);
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .courses {
+    padding: 0 px($spacing-sm) px($spacing-lg);
+
+    &__container {
+      row-gap: px($spacing-md);
+    }
+
+    &__title {
+      margin-top: px($spacing-md);
+    }
+
+    &__smiley {
+      width: 64px;
+      height: 64px;
+      font-size: px($font-md);
+    }
+
+    &__description {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      row-gap: px($spacing-sm);
+    }
+
+    &__round {
+      margin-top: 0;
+      margin-bottom: 0;
+      width: 12px;
+      height: 12px;
+    }
+
+    &__cards {
+      gap: px($spacing-md);
+      margin-top: px($spacing-md);
+
+      & > * {
+        flex: 0 0 100%;
+        max-width: 100%;
+      }
+    }
+  }
+}

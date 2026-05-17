@@ -1,0 +1,448 @@
+@use '../../../../styles/variables.scss' as *;
+
+.container {
+  padding: px($spacing-lg);
+  max-width: px($container-md);
+  margin: 0 auto;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  padding: px($spacing-sm) px($spacing-md);
+  background-color: transparent;
+  color: $color-info;
+  border: 1px solid $color-info;
+  border-radius: px($radius-medium);
+  font-size: px($font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: px($spacing-lg);
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: $color-info;
+    color: $color-white;
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: px($font-sx);
+  color: $color-gray-600;
+}
+
+.loadingSmall {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: px($spacing-lg);
+  font-size: px($font-xs);
+  color: $color-gray-500;
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: px($spacing-lg);
+  gap: px($spacing-md);
+}
+
+.errorIcon {
+  font-size: 48px;
+}
+
+.errorText {
+  font-size: px($font-sx);
+  color: $color-error;
+  text-align: center;
+}
+
+.retryButton {
+  padding: px($spacing-sm) px($spacing-xl);
+  background-color: $color-info;
+  color: $color-white;
+  border: none;
+  border-radius: px($radius-medium);
+  font-size: px($font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: darken($color-info, 10%);
+  }
+}
+
+.header {
+  background: linear-gradient(135deg, $color-info 0%, darken($color-info, 15%) 100%);
+  padding: px($spacing-xxl) px($spacing-lg);
+  border-radius: px($radius-large);
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba($color-black, 0.15);
+  margin-bottom: px($spacing-lg);
+}
+
+.avatarWrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.avatarContainer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid $color-white;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid $color-white;
+  background-color: $color-info;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.avatarPlaceholderText {
+  font-size: 48px;
+  color: $color-white;
+  font-weight: bold;
+}
+
+.name {
+  font-size: px($font-lg);
+  font-weight: 700;
+  color: $color-white;
+  margin-top: px($spacing-md);
+}
+
+.emailContainer {
+  margin-top: px($spacing-xs);
+}
+
+.email {
+  font-size: px($font-xs);
+  color: rgba($color-white, 0.9);
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: px($spacing-xs) px($spacing-md);
+  border-radius: px($radius-large);
+  margin-top: px($spacing-md);
+}
+
+.statusActive {
+  background-color: $color-success;
+}
+
+.statusInactive {
+  background-color: $color-error;
+}
+
+.statusText {
+  color: $color-white;
+  font-size: px($font-xs);
+  font-weight: 600;
+}
+
+.statsContainer {
+  display: flex;
+  background-color: $color-white;
+  padding: px($spacing-lg);
+  border-radius: px($radius-large);
+  box-shadow: 0 2px 8px rgba($color-black, 0.08);
+  margin-bottom: px($spacing-lg);
+}
+
+.statItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: px($spacing-xs);
+}
+
+.statDivider {
+  width: 1px;
+  background-color: $color-gray-200;
+}
+
+.statValue {
+  font-size: px($font-lg);
+  font-weight: 700;
+  color: $color-info;
+}
+
+.statLabel {
+  font-size: px($border-radius-sm);
+  color: $color-gray-600;
+}
+
+.section {
+  background-color: $color-white;
+  padding: px($spacing-lg);
+  border-radius: px($radius-large);
+  box-shadow: 0 2px 8px rgba($color-black, 0.08);
+  margin-bottom: px($spacing-lg);
+}
+
+.sectionTitle {
+  font-size: px($font-md);
+  font-weight: 600;
+  color: $color-gray-800;
+  margin-bottom: px($spacing-md);
+}
+
+.infoGrid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 (-(px($spacing-xs)));
+}
+
+.infoItem {
+  width: 50%;
+  padding: px($spacing-xs);
+  box-sizing: border-box;
+}
+
+.infoItemFull {
+  width: 100%;
+}
+
+.infoItemLabel {
+  display: block;
+  font-size: px($border-radius-sm);
+  color: $color-gray-500;
+  margin-bottom: 2px;
+}
+
+.infoItemValue {
+  display: block;
+  font-size: px($font-xs);
+  color: $color-gray-800;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.coursesList {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-md);
+}
+
+.courseCard {
+  background-color: $color-gray-50;
+  padding: px($spacing-md);
+  border-radius: px($radius-medium);
+  border: 1px solid $color-gray-100;
+}
+
+.courseHeader {
+  display: flex;
+  gap: px($spacing-md);
+  margin-bottom: px($spacing-sm);
+}
+
+.courseLogo {
+  width: 80px;
+  height: 80px;
+  border-radius: px($radius-medium);
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: $color-gray-100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.courseLogoPlaceholder {
+  font-size: 32px;
+}
+
+.courseInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.courseTitle {
+  font-size: px($font-xs);
+  font-weight: 600;
+  color: $color-gray-800;
+  margin-bottom: px($spacing-xs);
+}
+
+.courseDesc {
+  font-size: px($border-radius-sm);
+  color: $color-gray-600;
+  line-height: 1.4;
+  margin-bottom: px($spacing-xs);
+}
+
+.courseMeta {
+  display: flex;
+  gap: px($spacing-sm);
+  flex-wrap: wrap;
+}
+
+.courseLang {
+  font-size: 11px;
+  color: $color-gray-500;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background-color: $color-gray-100;
+}
+
+.courseTags {
+  font-size: 11px;
+  color: $color-purple;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background-color: rgba($color-purple, 0.1);
+}
+
+.courseFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: px($spacing-sm);
+  border-top: 1px solid $color-gray-100;
+}
+
+.courseDates {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: $color-gray-400;
+}
+
+.courseStatus {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.statusPublished {
+  background-color: $color-success;
+  color: $color-white;
+}
+
+.statusDraft {
+  background-color: $color-warning;
+  color: $color-white;
+}
+
+.statusArchived {
+  background-color: $color-gray-400;
+  color: $color-white;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: px($spacing-xxl);
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: px($spacing-sm);
+}
+
+.emptyText {
+  font-size: px($font-xs);
+  color: $color-gray-500;
+}
+
+@media (max-width: $breakpoint-md) {
+  .container {
+    padding: px($spacing-md);
+  }
+
+  .header {
+    padding: px($spacing-lg) px($spacing-md);
+    border-radius: px($radius-medium);
+  }
+
+  .avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatarPlaceholder {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatarPlaceholderText {
+    font-size: 32px;
+  }
+
+  .name {
+    font-size: px($font-md);
+  }
+
+  .statsContainer {
+    flex-direction: column;
+    gap: px($spacing-md);
+  }
+
+  .statDivider {
+    width: 100%;
+    height: 1px;
+  }
+
+  .statItem {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .infoItem {
+    width: 100%;
+  }
+
+  .courseHeader {
+    flex-direction: column;
+  }
+
+  .courseLogo {
+    width: 100%;
+    height: 120px;
+  }
+
+  .courseFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: px($spacing-sm);
+  }
+}

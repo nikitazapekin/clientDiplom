@@ -1,0 +1,945 @@
+// Глобальные стили
+.globalStyle {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.pageWrapper {
+  display: flex;
+  height: 100vh;
+  background-color: #f5f5f5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.wrapperContainer {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.unsupportedState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.unsupportedCard {
+  width: min(100%, 520px);
+  padding: 32px 24px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  text-align: center;
+}
+
+.unsupportedTitle {
+  margin: 0 0 12px;
+  color: #171717;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.unsupportedText {
+  margin: 0;
+  color: #666;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+// Левая панель
+.leftPanel {
+  width: 250px;
+  background: white;
+  border-right: 1px solid #e0e0e0;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+// Правая панель
+.rightPanel {
+  width: 300px;
+  background: white;
+  border-left: 1px solid #e0e0e0;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+// Основной контент
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  position: relative;
+  overflow-y: auto;
+}
+
+.contentWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+ 
+.mapContainer {
+  position: relative;
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  flex-shrink: 0;
+  
+  &.centered {
+    margin: 0 auto;
+  }
+  
+  &[style*="background: white"] {
+    border: 2px solid #333;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: auto;
+  }
+}
+
+.mapContent {
+  position: relative;
+  background: transparent;
+}
+
+// Элементы для изменения размера
+.resizeHandleRight {
+  position: absolute;
+  right: -5px;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  background: #007acc;
+  cursor: col-resize;
+  
+  &:hover {
+    background: #005a9e;
+  }
+}
+
+.resizeHandleBottom {
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background: #007acc;
+  cursor: row-resize;
+  
+  &:hover {
+    background: #005a9e;
+  }
+}
+
+.sizeInfo {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+// Элементы карты
+.elementCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #333;
+  cursor: move;
+  position: absolute;
+  transform-origin: center;
+  user-select: none;
+  
+  &.elementSelected {
+    border: 3px solid #007acc;
+  }
+}
+
+.imageContainer {
+  border: 2px solid #333;
+  border-radius: 4px;
+  cursor: move;
+  position: absolute;
+  transform-origin: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  
+  &.elementSelected {
+    border: 3px solid #007acc;
+  }
+}
+
+.elementImage {
+  object-fit: contain;
+  width: 100%;
+  height: 100%;
+}
+
+.imagePlaceholder {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  padding: 10px;
+}
+
+// Текстовый элемент
+.textElement {
+  position: absolute;
+  cursor: move;
+  transform-origin: center;
+  padding: 5px;
+  word-break: break-word;
+  white-space: pre-wrap;
+  user-select: none;
+  
+  &.elementSelected {
+    outline: 2px solid #007acc;
+    outline-offset: 2px;
+  }
+}
+
+// Контрольная точка
+.checkpointContainer {
+  position: absolute;
+  cursor: move;
+  transform-origin: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  &.elementSelected {
+    .checkpointElement {
+      border: 3px solid #007acc;
+    }
+  }
+}
+
+.checkpointElement {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ff0000;
+  
+  .checkpointInner {
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+    border: 2px solid #333;
+  }
+}
+
+.checkpointTitle {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #333;
+  text-align: center;
+  max-width: 100px;
+  word-break: break-word;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+// Эмодзи элемент
+.emojiElement {
+  position: absolute;
+  cursor: move;
+  transform-origin: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  user-select: none;
+  
+  &.elementSelected {
+    outline: 2px solid #007acc;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+// Уроки
+.lessonContainer {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: move;
+  transform-origin: center;
+  border-radius: 8px;
+  padding: 5px;
+  user-select: none;
+  
+  &.elementSelected {
+    .lessonCircle {
+      border: 3px solid #007acc;
+    }
+  }
+}
+
+.lessonCircle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #9E9E9E, #757575);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border: 2px solid #616161;
+  
+  &.lessonActive {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    border-color: #388E3C;
+  }
+}
+
+.starsArc {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 8px;
+}
+
+.star {
+  width: 14px;
+  height: 14px;
+  background: #E0E0E0;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  position: relative;
+  z-index: 1;
+  
+  &.starFilled {
+    background: #FFD700;
+  }
+}
+
+.lessonTitle {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #333;
+  text-align: center;
+  max-width: 80px;
+  word-break: break-word;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+// Секции панелей
+.panelSection {
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 16px;
+}
+
+// Кнопки
+.elementButton {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background: #e0e0e0;
+  }
+}
+
+.toggleButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 10px 15px;
+  background: #007acc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 100;
+  
+  &:hover {
+    background: #005a9e;
+  }
+}
+
+.uploadButton {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  background: #9f0fa7;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #45a049;
+  }
+}
+
+// Смайлики
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.emojiButton {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: #f0f0f0;
+  }
+}
+
+.emojiModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  
+  &.show {
+    display: flex;
+  }
+}
+
+.emojiModalContent {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  position: relative;
+}
+
+.emojiModalGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.emojiModalButton {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: #f0f0f0;
+  }
+}
+
+.emojiDisplay {
+  font-size: 40px;
+  text-align: center;
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+// Свойства элементов
+.propertyGroup {
+  margin-bottom: 15px;
+}
+
+.propertyLabel {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
+}
+
+.propertyInput {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.textInput {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.propertySelect {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.colorInput {
+  width: 100%;
+  height: 40px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.offsetDisplay {
+  background: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  font-size: 14px;
+  color: #495057;
+}
+
+.offsetValue {
+  font-weight: 600;
+  color: #007acc;
+}
+
+// Управление вращением
+.rotationControl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rotationSlider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #ddd;
+  border-radius: 3px;
+  outline: none;
+  
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #007acc;
+    cursor: pointer;
+  }
+  
+  &::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #007acc;
+    cursor: pointer;
+    border: none;
+  }
+}
+
+.rotationValue {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 600;
+  color: #007acc;
+}
+
+// Управление размером
+.sizeControl {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sizeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  label {
+    font-size: 12px;
+    color: #666;
+    min-width: 50px;
+  }
+}
+
+.sizeInput {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+// Начертание шрифта
+.fontStyleControls {
+  display: flex;
+  gap: 10px;
+}
+
+.fontStyleButton {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-weight: bold;
+  font-style: normal;
+  
+  &:hover {
+    background: #f0f0f0;
+  }
+  
+  &.active {
+    background: #007acc;
+    color: white;
+    border-color: #007acc;
+  }
+}
+
+.imagePreviewContainer {
+  position: relative;
+  margin-top: 10px;
+}
+
+.imagePreview {
+  width: 100%;
+  max-height: 150px;
+  object-fit: contain;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+}
+
+.backgroundPreview {
+  width: 100%;
+  max-height: 100px;
+  object-fit: contain;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+  margin-top: 10px;
+}
+
+.removeImageButton {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  
+  &:hover {
+    background: #ff3742;
+  }
+}
+ 
+.breakpointsSection {
+  margin-top: auto;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 20px;
+}
+
+.breakpointButton {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #e0e0e0;
+  }
+  
+  &.active {
+    background: #007acc;
+    color: white;
+    
+    &:hover {
+      background: #005a9e;
+    }
+  }
+}
+
+.breakpointControls {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.smallButton {
+  flex: 1;
+  padding: 5px;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  
+  &:hover {
+    background: #e0e0e0;
+  }
+}
+
+.breakpointPropertyGroup {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+// Эмулятор
+.emulatorOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.emulatorContainer {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 95%;
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emulatorScreen {
+  border: 2px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.deviceSelector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.deviceButton {
+  padding: 8px 12px;
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #e0e0e0;
+  }
+  
+  &.active {
+    background: #007acc;
+    color: white;
+    
+    &:hover {
+      background: #005a9e;
+    }
+  }
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  
+  &:hover {
+    background: #ff3742;
+  }
+}
+
+
+
+
+
+
+
+
+ 
+.saveControls {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+  background: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.saveButton {
+  padding: 10px 20px;
+  background: #9f0fa7;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+   
+  
+  &.success {
+    background: #4CAF50;
+    
+    &:hover {
+      background: #45a049;
+    }
+  }
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.checkmark {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.errorMessage {
+  color: #ff4757;
+  font-size: 12px;
+  text-align: center;
+  max-width: 200px;
+}
+
+.warningMessage {
+  color: #ffa502;
+  font-size: 12px;
+  text-align: center;
+  max-width: 200px;
+}
+
+.saveInfo {
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+}

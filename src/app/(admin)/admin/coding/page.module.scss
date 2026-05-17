@@ -1,0 +1,634 @@
+@use "../../../styles/variables.scss" as *;
+@use "../../../styles/mixins.scss" as *;
+
+.page {
+  width: 100%;
+  min-height: 100vh;
+  padding: px($spacing-lg) px($spacing-md);
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  max-width: $container-md;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-lg);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: px($spacing-sm);
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: $color-gray-900;
+  }
+}
+
+.headerActions {
+  display: flex;
+  gap: px($spacing-sm);
+}
+
+.filters {
+  display: flex;
+  gap: px($spacing-sm);
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid $color-gray;
+  background: $color-white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $color-grayLight;
+  }
+}
+
+.filterActive {
+  background: $color-purple;
+  color: $color-white;
+  border-color: $color-purple;
+}
+
+.emptyText {
+  text-align: center;
+  color: $color-gray-500;
+  padding: 40px 0;
+  font-size: 16px;
+}
+
+.emptyHint {
+  color: $color-gray-400;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-md);
+}
+
+.taskCard {
+  background: $color-white;
+  border: 1px solid $color-gray-200;
+  border-radius: 12px;
+  padding: px($spacing-lg);
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.taskCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.taskTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: $color-gray-900;
+  margin: 0;
+}
+
+.taskMeta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.xpBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.taskTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.taskTag {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #fff6da;
+  color: #836400;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.taskFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.taskInfo {
+  font-size: 13px;
+  color: $color-gray-400;
+}
+
+.taskActions {
+  display: flex;
+  gap: 8px;
+}
+
+.editBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid $color-purple;
+  color: $color-purple;
+  background: #9f0fa7;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $color-purple;
+    color: $color-white;
+  }
+}
+
+.deleteBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid $color-red;
+  color: $color-red;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $color-red;
+    color: $color-white;
+  }
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: px($spacing-lg);
+
+  @media (max-width: $breakpoint-lg) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formLeft,
+.formRight {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-md);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 14px;
+    font-weight: 600;
+    color: $color-gray-700;
+  }
+}
+
+.formRow {
+  display: flex;
+  gap: px($spacing-md);
+  flex-wrap: wrap;
+
+  .formGroup {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+.input {
+  padding: 10px 12px;
+  border: 1px solid $color-gray-200;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+
+  &:focus {
+    border-color: $color-purple;
+  }
+}
+
+.textarea {
+  padding: 10px 12px;
+  border: 1px solid $color-gray-200;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  width: 100%;
+  min-height: 100px;
+
+  &:focus {
+    border-color: $color-purple;
+  }
+}
+
+.select {
+  padding: 10px 12px;
+  border: 1px solid $color-gray-200;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: $color-white;
+  cursor: pointer;
+  width: 100%;
+
+  &:focus {
+    border-color: $color-purple;
+  }
+}
+
+.codeEditorWrap {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid $color-gray-200;
+}
+
+.codeOutput {
+  background: $color-darkLight;
+  color: $color-white;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+
+  pre {
+    margin: 4px 0 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+}
+
+.section {
+  background: $color-white;
+  border: 1px solid $color-gray-200;
+  border-radius: 12px;
+  padding: px($spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-sm);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    color: $color-gray-800;
+  }
+}
+
+.testCase {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: $color-gray-50;
+  border-radius: 8px;
+}
+
+.testCaseHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.testCaseTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: $color-purple;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: $color-red;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(216, 9, 9, 0.1);
+  }
+}
+
+.constraint {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: $color-gray-50;
+  border-radius: 8px;
+}
+
+.constraintHeader {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  .select {
+    flex: 1;
+  }
+}
+
+.langChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.langChip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid $color-gray-200;
+  background: $color-white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: $color-gray-700;
+
+  &:hover {
+    border-color: $color-purple;
+    color: $color-purple;
+  }
+}
+
+.langChipActive {
+  background: $color-purple;
+  border-color: $color-purple;
+  color: $color-white;
+
+  &:hover {
+    background: darken(#9f0fa7, 10%);
+    color: $color-white;
+  }
+}
+
+.langTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid $color-gray-200;
+  margin-bottom: -1px;
+}
+
+.tagSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagChip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid $color-gray-200;
+  background: $color-white;
+  color: $color-gray-700;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $color-purple;
+    color: $color-purple;
+  }
+}
+
+.tagChipActive {
+  background: rgba(159, 15, 167, 0.1);
+  border-color: $color-purple;
+  color: $color-purple;
+}
+
+.langTab {
+  padding: 8px 18px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: $color-gray-500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+
+  &:hover {
+    color: $color-purple;
+  }
+}
+
+.langTabActive {
+  color: $color-purple;
+  border-bottom-color: $color-purple;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .page {
+    padding: px($spacing-md) px($spacing-sm);
+  }
+
+  .header {
+    align-items: flex-start;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .taskFooter {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .taskActions {
+    flex-wrap: wrap;
+  }
+
+  .formRow {
+    flex-direction: column;
+  }
+
+  .langTabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sectionHeader,
+  .testCaseHeader,
+  .constraintHeader {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: px($spacing-sm);
+  }
+
+  .container {
+    gap: px($spacing-md);
+  }
+
+  .header {
+    flex-direction: column;
+    gap: px($spacing-md);
+
+    h1 {
+      font-size: 24px;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .headerActions {
+    flex-direction: column;
+    align-items: stretch;
+
+    > * {
+      width: 100%;
+      max-width: none;
+    }
+  }
+
+  .filters {
+    gap: px($spacing-xs);
+  }
+
+  .filterBtn {
+    flex: 1 1 calc(50% - #{px($spacing-xs) / 2});
+    min-width: 0;
+    text-align: center;
+  }
+
+  .taskCard {
+    padding: px($spacing-md);
+  }
+
+  .taskTitle,
+  .taskInfo {
+    overflow-wrap: anywhere;
+  }
+
+  .taskMeta,
+  .taskTags,
+  .taskActions,
+  .langChips,
+  .tagSelector {
+    gap: px($spacing-xs);
+  }
+
+  .taskActions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .editBtn,
+  .deleteBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .section {
+    padding: px($spacing-sm);
+  }
+
+  .sectionHeader {
+    align-items: stretch;
+
+    h3 {
+      overflow-wrap: anywhere;
+    }
+
+    > * {
+      width: 100%;
+      max-width: none;
+    }
+  }
+
+  .testCase,
+  .constraint {
+    padding: 8px;
+  }
+
+  .testCaseTitle {
+    overflow-wrap: anywhere;
+  }
+
+  .langChip,
+  .tagChip {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .langTab {
+    white-space: nowrap;
+    padding: 8px 14px;
+  }
+
+  .codeOutput {
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .emptyText {
+    padding: 24px 0;
+  }
+}

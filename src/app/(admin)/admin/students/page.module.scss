@@ -1,0 +1,335 @@
+@use '../../../styles/variables.scss' as *;
+
+.container {
+  padding: px($spacing-lg);
+  max-width: px($container-md);
+  margin: 0 auto;
+}
+
+.title {
+  font-size: px($font-lg);
+  font-weight: 600;
+  margin-bottom: px($spacing-lg);
+  color: $color-dark;
+}
+.searchForm__button {
+
+  background-color: #9f0fa7;;
+}
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: px($font-sx);
+  color: $color-gray-600;
+}
+
+.error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: px($font-sx);
+  color: $color-error;
+}
+
+.searchForm {
+  display: flex;
+  gap: px($spacing-md);
+  margin-bottom: px($spacing-lg);
+  max-width: 600px;
+
+  &__input {
+    flex: 1;
+    padding: px($spacing-md);
+    border: 1px solid $color-gray-300;
+    border-radius: px($radius-medium);
+    font-size: px($font-xs);
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: $color-info;
+    }
+
+    &::placeholder {
+      color: $color-gray-400;
+    }
+  }
+
+  &__button {
+    padding: px($spacing-md) px($spacing-xl);
+    background-color: #9F0FA7;
+    color: $color-white;
+    border: none;
+    border-radius: px($radius-medium);
+    font-size: px($font-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: darken($color-green, 10%);
+    }
+
+    &:disabled {
+      background-color: $color-gray;
+      cursor: not-allowed;
+    }
+  }
+
+  &__clear {
+    padding: px($spacing-md) px($spacing-md);
+    background-color: $color-grayLight;
+    color: $color-gray-600;
+    border: none;
+    border-radius: px($radius-medium);
+    font-size: px($font-sx);
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: $color-gray;
+    }
+  }
+}
+
+.tableWrapper {
+  background: $color-white;
+  border-radius: px($radius-large);
+  box-shadow: 0 2px 8px rgba($color-black, 0.08);
+  overflow: hidden;
+  margin-bottom: px($spacing-lg);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background-color: $color-gray-50;
+    border-bottom: 2px solid $color-gray-200;
+
+    tr {
+      th {
+        padding: px($spacing-md);
+        text-align: left;
+        font-size: px($font-xs);
+        font-weight: 600;
+        color: $color-gray-600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid $color-gray-100;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: $color-gray-50;
+      }
+
+      td {
+        padding: px($spacing-md);
+        font-size: px($font-xs);
+        color: $color-gray-800;
+      }
+
+      .id {
+        font-family: $font-secondary;
+        font-size: 13px;
+        color: $color-gray-600;
+      }
+    }
+  }
+
+  .empty {
+    text-align: center;
+    padding: px($spacing-xxl) !important;
+    color: $color-gray-400;
+    font-size: px($font-sx);
+  }
+}
+
+.status {
+  display: inline-block;
+  padding: px($spacing-xs) px($spacing-sm);
+  border-radius: px($radius-large);
+  font-size: px($border-radius-sm);
+  font-weight: 500;
+
+  &_active {
+    background-color: rgba($color-success, 0.15);
+    color: $color-success;
+  }
+
+  &_inactive {
+    background-color: rgba($color-error, 0.15);
+    color: $color-error;
+  }
+}
+
+.clickableRow {
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba($color-info, 0.08) !important;
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: px($spacing-md) 0;
+}
+
+.total {
+  font-size: px($font-xs);
+  color: $color-gray-600;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: px($spacing-md);
+
+  &__button {
+    padding: px($spacing-sm) px($spacing-lg);
+    background-color: $color-green;
+    color: $color-white;
+    border: none;
+    border-radius: px($radius-medium);
+    font-size: px($font-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover:not(:disabled) {
+      background-color: darken($color-green, 10%);
+    }
+
+    &:disabled {
+      background-color: $color-gray-200;
+      color: $color-gray-400;
+      cursor: not-allowed;
+    }
+  }
+
+  &__info {
+    font-size: px($font-xs);
+    color: $color-gray-600;
+    min-width: 120px;
+    text-align: center;
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .container {
+    padding: px($spacing-md);
+  }
+
+  .title {
+    font-size: px($font-md);
+  }
+
+  .searchForm {
+    flex-direction: column;
+    max-width: 100%;
+
+    &__button,
+    &__clear {
+      width: 100%;
+    }
+  }
+
+  .tableWrapper {
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .table {
+    min-width: 0;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: flex;
+      flex-direction: column;
+      gap: px($spacing-md);
+
+      tr {
+        display: flex;
+        flex-direction: column;
+        gap: px($spacing-sm);
+        padding: px($spacing-md);
+        border: 1px solid $color-gray-200;
+        border-radius: px($radius-large);
+        background: $color-white;
+        box-shadow: 0 2px 8px rgba($color-black, 0.06);
+
+        td {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: px($spacing-md);
+          padding: 0;
+          font-size: px($font-xs);
+          border: none;
+          overflow-wrap: anywhere;
+
+          &::before {
+            content: attr(data-label);
+            flex: 0 0 92px;
+            color: $color-gray-600;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
+        }
+      }
+    }
+
+    .empty {
+      display: block;
+      text-align: center;
+      padding: px($spacing-xl) !important;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+
+  .footer {
+    flex-direction: column;
+    gap: px($spacing-md);
+    align-items: stretch;
+  }
+
+  .total {
+    text-align: center;
+  }
+
+  .pagination {
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    &__button {
+      flex: 1 1 140px;
+    }
+
+    &__info {
+      order: -1;
+      width: 100%;
+    }
+  }
+}

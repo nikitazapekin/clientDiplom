@@ -1,0 +1,458 @@
+.courseMapView {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.header h1 {
+  margin: 0;
+  color: #333;
+}
+
+.breakpointIndicator {
+  background: #4dabf7;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.mapContainerWrapper {
+  width: 100%;
+  overflow: auto;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: #f8f9fa;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  min-height: 500px;
+}
+
+.mapContainer {
+  position: relative;
+}
+
+.mapBackground {
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.element {
+  position: absolute;
+  cursor: default;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.element:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+  z-index: 10;
+}
+ 
+.lesson {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+}
+
+.lesson.active {
+  cursor: pointer;
+}
+
+.lesson.active:hover {
+  box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.5);
+}
+
+.lessonCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #4dabf7;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.lesson.active .lessonCircle {
+  background: #339af0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.starsArc {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 5px;
+}
+
+.star {
+  width: 12px;
+  height: 12px;
+  background: #ddd;
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+}
+
+.star.filled {
+  background: #ffd700;
+}
+
+.lessonTitle {
+  font-size: 12px;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333;
+  font-weight: 500;
+}
+ 
+.checkpoint {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  cursor: pointer;
+}
+
+.checkpoint:hover {
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.5);
+}
+
+.checkpointElement {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  position: relative;
+  margin-bottom: 5px;
+}
+
+.checkpointInner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+}
+
+.checkpointTitle {
+  font-size: 12px;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333;
+  font-weight: 500;
+}
+ 
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.elementImage {
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.mapInfo {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  font-size: 14px;
+  color: #495057;
+}
+
+.mapInfo p {
+  margin: 5px 0;
+}
+ 
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #4dabf7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+ 
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+  text-align: center;
+  padding: 20px;
+}
+
+.errorContainer h2 {
+  color: #ff6b6b;
+  margin-bottom: 15px;
+}
+
+.errorContainer p {
+  color: #6c757d;
+  margin-bottom: 10px;
+}
+ 
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.closeButton {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6c757d;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: #f8f9fa;
+  color: #495057;
+}
+
+.modal h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+.starsDisplay {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.modalStar {
+  font-size: 32px;
+  color: #ddd;
+}
+
+.modalStar.filled {
+  color: #ffd700;
+}
+
+.modalStatus {
+  text-align: center;
+  font-size: 16px;
+  color: #495057;
+  margin-bottom: 25px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.checkpointContent {
+  text-align: center;
+  margin: 25px 0;
+}
+
+.checkpointIcon {
+  width: 60px;
+  height: 60px;
+  background: #ff6b6b;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkpointInnerIcon {
+  width: 30px;
+  height: 30px;
+  background: white;
+  border-radius: 50%;
+}
+
+.checkpointContent p {
+  color: #6c757d;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.modalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.actionButton {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 140px;
+}
+
+.startButton {
+  background: #4dabf7;
+  color: white;
+}
+
+.startButton:hover {
+  background: #339af0;
+}
+
+.continueButton {
+  background: #40c057;
+  color: white;
+}
+
+.continueButton:hover {
+  background: #2f9e44;
+}
+
+.restartButton {
+  background: #ffa94d;
+  color: white;
+}
+
+.restartButton:hover {
+  background: #ff922b;
+}
+
+.cancelButton {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.cancelButton:hover {
+  background: #e9ecef;
+}
+ 
+@media (max-width: 768px) {
+  .courseMapView {
+    padding: 10px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .breakpointIndicator {
+    align-self: flex-start;
+  }
+  
+  .modal {
+    width: 95%;
+    padding: 20px;
+  }
+  
+  .actionButton {
+    min-width: 120px;
+    padding: 10px 16px;
+  }
+}

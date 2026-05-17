@@ -1,0 +1,74 @@
+ 
+$color-white: #ffffff;
+$color-black: #000000;
+$color-green: #379c07;
+$color-orange: #e29f22;
+$color-grayLight:  #f0f0f0;
+$color-gray: #d8d8d8;
+$color-purple: #9f0fa7;
+$color-white: #fff;
+$color-darkLight: #303027;
+$color-dark: #222121;
+$color-red: #d80909;
+ 
+
+$container-sm: 1280;
+$container-md: 1400;
+$container-xs: 700;
+
+ 
+$font-xs: 14;
+$font-sx: 20;
+$font-md: 24;
+$font-lg: 32;
+
+$radius-small: 4;
+$radius-medium: 8;
+$radius-large: 16;
+$radius-xlarge: 24;
+$radius-circle: 9999;
+
+$spacing-xs: 4;
+$spacing-sm: 8;
+$spacing-md: 16;
+$spacing-lg: 24;
+$spacing-xl: 32;
+$spacing-xxl: 48;
+$spacing-bg: 60;
+$spacing-vg: 80;
+
+@function px($value) {
+  @return #{$value}px;
+}
+
+$color-gray-50: #f9fafb;
+$color-gray-100: #f3f4f6;
+$color-gray-200: #e5e7eb;
+$color-gray-300: #d1d5db;
+$color-gray-400: #9ca3af;
+$color-gray-500: #6b7280;
+$color-gray-600: #4b5563;
+$color-gray-700: #374151;
+$color-gray-800: #1f2937;
+$color-gray-900: #111827;
+ 
+$color-success: #10b981;
+$color-warning: #f59e0b;
+$color-error: #ef4444;
+$color-info: #3b82f6;
+ 
+$font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-secondary: 'SF Mono', 'Roboto Mono', monospace;
+ 
+ $breakpoint-xs: 480px;
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+$breakpoint-2xl: 1536px;
+ 
+$border-radius-sm: 0.25rem;
+$border-radius-md: 0.5rem;
+$border-radius-lg: 1rem;
+$border-radius-full: 9999px;
+ 

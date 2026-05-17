@@ -1,0 +1,228 @@
+// index.module.scss
+.container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  background: #0D1117;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #30363D;
+  min-height: 200px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &.focused {
+    border-color: #FF79C6;
+    box-shadow: 0 0 0 2px rgba(255, 121, 198, 0.2);
+  }
+}
+
+.editorContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.editorScroll {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
+  background: #0D1117;
+  pointer-events: none;
+}
+
+.editor {
+  position: relative;
+  min-width: 100%;
+  width: max-content;
+  white-space: pre;
+  padding: 8px;
+}
+
+.lineContainer {
+  display: flex;
+  min-height: 20px;
+  white-space: nowrap;
+  width: max-content;
+  min-width: 100%;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+.lineNumber {
+  display: inline-block;
+  width: 40px;
+  color: #6E7681;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: right;
+  padding-right: 8px;
+  user-select: none;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.lineContent {
+  flex: 0 0 auto;
+  min-height: 20px;
+  white-space: pre;
+  font-family: inherit;
+  font-size: 14px;
+  color: #E6EDF3;
+  position: relative;
+  display: block;
+}
+
+.cursor {
+  position: absolute;
+  width: 2px;
+  height: 18px;
+  background: #E6EDF3;
+  animation: blink 1s infinite;
+  z-index: 3;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.hiddenTextarea {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 8px 8px 8px 48px;
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 20px;
+  border: none;
+  resize: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  overflow: auto;
+  white-space: pre;
+  word-wrap: normal;
+  -webkit-text-fill-color: transparent;
+  z-index: 2;
+  
+  &::selection {
+    background: rgba(255, 121, 198, 0.3);
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+.measureText {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: pre;
+}
+
+.autocompleteContainer {
+  position: absolute;
+  bottom: 8px;
+  left: 48px;
+  right: 8px;
+  max-height: 200px;
+  background: #1F2937;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.suggestionItem {
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #374151;
+  color: #E6EDF3;
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #2D3748;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.suggestionItemSelected {
+  background: #2D3748;
+  color: #FF79C6;
+}
+
+.runButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: #2ea043;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border: 1px solid #3fb950;
+
+  &:hover:not(:disabled) {
+    background: #3fb950;
+    transform: scale(1.05);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.runIcon {
+  width: 0;
+  height: 0;
+  margin-left: 2px;
+  border-style: solid;
+  border-width: 6px 0 6px 10px;
+  border-color: transparent transparent transparent currentColor;
+}
+
+.runLoading {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

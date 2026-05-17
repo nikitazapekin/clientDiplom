@@ -1,0 +1,510 @@
+@use "../../../styles/variables.scss" as *;
+@use "../../../styles/mixins.scss" as *;
+
+.page {
+  width: 100%;
+  min-height: 100vh;
+  background: $color-gray-50;
+}
+
+.loadingText {
+  text-align: center;
+  padding: 80px 0;
+  color: $color-gray-500;
+  font-size: 16px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: calc(100vh - 70px);
+
+  @media (max-width: $breakpoint-lg) {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+.leftPanel {
+  padding: px($spacing-lg);
+  overflow-y: auto;
+  border-right: 1px solid $color-gray-200;
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-md);
+}
+
+.rightPanel {
+  padding: px($spacing-lg);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-md);
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: $color-purple;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  text-align: left;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.taskInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.taskTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: $color-gray-900;
+  margin: 0;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.taskTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.taskTag {
+  font-size: 12px;
+  color: $color-gray-700;
+  background: $color-gray-100;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.xpBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.langTag {
+  font-size: 13px;
+  color: $color-gray-500;
+  background: $color-gray-100;
+  padding: 3px 10px;
+  border-radius: 8px;
+}
+
+.authorTag {
+  font-size: 12px;
+  color: $color-gray-400;
+}
+
+.description {
+  background: $color-white;
+  border-radius: 12px;
+  padding: px($spacing-md);
+  border: 1px solid $color-gray-200;
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: $color-gray-800;
+    margin: 0 0 8px;
+  }
+
+  p {
+    font-size: 14px;
+    color: $color-gray-600;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+}
+
+.constraintsBox {
+  background: $color-white;
+  border-radius: 12px;
+  padding: px($spacing-md);
+  border: 1px solid $color-gray-200;
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: $color-gray-800;
+    margin: 0 0 8px;
+  }
+}
+
+.constraintItem {
+  font-size: 13px;
+  color: $color-gray-700;
+  margin-bottom: 4px;
+}
+
+.examplesBox {
+  background: $color-white;
+  border-radius: 12px;
+  padding: px($spacing-md);
+  border: 1px solid $color-gray-200;
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: $color-gray-800;
+    margin: 0 0 12px;
+  }
+}
+
+.example {
+  background: $color-gray-50;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: $color-gray-700;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  code {
+    font-family: $font-secondary;
+    background: $color-gray-200;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+}
+
+.moreTests {
+  font-size: 12px;
+  color: $color-gray-400;
+  font-style: italic;
+  margin: 4px 0 0;
+}
+
+.moreResults {
+  font-size: 12px;
+  color: $color-gray-400;
+  margin: 8px 0 0;
+}
+
+.codeBlock {
+  background: $color-gray-900;
+  color: $color-white;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: $font-secondary;
+  font-size: 12px;
+  overflow-x: auto;
+  margin: 8px 0 12px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.levelBox {
+  background: $color-white;
+  border-radius: 12px;
+  padding: 12px px($spacing-md);
+  border: 1px solid $color-gray-200;
+}
+
+.levelRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: $color-gray-600;
+  margin-bottom: 6px;
+}
+
+.xpBar {
+  height: 6px;
+  background: $color-gray-200;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.xpFill {
+  height: 100%;
+  background: $color-purple;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.editorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.langSelector {
+  display: flex;
+  gap: 0;
+  border: 1px solid $color-gray-200;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.langBtn {
+  padding: 8px 16px;
+  border: none;
+  background: $color-white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: $color-gray-600;
+  border-right: 1px solid $color-gray-200;
+  transition: all 0.15s;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &:hover {
+    background: $color-gray-50;
+    color: $color-purple;
+  }
+}
+
+.langBtnActive {
+  background: $color-purple;
+  color: $color-white;
+
+  &:hover {
+    background: $color-purple;
+    color: $color-white;
+  }
+}
+
+.editorActions {
+  display: flex;
+  gap: 8px;
+}
+
+.editorWrap {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid $color-gray-200;
+}
+
+.consoleBox {
+  background: #1e1e1e;
+  border-radius: 10px;
+  padding: 14px;
+  color: #d4d4d4;
+  font-size: 13px;
+
+  strong {
+    color: #aaa;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: $font-secondary;
+  }
+}
+
+.resultsBox {
+  background: $color-white;
+  border-radius: 12px;
+  padding: px($spacing-md);
+  border: 1px solid $color-gray-200;
+}
+
+.resultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+}
+
+.resultsScore {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.xpGained {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: $color-white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.testResults {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.testResult {
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.testPassed {
+  background: #f0fdf4;
+}
+
+.testFailed {
+  background: #fef2f2;
+}
+
+.testResultHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.testResultDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: $color-gray-600;
+  font-family: $font-secondary;
+}
+
+
+  
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modalContent {
+  background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideUp 0.3s ease;
+}
+
+.modalIcon {
+  font-size: 4rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.modalTitle {
+  color: #fff;
+  font-size: 1.8rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  background: linear-gradient(45deg, #9F0FA7, #FF6B6B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.modalBody {
+  color: #e0e0e0;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.modalRewards {
+  background: rgba(159, 15, 167, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 1rem;
+  border: 1px solid rgba(159, 15, 167, 0.3);
+}
+
+.modalReward {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.5rem 0;
+  color: #fff;
+  
+  strong {
+    color: #9F0FA7;
+  }
+}
+
+.modalButton {
+  background: linear-gradient(45deg, #9F0FA7, #FF6B6B);
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 0.2s, box-shadow 0.2s;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(159, 15, 167, 0.4);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

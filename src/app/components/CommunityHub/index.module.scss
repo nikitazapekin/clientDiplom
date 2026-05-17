@@ -1,0 +1,348 @@
+@use "../../styles/mixins.scss" as *;
+@use "../../styles/variables.scss" as *;
+
+.page {
+  min-height: calc(100vh - #{px($spacing-vg)});
+  background: #f7f7f4;
+  padding: px($spacing-xl) px($spacing-md) px($spacing-vg);
+}
+
+.shell {
+  max-width: px($container-md);
+  margin: 0 auto;
+  @include flex-column;
+  gap: px($spacing-lg);
+}
+
+.hero,
+.panel,
+.card,
+.state {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(34, 33, 33, 0.08);
+  border-radius: px($radius-xlarge);
+  box-shadow: 0 20px 60px rgba(34, 33, 33, 0.08);
+}
+
+.hero {
+  display: block;
+  overflow: hidden;
+  padding: px($spacing-xl);
+}
+
+.heroBlock {
+  @include flex-column;
+  gap: px($spacing-md);
+  width: 100%;
+}
+
+.eyebrow {
+  color: $color-purple;
+  font-size: px($font-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  color: $color-dark;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 800;
+  line-height: 0.95;
+  margin: 0;
+  max-width: 100%;
+}
+
+.lead {
+  color: rgba(34, 33, 33, 0.72);
+  font-size: 1rem;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 100%;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-md);
+}
+
+.primaryButton,
+.secondaryButton,
+.ghostButton,
+.voteButton,
+.statusButton {
+  @include transition();
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.primaryButton,
+.secondaryButton,
+.ghostButton {
+  border-radius: px($radius-circle);
+  padding: px($spacing-md) px($spacing-lg);
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, $color-purple, #c131c9);
+  color: $color-white;
+  font-weight: 700;
+}
+
+.secondaryButton {
+  background: rgba(34, 33, 33, 0.08);
+  color: $color-dark;
+  font-weight: 700;
+}
+
+.ghostButton {
+  background: transparent;
+  border: 1px solid rgba(34, 33, 33, 0.14);
+  color: rgba(34, 33, 33, 0.8);
+}
+
+.primaryButton:hover,
+.secondaryButton:hover,
+.ghostButton:hover,
+.voteButton:hover,
+.statusButton:hover {
+  transform: translateY(-1px);
+}
+
+.panel {
+  padding: px($spacing-xl);
+}
+
+.panelHeader {
+  @include flex-between;
+  gap: px($spacing-md);
+  margin-bottom: px($spacing-lg);
+}
+
+.panelTitle {
+  color: $color-dark;
+  font-size: px($font-sx);
+  font-weight: 800;
+  margin: 0;
+}
+
+.panelText {
+  color: rgba(34, 33, 33, 0.64);
+  margin: px($spacing-sm) 0 0;
+}
+
+.fields {
+  display: grid;
+  gap: px($spacing-md);
+}
+
+.splitFields {
+  display: grid;
+  gap: px($spacing-md);
+
+  @include breakpoint-md {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.input,
+.textarea {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(34, 33, 33, 0.1);
+  border-radius: px($radius-large);
+  color: $color-dark;
+  font: inherit;
+  outline: none;
+  padding: px($spacing-md) px($spacing-lg);
+  width: 100%;
+}
+
+.textarea {
+  min-height: 168px;
+  resize: vertical;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: rgba(159, 15, 167, 0.42);
+  box-shadow: 0 0 0 4px rgba(159, 15, 167, 0.08);
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-md);
+}
+
+.hint,
+.message,
+.error {
+  font-size: px($font-xs);
+  margin: 0;
+}
+
+.hint,
+.message {
+  color: rgba(34, 33, 33, 0.6);
+}
+
+.error {
+  color: $color-red;
+}
+
+.filters {
+  display: grid;
+  gap: px($spacing-md);
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-sm);
+}
+
+.statusButton {
+  background: rgba(34, 33, 33, 0.06);
+  border-radius: px($radius-circle);
+  color: rgba(34, 33, 33, 0.72);
+  padding: px($spacing-sm) px($spacing-md);
+}
+
+.statusButtonActive {
+  background: $color-dark;
+  color: $color-white;
+}
+
+.state {
+  padding: px($spacing-xl);
+  text-align: center;
+}
+
+.list {
+  display: grid;
+  gap: px($spacing-lg);
+}
+
+.card {
+  padding: px($spacing-xl);
+}
+
+.cardTop {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-sm);
+  justify-content: space-between;
+}
+
+.cardDate {
+  color: rgba(34, 33, 33, 0.54);
+  font-size: px($font-xs);
+}
+
+.cardBadge {
+  background: rgba(159, 15, 167, 0.1);
+  border-radius: px($radius-circle);
+  color: $color-purple;
+  font-size: px($font-xs);
+  font-weight: 700;
+  padding: px($spacing-sm) px($spacing-md);
+}
+
+.cardTitle {
+  color: $color-dark;
+  font-size: clamp(1.3rem, 2.4vw, 1.8rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin: px($spacing-md) 0 px($spacing-sm);
+}
+
+.cardText {
+  color: rgba(34, 33, 33, 0.74);
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-sm);
+  margin-top: px($spacing-lg);
+}
+
+.tag {
+  background: rgba(55, 156, 7, 0.1);
+  border-radius: px($radius-circle);
+  color: $color-green;
+  font-size: px($font-xs);
+  font-weight: 700;
+  padding: px($spacing-sm) px($spacing-md);
+}
+
+.cardFooter {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-md);
+  justify-content: space-between;
+  margin-top: px($spacing-lg);
+}
+
+.author {
+  color: rgba(34, 33, 33, 0.72);
+  font-weight: 700;
+}
+
+.meta {
+  color: rgba(34, 33, 33, 0.52);
+}
+
+.voteRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-sm);
+}
+
+.voteButton {
+  align-items: center;
+  background: rgba(34, 33, 33, 0.05);
+  border-radius: px($radius-circle);
+  color: rgba(34, 33, 33, 0.82);
+  display: inline-flex;
+  gap: px($spacing-sm);
+  padding: px($spacing-sm) px($spacing-md);
+}
+
+.voteButtonActive {
+  background: rgba(159, 15, 167, 0.12);
+  color: $color-purple;
+}
+
+.voteIcon {
+  height: 18px;
+  width: 18px;
+}
+
+.voteIconRotated {
+  transform: rotate(180deg);
+}
+
+.statusPill {
+  border-radius: px($radius-circle);
+  font-size: px($font-xs);
+  font-weight: 700;
+  padding: px($spacing-sm) px($spacing-md);
+}
+
+.statusOpen {
+  background: #4caf50;
+  color: #fff;
+}
+
+.statusClosed {
+  background: #880000;
+  color: #fff;
+}

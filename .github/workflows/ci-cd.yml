@@ -1,0 +1,71 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ['**']  
+  pull_request:
+    types: [open]
+    branches: [develop]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x  
+          cache: 'yarn'
+          
+      - name: Install dependencies
+        run: yarn install  
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run code formatting
+        run: yarn format
+        
+      - name: Run lint
+        run: yarn lint
+      
+      - name: Build production
+        run: yarn build
+
+  deploy-on-merge:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x   
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest  
+      
+      - name: Deploy to Vercel
+        run: vercel --prod --yes --token ${{ secrets.VERCEL_TOKEN }}
+
+  deploy-on-push:
+    if: github.event_name == 'push'  
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x  
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest  
+      
+      - name: Deploy to Vercel
+        run: vercel --prod --yes --token ${{ secrets.VERCEL_TOKEN }}

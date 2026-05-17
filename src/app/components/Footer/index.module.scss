@@ -1,0 +1,26 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
+
+.footer {
+  width: 100%;
+  min-height: px($spacing-bg);
+  display: flex;
+  justify-content: space-between;
+  background-color: $color-dark;
+  
+  &__container {
+    max-width: px($container-md);
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: px($spacing-sm) 0;
+  }
+
+  &__copyright {
+    color: $color-white; 
+    text-align: center;
+    margin: 0 auto;
+  }
+}

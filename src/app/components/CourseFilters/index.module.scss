@@ -1,0 +1,187 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
+
+.courses {
+  width: 100%;
+
+  &__container {
+    width: 100%;
+    padding: px($spacing-xl);
+    border-radius: px($radius-large);
+    border: 1px solid $color-gray;
+    background-color: $color-white;
+  }
+&__count {
+  
+  display: flex;
+align-items: center;
+justify-content: center;
+column-gap: 10px;
+ 
+       //style={{ display: "flex", alignItems: "center", justifyContent: "center",  background: "red"}}
+}
+
+&__countLabel {
+ 
+  align-self: center;
+}
+  &__preview {
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-lg);
+    margin-bottom: px($spacing-lg);
+
+    @include breakpoint-lg {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+  }
+
+  &__copy {
+    max-width: 720px;
+    min-width: 0;
+  }
+
+  &__eyebrow {
+    margin: 0 0 px($spacing-sm);
+    display: inline-flex;
+    align-items: center;
+    padding: px($spacing-xs) px($spacing-md);
+    border-radius: px($radius-circle);
+    background-color: rgba($color-purple, 0.08);
+    color: $color-purple;
+    font-size: px($font-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    margin: 0;
+    color: $color-dark;
+    font-size: px($font-md);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  &__description {
+    margin: px($spacing-sm) 0 0;
+    max-width: 620px;
+    color: rgba($color-dark, 0.72);
+    font-size: px($font-xs);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: px($spacing-md);
+    align-items: center;
+    min-width: 0;
+  }
+
+  &__count {
+    min-width: 124px;
+    padding: px($spacing-md) px($spacing-lg);
+    border-radius: px($radius-large);
+    background-color: $color-grayLight;
+    border: 1px solid $color-gray;
+  }
+
+  &__countLabel {
+   /* display: block;
+    margin-bottom: 6px;
+    font-size: px(12);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba($color-dark, 0.64);
+
+
+    */
+
+
+        min-height: 52px;
+    border: none;
+    padding: 0 px($spacing-xl);
+    border-radius: px($radius-medium);
+    background-color: $color-purple;
+    color: $color-white;
+    font-size: px($font-xs);
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s ease;
+    
+  }
+
+  &__countValue {
+   /* display: block;
+    color: $color-dark;
+    font-size: 14px;
+    line-height: 1;
+     min-height: 52px;
+         font-size: px($font-xs);
+    font-weight: 700;
+    */
+
+     
+  }
+
+  &__create {
+    min-height: 52px;
+    border: none;
+    padding: 0 px($spacing-xl);
+    border-radius: px($radius-medium);
+    background-color: $color-purple;
+    color: $color-white;
+    font-size: px($font-xs);
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s ease;
+  }
+
+  &__create:hover {
+    opacity: 0.92;
+  }
+
+  &__create:focus-visible {
+    outline: 2px solid rgba($color-purple, 0.35);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 768px) {
+  .courses {
+    &__container {
+      padding: px($spacing-lg);
+    }
+
+    &__preview {
+      gap: px($spacing-md);
+      margin-bottom: px($spacing-md);
+    }
+
+    &__actions {
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    &__count,
+    &__create {
+      width: 100%;
+    }
+
+    &__count {
+      min-width: 0;
+      padding: px($spacing-sm) px($spacing-md);
+    }
+
+    &__create {
+      min-height: 48px;
+      padding: 0 px($spacing-md);
+    }
+  }
+}

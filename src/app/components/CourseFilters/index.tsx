@@ -1,0 +1,67 @@
+"use client";
+
+import SearchCourses from "../SearchCourses";
+
+import styles from "./index.module.scss";
+import type { FiltersProps } from "./types";
+
+const CourseFilters = ({
+  handleOpen,
+  title,
+  description,
+  eyebrow,
+  ctaLabel = "Создать курс",
+  showCreateButton = false,
+  totalCount,
+  searchPlaceholder,
+  sortOptions,
+  onSearchChange,
+  onSortChange,
+  filters,
+  onApplyFilters,
+  onResetFilters,
+}: FiltersProps) => {
+  return (
+    <section className={styles.courses}>
+      <div className={styles.courses__container}>
+        <div className={styles.courses__preview}>
+          <div className={styles.courses__copy}>
+            {eyebrow ? <p className={styles.courses__eyebrow}>{eyebrow}</p> : null}
+            <h2 className={styles.courses__title}>{title}</h2>
+            <p className={styles.courses__description}>{description}</p>
+          </div>
+
+          <div className={styles.courses__actions}>
+            {typeof totalCount === "number" ? (
+              <div className={styles.courses__count} 
+              
+              //style={{ display: "flex", alignItems: "center", justifyContent: "center",  background: "red"}}
+              >
+          
+                <p className={styles.courses__countValue}  > Найдено {totalCount}</p>
+              </div>
+            ) : null}
+
+            {showCreateButton && handleOpen ? (
+              <button className={styles.courses__create} type="button" onClick={handleOpen}>
+                {ctaLabel}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <SearchCourses
+          filters={filters}
+          onApplyFilters={onApplyFilters}
+          onSearchChange={onSearchChange}
+          onSortChange={onSortChange}
+          onResetFilters={onResetFilters}
+          placeholder={searchPlaceholder}
+          sortOptions={sortOptions}
+        />
+      </div>
+    </section>
+  );
+};
+
+export default CourseFilters;

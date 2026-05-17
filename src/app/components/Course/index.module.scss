@@ -1,0 +1,215 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
+
+.course {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $color-gray;
+  border-radius: px($radius-large);
+  overflow: hidden;
+  background-color: $color-white;
+  cursor: pointer;
+
+  @include breakpoint-md {
+    display: grid;
+    grid-template-columns: 30% minmax(0, 1fr);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($color-purple, 0.35);
+    outline-offset: 3px;
+  }
+
+  &__media {
+    position: relative;
+    min-height: 220px;
+    background-color: $color-grayLight;
+    border-bottom: 1px solid $color-gray;
+    overflow: hidden;
+
+    @include breakpoint-md {
+      min-height: 100%;
+      border-right: 1px solid $color-gray;
+      border-bottom: none;
+    }
+  }
+
+  &__image,
+  &__fallback {
+    width: 100%;
+    height: 100%;
+  }
+
+  &__image {
+    object-fit: cover;
+  }
+
+  &__fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba($color-purple, 0.06);
+  }
+
+  &__initial {
+    color: $color-purple;
+    font-size: px(72);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-md);
+    padding: px($spacing-lg);
+    min-width: 0;
+  }
+
+  &__head {
+    display: flex;
+    flex-direction: column;
+    gap: px($spacing-md);
+
+    @include breakpoint-lg {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+  }
+
+  &__main {
+    min-width: 0;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: px($spacing-xs);
+    margin-bottom: px($spacing-sm);
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 px($spacing-sm);
+    border: 1px solid $color-gray;
+    border-radius: px($radius-circle);
+    background-color: $color-grayLight;
+    color: rgba($color-dark, 0.72);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &__title {
+    margin: 0;
+    color: $color-dark;
+    font-size: px($font-md);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: px($spacing-sm) px($spacing-md);
+    border: 1px solid $color-gray;
+    border-radius: px($radius-medium);
+    color: $color-purple;
+    font-size: 13px;
+    font-weight: 700;
+    max-width: 100%;
+    align-self: flex-start;
+    white-space: normal;
+    text-align: center;
+  }
+
+  &__description {
+    margin: 0;
+    color: rgba($color-dark, 0.72);
+    font-size: px($font-xs);
+    line-height: 1.5;
+    @include text-multiline-truncate(2);
+  }
+
+  &__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: px($spacing-md);
+  }
+
+  &__stat {
+    min-width: 120px;
+  }
+
+  &__statLabel {
+    display: block;
+    margin-bottom: 4px;
+    color: rgba($color-dark, 0.56);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &__statValue {
+    display: block;
+    color: $color-dark;
+    font-size: px($font-md);
+    line-height: 1;
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background-color: #fafafa;
+    color: rgba($color-dark, 0.72);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .course {
+    &__media {
+      min-height: 180px;
+    }
+
+    &__initial {
+      font-size: px(56);
+    }
+
+    &__body {
+      gap: px($spacing-sm);
+      padding: px($spacing-md);
+    }
+
+    &__head {
+      gap: px($spacing-sm);
+    }
+
+    &__action {
+      width: 100%;
+      align-self: stretch;
+    }
+
+    &__stats {
+      gap: px($spacing-sm);
+    }
+
+    &__stat {
+      min-width: calc(50% - #{px($spacing-sm) / 2});
+      flex: 1 1 calc(50% - #{px($spacing-sm) / 2});
+    }
+  }
+}

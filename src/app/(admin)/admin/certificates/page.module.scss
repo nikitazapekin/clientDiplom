@@ -1,0 +1,480 @@
+@use '../../../styles/variables.scss' as *;
+
+.container {
+  padding: px($spacing-lg);
+  max-width: px($container-md);
+  margin: 0 auto;
+}
+
+.title {
+  font-size: px($font-lg);
+  font-weight: 600;
+  margin-bottom: px($spacing-lg);
+  color: $color-dark;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: px($font-sx);
+  color: $color-gray-600;
+}
+
+.error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: px($font-sx);
+  color: $color-error;
+}
+
+.searchForm {
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-md);
+  margin-bottom: px($spacing-lg);
+}
+
+.searchRow {
+  display: flex;
+  gap: px($spacing-md);
+  flex-wrap: wrap;
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
+  }
+}
+
+.searchForm__input {
+  flex: 1;
+  min-width: 150px;
+  padding: px($spacing-md);
+  border: 1px solid $color-gray-300;
+  border-radius: px($radius-medium);
+  font-size: px($font-xs);
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: $color-info;
+  }
+
+  &::placeholder {
+    color: $color-gray-400;
+  }
+}
+
+.searchForm__button {
+  padding: px($spacing-md) px($spacing-xl);
+  background-color: #9f0fa7;
+  color: $color-white;
+  border: none;
+  border-radius: px($radius-medium);
+  font-size: px($font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: darken($color-green, 10%);
+  }
+
+  &:disabled {
+    background-color: $color-gray;
+    cursor: not-allowed;
+  }
+}
+
+.searchForm__clear {
+  padding: px($spacing-md) px($spacing-md);
+  background-color: $color-grayLight;
+  color: $color-gray-600;
+  border: none;
+  border-radius: px($radius-medium);
+  font-size: px($font-sx);
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: $color-gray;
+  }
+}
+
+.tableWrapper {
+  background: $color-white;
+  border-radius: px($radius-large);
+  box-shadow: 0 2px 8px rgba($color-black, 0.08);
+  overflow: hidden;
+  margin-bottom: px($spacing-lg);
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+
+  thead {
+    background-color: $color-gray-50;
+    border-bottom: 2px solid $color-gray-200;
+
+    tr {
+      th {
+        padding: px($spacing-md);
+        text-align: left;
+        font-size: px($font-xs);
+        font-weight: 600;
+        color: $color-gray-600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid $color-gray-100;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: $color-gray-50;
+      }
+
+      td {
+        padding: px($spacing-md);
+        font-size: px($font-xs);
+        color: $color-gray-800;
+        vertical-align: middle;
+      }
+
+      .id {
+        font-family: $font-secondary;
+        font-size: 13px;
+        color: $color-gray-600;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .mono {
+        font-family: $font-secondary;
+        font-size: 12px;
+        color: $color-gray-600;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .url {
+        a {
+          color: $color-info;
+          text-decoration: none;
+          
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+  }
+
+  .empty {
+    text-align: center;
+    padding: px($spacing-xxl) !important;
+    color: $color-gray-400;
+    font-size: px($font-sx);
+  }
+}
+
+.status {
+  display: inline-block;
+  padding: px($spacing-xs) px($spacing-sm);
+  border-radius: px($radius-large);
+  font-size: px($border-radius-sm);
+  font-weight: 500;
+
+  &_viewed {
+    background-color: rgba($color-success, 0.15);
+    color: $color-success;
+  }
+
+  &_notViewed {
+    background-color: rgba($color-warning, 0.15);
+    color: $color-warning;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: px($spacing-sm);
+  white-space: nowrap;
+}
+
+.editButton,
+.deleteButton,
+.saveButton,
+.cancelButton,
+.confirmDeleteButton {
+  padding: px($spacing-xs) px($spacing-sm);
+  border: none;
+  border-radius: px($radius-medium);
+  font-size: px($border-radius-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.editButton {
+  background-color: #9F0FA7;
+  color: $color-white;
+
+  &:hover {
+    background-color: darken($color-info, 10%);
+  }
+}
+
+.deleteButton {
+  background-color: $color-error;
+  color: $color-white;
+
+  &:hover {
+    background-color: darken($color-error, 10%);
+  }
+}
+
+.saveButton {
+  background-color: $color-success;
+  color: $color-white;
+
+  &:hover {
+    background-color: darken($color-success, 10%);
+  }
+}
+
+.cancelButton {
+  background-color: $color-gray-400;
+  color: $color-white;
+
+  &:hover {
+    background-color: $color-gray-500;
+  }
+}
+
+.confirmDeleteButton {
+  background-color: $color-error;
+  color: $color-white;
+
+  &:hover {
+    background-color: darken($color-error, 10%);
+  }
+}
+
+.editInput {
+  padding: px($spacing-xs) px($spacing-sm);
+  border: 1px solid $color-info;
+  border-radius: px($radius-medium);
+  font-size: px($border-radius-sm);
+  outline: none;
+  width: 100%;
+  min-width: 80px;
+
+  &:focus {
+    border-color: darken($color-info, 10%);
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: px($spacing-md) 0;
+  flex-wrap: wrap;
+  gap: px($spacing-md);
+}
+
+.total {
+  font-size: px($font-xs);
+  color: $color-gray-600;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: px($spacing-md);
+
+  &__button {
+    padding: px($spacing-sm) px($spacing-lg);
+    background-color: $color-green;
+    color: $color-white;
+    border: none;
+    border-radius: px($radius-medium);
+    font-size: px($font-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover:not(:disabled) {
+      background-color: darken($color-green, 10%);
+    }
+
+    &:disabled {
+      background-color: $color-gray-200;
+      color: $color-gray-400;
+      cursor: not-allowed;
+    }
+  }
+
+  &__info {
+    font-size: px($font-xs);
+    color: $color-gray-600;
+    min-width: 120px;
+    text-align: center;
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .container {
+    padding: px($spacing-md);
+  }
+
+  .title {
+    font-size: px($font-md);
+  }
+
+  .searchForm {
+    flex-direction: column;
+  }
+
+  .searchRow {
+    flex-direction: column;
+  }
+
+  .searchForm__input,
+  .searchForm__button,
+  .searchForm__clear {
+    width: 100%;
+  }
+
+  .tableWrapper {
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .table {
+    min-width: 0;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: flex;
+      flex-direction: column;
+      gap: px($spacing-md);
+
+      tr {
+        display: flex;
+        flex-direction: column;
+        gap: px($spacing-sm);
+        padding: px($spacing-md);
+        border: 1px solid $color-gray-200;
+        border-radius: px($radius-large);
+        background: $color-white;
+        box-shadow: 0 2px 8px rgba($color-black, 0.06);
+
+        td {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: px($spacing-md);
+          padding: 0;
+          border: none;
+          overflow-wrap: anywhere;
+
+          &::before {
+            content: attr(data-label);
+            flex: 0 0 92px;
+            color: $color-gray-600;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
+        }
+
+        .id {
+          max-width: none;
+          white-space: normal;
+        }
+
+        .url {
+          a {
+            overflow-wrap: anywhere;
+          }
+        }
+      }
+    }
+
+    .empty {
+      display: block;
+      text-align: center;
+      padding: px($spacing-xl) !important;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: px($spacing-xs);
+
+    &::before {
+      align-self: flex-start;
+    }
+  }
+
+  .editButton,
+  .deleteButton,
+  .saveButton,
+  .cancelButton,
+  .confirmDeleteButton {
+    width: 100%;
+  }
+
+  .editInput {
+    min-width: 0;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .total {
+    text-align: center;
+  }
+
+  .pagination {
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    &__button {
+      flex: 1 1 140px;
+    }
+
+    &__info {
+      order: -1;
+      width: 100%;
+    }
+  }
+}
