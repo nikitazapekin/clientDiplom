@@ -99,8 +99,8 @@ const Course = ({ item, isAdmin }: CourseProps) => {
   const visibleTags = item.tags.slice(0, 2);
   const hiddenTagsCount = Math.max(item.tags.length - visibleTags.length, 0);
   const courseInitial = item.title.trim().charAt(0).toUpperCase() || "C";
-  const ctaLabel = isAdmin ? "Редактировать курс" : "Перейти к обучению";
   const statusLabel = isAdmin && item.status ? statusLabels[item.status] : null;
+  const subscriptionLabel = !isAdmin && item.isSubscribed ? "Вы подписаны" : null;
 
   return (
     <article
@@ -130,6 +130,11 @@ const Course = ({ item, isAdmin }: CourseProps) => {
         <div className={styles.course__head}>
           <div className={styles.course__main}>
             <div className={styles.course__meta}>
+              {subscriptionLabel ? (
+                <span className={`${styles.course__badge} ${styles.course__badgeSubscribed}`}>
+                  {subscriptionLabel}
+                </span>
+              ) : null}
               {item.type ? <span className={styles.course__badge}>{item.type}</span> : null}
               {item.language ? <span className={styles.course__badge}>{item.language}</span> : null}
               {statusLabel ? <span className={styles.course__badge}>{statusLabel}</span> : null}

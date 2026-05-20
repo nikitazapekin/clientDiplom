@@ -13,5 +13,6 @@ export interface CourseItem {
     status?: CourseStatus;
     createdAt?: string;
     updatedAt?: string;
+    isSubscribed?: boolean;
   };
 }

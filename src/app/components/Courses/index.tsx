@@ -8,6 +8,7 @@ import CourseFilters from "../CourseFilters";
 import styles from "./index.module.scss";
 
 import type { CourseFilterValues } from "@/app/components/CourseFilters/types";
+import { AuthService } from "@/app/http/auth";
 import { CourseService } from "@/app/http/courses";
 import type { CourseListResponse, CourseStatsResponse } from "@/app/http/types/course";
 
@@ -67,6 +68,43 @@ const Courses = ({ initialCourses }: { initialCourses: CourseListResponse }) => 
   const [sortOption, setSortOption] = useState(sortOptions[0].value);
   const [filters, setFilters] = useState<CourseFilterValues>(DEFAULT_FILTERS);
   const [courseStats, setCourseStats] = useState<Record<string, CourseStatsResponse | undefined>>({});
+  const [subscribedCourseIds, setSubscribedCourseIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadSubscribedCourses = async () => {
+      const { accessToken, role } = AuthService.getCurrentUser();
+
+      if (!accessToken || role !== "client") {
+        if (isActive) {
+          setSubscribedCourseIds(new Set());
+        }
+
+        return;
+      }
+
+      try {
+        const subscribedCourses = await CourseService.getMyCourses();
+
+        if (isActive) {
+          setSubscribedCourseIds(new Set(subscribedCourses.map((course) => course.id)));
+        }
+      } catch (error) {
+        console.error("Failed to load subscribed courses:", error);
+
+        if (isActive) {
+          setSubscribedCourseIds(new Set());
+        }
+      }
+    };
+
+    void loadSubscribedCourses();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const courses = useMemo(
     () =>
@@ -81,8 +119,9 @@ const Courses = ({ initialCourses }: { initialCourses: CourseListResponse }) => 
         status: course.status,
         createdAt: course.createdAt,
         updatedAt: course.updatedAt,
+        isSubscribed: subscribedCourseIds.has(course.id),
       })),
-    [initialCourses?.courses],
+    [initialCourses?.courses, subscribedCourseIds],
   );
 
   useEffect(() => {

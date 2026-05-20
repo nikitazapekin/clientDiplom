@@ -1,5 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+
+  // 1. ОТКЛЮЧАЕТ почти все логи разработки (запросы, fetch и т.д.)
+  // Поддерживается с Next.js 15+
+  logging: false,
+
+// 2. УДАЛЯЕТ ваш собственный console.log (опционально)
+  compiler: {
+    removeConsole: {
+      // Оставляем 'error' и 'warn', чтобы видеть важные ошибки
+      exclude: ['error', 'warn'],
+    },
+  },
+
+
   images: {
     remotePatterns: [
       {

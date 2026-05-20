@@ -1316,7 +1316,7 @@ export function PreviewCodeTask({
         <div className={styles.constraintResults}>
           <div className={styles.resultsHeader}>
             <div>
-              <span className={styles.resultEyebrow}>Анализ кода</span>
+           
               <h4>Проверка ограничений</h4>
             </div>
             <span className={styles.summaryPill}>
