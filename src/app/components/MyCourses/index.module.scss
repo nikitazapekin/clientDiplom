@@ -1,0 +1,119 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
+
+.page {
+  width: 100%;
+  min-height: calc(100vh - #{px($spacing-bg * 2)});
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: px($spacing-xl) px($spacing-md) px($spacing-vg);
+  background-color: $color-grayLight;
+}
+
+.container {
+  max-width: px($container-md);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-xl);
+}
+
+.title {
+  margin: 0;
+  font-size: px(28);
+  font-weight: 700;
+  color: $color-dark;
+}
+
+.grid {
+  display: grid;
+  gap: px($spacing-lg);
+  grid-template-columns: repeat(3, minmax(320px, 1fr));
+}
+
+.empty {
+  padding: px($spacing-bg);
+  border-radius: px($radius-large);
+  text-align: center;
+  background-color: $color-white;
+  border: 1px solid $color-gray;
+}
+
+.emptyTitle {
+  margin: 0 0 px($spacing-sm);
+  color: $color-dark;
+  font-size: px($font-md);
+  line-height: 1.2;
+}
+
+.emptyText {
+  margin: 0;
+  color: rgba($color-dark, 0.72);
+  font-size: px($font-xs);
+  line-height: 1.6;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 4px solid $color-gray-200;
+  border-top: 4px solid $color-purple;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.errorText {
+  font-size: px($font-sx);
+  color: $color-error;
+  text-align: center;
+}
+
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: px($spacing-md) px($spacing-sm) px($spacing-xl);
+  }
+
+  .container {
+    gap: px($spacing-md);
+  }
+
+  .title {
+    font-size: px($font-md);
+  }
+
+  .grid {
+    gap: px($spacing-md);
+    grid-template-columns: 1fr;
+  }
+
+  .empty {
+    padding: px($spacing-xl) px($spacing-md);
+  }
+}

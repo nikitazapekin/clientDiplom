@@ -34,6 +34,20 @@ export interface CourseResponse {
   publishedAt?: string;
 }
 
+export interface StudentCourseResponse {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  language: string;
+  tags: string[];
+  logo: string;
+  status: CourseStatus;
+  subscribedAt: string;
+  publishedAt?: string | null;
+  isSubscribed: boolean;
+}
+
 export interface CourseStatsResponse {
   lessonCount: number;
   studentCount: number;

@@ -140,8 +140,8 @@ const ForumHub = () => {
       <div className={styles.shell}>
         <section className={styles.hero}>
           <div className={styles.heroBlock}>
-            <span className={styles.eyebrow}>Форум</span>
-            <h1 className={styles.title}>Вопросы по курсам, задачам и коду.</h1>
+         
+            <h1 className={styles.title}>Вопросы по курсам, задачам и коду</h1>
             <p className={styles.lead}>
               Создавай темы, фильтруй обсуждения и поднимай полезные вопросы реакциями сообщества.
             </p>

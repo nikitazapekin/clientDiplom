@@ -4,6 +4,7 @@ import type {
   CourseStatsResponse,
   CourseStatus,
   CreateCourseRequest,
+  StudentCourseResponse,
   UpdateCourseRequest,
 } from "./types/course";
 import $api from "./api";
@@ -146,14 +147,9 @@ export class CourseService {
     }
   }
 
-  static async getMyCourses(): Promise<CourseResponse[]> {
+  static async getMyCourses(): Promise<StudentCourseResponse[]> {
     try {
-      const token = localStorage.getItem("accessToken");
-      const response = await $api.get("/courses/my-courses", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await $api.get("/course-subscriptions/my-courses");
 
       return response.data;
     } catch (error: any) {

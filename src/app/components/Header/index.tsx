@@ -19,8 +19,10 @@ const Header = () => {
     { id: "problems", label: "Задачи", path: "/problems" },
     { id: "study", label: "Учиться", path: "/study" },
     { id: "articles", label: "Статьи", path: "/articles" },
-       { id: "forum", label: "Форум", path: "/forum" },
+    { id: "forum", label: "Форум", path: "/forum" },
     { id: "messages", label: "Сообщения", path: "/messages" },
+    { id: "achievements", label: "Достижения", path: "/achievements" },
+    { id: "my-courses", label: "Мои курсы", path: "/my-courses" },
     { id: "account", label: "Профиль", path: "/account" },
   ];
 

@@ -1,0 +1,462 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/mixins.scss" as *;
+
+.page {
+  width: 100%;
+  min-height: calc(100vh - #{px($spacing-bg * 2)});
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: px($spacing-xl) px($spacing-md) px($spacing-vg);
+  background-color: $color-grayLight;
+}
+
+.container {
+  max-width: px($container-md);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-lg);
+}
+
+.card {
+  background: $color-white;
+  border-radius: px($radius-large);
+  padding: px($spacing-lg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cardTitle {
+  margin: 0 0 px($spacing-md);
+  font-size: px($font-md);
+  font-weight: 700;
+  color: $color-dark;
+}
+
+.sectionCaption {
+  margin: 0 0 px($spacing-md);
+  font-size: px($font-xs);
+  color: $color-gray-500;
+  line-height: 1.5;
+}
+
+.progressItem {
+  margin-bottom: px($spacing-md);
+}
+
+.progressLabel {
+  font-size: px($font-xs);
+  color: $color-gray-600;
+  margin-bottom: px($spacing-xs);
+}
+
+.progressBar {
+  height: 8px;
+  background-color: $color-gray-200;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: $color-green;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: px($font-xs);
+  color: $color-gray-500;
+  margin-top: px($spacing-xs);
+  text-align: right;
+}
+
+.myRankCard {
+  background-color: #f6fbef;
+  border: 1px solid $color-green;
+  border-radius: px($radius-medium);
+  padding: px($spacing-md);
+  margin-bottom: px($spacing-md);
+}
+
+.myRankLabel {
+  font-size: px(11);
+  font-weight: 700;
+  color: $color-green;
+  text-transform: uppercase;
+}
+
+.myRankName {
+  font-size: px($font-sx);
+  font-weight: 700;
+  color: $color-dark;
+  margin-top: px($spacing-sm);
+}
+
+.myRankMeta {
+  font-size: px($font-xs);
+  color: $color-gray-600;
+  margin-top: px($spacing-xs);
+}
+
+.myRankStatsRow {
+  display: flex;
+  gap: px($spacing-md);
+  margin-top: px($spacing-md);
+}
+
+.myRankStat {
+  flex: 1;
+  background: $color-white;
+  border-radius: px($radius-medium);
+  padding: px($spacing-md);
+  border: 1px solid $color-gray-200;
+}
+
+.myRankStatValue {
+  font-size: px($font-sx);
+  font-weight: 700;
+  color: $color-dark;
+}
+
+.myRankStatLabel {
+  font-size: px($font-xs);
+  color: $color-gray-500;
+  margin-top: px($spacing-xs);
+}
+
+.leaderboardHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: px($spacing-md);
+  gap: px($spacing-md);
+}
+
+.leaderboardPageSummary {
+  font-size: px($font-xs);
+  color: $color-gray-500;
+}
+
+.leaderboardList {
+  display: flex;
+  flex-direction: column;
+  gap: px(10);
+}
+
+.leaderboardRow {
+  display: flex;
+  align-items: center;
+  border: 1px solid;
+  border-radius: px($radius-medium);
+  padding: px(12) px($spacing-md);
+  transition: box-shadow 0.2s ease;
+}
+
+.leaderboardRowCurrent {
+  border-color: $color-green;
+  box-shadow: 0 2px 6px rgba(159, 15, 167, 0.12);
+}
+
+.leaderboardRankBadge {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: $color-white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: px($spacing-md);
+  flex-shrink: 0;
+}
+
+.leaderboardRankText {
+  font-size: px(14);
+  font-weight: 700;
+  color: $color-dark;
+}
+
+.leaderboardAvatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  margin-right: px($spacing-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.leaderboardAvatarPlaceholder {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  margin-right: px($spacing-md);
+  background-color: $color-gray-200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: px(14);
+  font-weight: 700;
+  color: $color-gray-700;
+  flex-shrink: 0;
+}
+
+.leaderboardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.leaderboardName {
+  font-size: px(14);
+  font-weight: 600;
+  color: $color-dark;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboardMeta {
+  font-size: px($font-xs);
+  color: $color-gray-500;
+  margin-top: px($spacing-xs);
+}
+
+.leaderboardScore {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: px($spacing-md);
+  flex-shrink: 0;
+}
+
+.leaderboardScoreValue {
+  font-size: px($font-sx);
+  font-weight: 700;
+  color: $color-dark;
+}
+
+.leaderboardScoreLabel {
+  font-size: px($font-xs);
+  color: $color-gray-500;
+  margin-top: px($spacing-xs);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: px($spacing-md);
+  gap: px($spacing-md);
+}
+
+.paginationButton {
+  min-width: 92px;
+  padding: px(10) px($spacing-md);
+  border-radius: px($radius-medium);
+  background-color: $color-green;
+  color: $color-white;
+  border: none;
+  cursor: pointer;
+  font-size: px($font-xs);
+  font-weight: 700;
+  text-align: center;
+  transition: opacity 0.2s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &Disabled {
+    background-color: $color-gray-200;
+    color: $color-gray-500;
+    cursor: not-allowed;
+  }
+}
+
+.paginationText {
+  flex: 1;
+  text-align: center;
+  font-size: px($font-xs);
+  color: $color-gray-700;
+  font-weight: 600;
+}
+
+.sectionBlock {
+  margin-top: px($spacing-sm);
+}
+
+.sectionTitle {
+  margin: 0 0 px($spacing-md);
+  font-size: px($font-md);
+  font-weight: 700;
+  color: $color-dark;
+}
+
+.achievementCard {
+  background: $color-white;
+  border-radius: px($radius-medium);
+  padding: px($spacing-md);
+  margin-bottom: px($spacing-md);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: px($spacing-md);
+}
+
+.achievementImage {
+  width: 64px;
+  height: 64px;
+  border-radius: px($radius-medium);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.achievementImageFallback {
+  width: 64px;
+  height: 64px;
+  border-radius: px($radius-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.achievementContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.achievementTitle {
+  margin: 0 0 px($spacing-xs);
+  font-size: px($font-sx);
+  font-weight: 700;
+  color: $color-dark;
+}
+
+.achievementDescription {
+  margin: 0 0 px($spacing-sm);
+  font-size: px($font-xs);
+  color: $color-gray-600;
+  line-height: 1.4;
+}
+
+.achievementTier {
+  display: block;
+  font-size: px($font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.achievementDate {
+  display: block;
+  font-size: px($font-xs);
+  color: $color-gray-500;
+  margin-top: px($spacing-xs);
+}
+
+.emptyBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: px($spacing-lg);
+  background: $color-white;
+  border-radius: px($radius-medium);
+  border: 1px solid $color-gray-200;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 52px;
+  margin-bottom: px($spacing-sm);
+}
+
+.emptyText {
+  margin: 0;
+  font-size: px($font-sx);
+  color: $color-gray-600;
+  line-height: 1.5;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 4px solid $color-gray-200;
+  border-top: 4px solid $color-green;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: px($spacing-xl);
+  text-align: center;
+  min-height: 300px;
+}
+
+.errorIcon {
+  font-size: 64px;
+}
+
+.errorText {
+  font-size: px($font-sx);
+  color: $color-error;
+  text-align: center;
+  margin: px($spacing-md) 0;
+}
+
+.retryButton {
+  margin-top: px($spacing-md);
+  padding: px(12) px($spacing-lg);
+  background-color: $color-green;
+  color: $color-white;
+  border: none;
+  border-radius: px($radius-medium);
+  cursor: pointer;
+  font-size: px($font-sx);
+  font-weight: 600;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: px($spacing-md) px($spacing-sm) px($spacing-xl);
+  }
+
+  .container {
+    gap: px($spacing-md);
+  }
+
+  .card {
+    padding: px($spacing-md);
+  }
+
+  .myRankStatsRow {
+    flex-direction: column;
+  }
+
+  .leaderboardRow {
+    flex-wrap: wrap;
+    gap: px($spacing-sm);
+  }
+}
