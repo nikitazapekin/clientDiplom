@@ -358,7 +358,7 @@
   padding: 2px 6px;
   border-radius: 4px;
   transition: background 0.2s;
-
+ 
   &:hover {
     background: rgba(216, 9, 9, 0.1);
   }
@@ -515,6 +515,8 @@
   .testCaseHeader,
   .constraintHeader {
     flex-wrap: wrap;
+    width: 100%;
+    justify-content: space-between;
   }
 }
 

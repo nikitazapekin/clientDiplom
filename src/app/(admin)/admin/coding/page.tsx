@@ -2325,7 +2325,7 @@ export default function CodingPage() {
                     <div className={styles.testCaseHeader}>
                       <span className={styles.testCaseTitle}>
                         Тест #{i + 1} ({LANGUAGES.find((l) => l.value === lang)?.label || lang})
-                      </span>
+                      </span> {' '}
                       <button className={styles.deleteButton} onClick={() => deleteTestCase(i)}>
                         ✕
                       </button>
