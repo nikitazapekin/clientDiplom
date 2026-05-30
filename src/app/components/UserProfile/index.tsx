@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import AvatarPicker from '../AvatarPicker';
+import FriendsModal from '../FriendsModal';
 
 import styles from './index.module.scss';
 
@@ -323,6 +324,7 @@ const UserProfile: React.FC = () => {
   const [studentLevel, setStudentLevel] = useState<StudentLevel | null>(null);
   const [codingLoading, setCodingLoading] = useState(false);
   const [showAllSolvedModal, setShowAllSolvedModal] = useState(false);
+  const [friendsModalVisible, setFriendsModalVisible] = useState(false);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -554,6 +556,15 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
 
+        <div className={styles.friendsButtonContainer}>
+          <button
+            className={styles.friendsButton}
+            onClick={() => setFriendsModalVisible(true)}
+          >
+            Друзья
+          </button>
+        </div>
+
      
         {!codingLoading && studentLevel && (
           <div className={styles.section}>
@@ -693,6 +704,10 @@ const UserProfile: React.FC = () => {
         allTasks={codingTasks}
         onTaskPress={handleTaskPress}
       />
+
+      {friendsModalVisible && (
+        <FriendsModal onClose={() => setFriendsModalVisible(false)} />
+      )}
     </>
   );
 };

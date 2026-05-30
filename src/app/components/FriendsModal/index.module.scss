@@ -1,0 +1,446 @@
+$background-color: #f8f9fa;
+$card-background: #ffffff;
+$text-primary: #212529;
+$text-secondary: #6c757d;
+$border-color: #e9ecef;
+$accent-color: #667eea;
+$success-color: #28a745;
+$danger-color: #dc3545;
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: $card-background;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid $border-color;
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: $text-secondary;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: $background-color;
+  }
+}
+
+.modalContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.refreshRow {
+  padding: 12px 24px;
+  border-bottom: 1px solid $border-color;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.refreshButton {
+  background: none;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: $text-secondary;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    border-color: $accent-color;
+    color: $accent-color;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.bodyContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tabContainer {
+  display: flex;
+  background: $card-background;
+  border-bottom: 1px solid $border-color;
+  padding: 0 16px;
+}
+
+.tabButton {
+  flex: 1;
+  padding: 14px 8px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-secondary;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+
+  &:hover {
+    color: $text-primary;
+  }
+}
+
+.tabButtonActive {
+  color: #9f0fa7;
+  border-bottom-color: #9f0fa7;
+}
+
+.tabButtonWithBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge {
+  background-color: $danger-color;
+  border-radius: 10px;
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.searchContainer {
+  padding: 12px 16px;
+  background: $card-background;
+  border-bottom: 1px solid $border-color;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  font-size: 14px;
+  color: $text-primary;
+  background: $background-color;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: $accent-color;
+  }
+
+  &::placeholder {
+    color: #999;
+  }
+}
+
+.searchingText {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: $text-secondary;
+}
+
+.listContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: $text-primary;
+  padding: 8px 0;
+  margin-bottom: 4px;
+}
+
+.friendCard {
+  display: flex;
+  align-items: center;
+  background: $card-background;
+  border: 1px solid $border-color;
+  border-radius: 12px;
+  padding: 14px;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.friendInfoClickable {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  cursor: pointer;
+}
+
+.avatarContainer {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarFallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.friendInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.friendName {
+  font-size: 15px;
+  font-weight: 600;
+  color: $text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friendSince {
+  font-size: 13px;
+  color: $text-secondary;
+  margin-top: 2px;
+}
+
+.friendEmail {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.removeFriendButton {
+  background: none;
+  border: 1px solid $danger-color;
+  color: $danger-color;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    background: $danger-color;
+    color: #fff;
+  }
+}
+
+.addFriendButton {
+  background: #9f0fa7;
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    background: darken(#9f0fa7, 10%);
+  }
+}
+
+.requestCard {
+  display: flex;
+  align-items: center;
+  background: $card-background;
+  border: 1px solid $border-color;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.requestInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.requestActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.acceptButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: $success-color;
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: darken($success-color, 10%);
+  }
+}
+
+.rejectButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: $danger-color;
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: darken($danger-color, 10%);
+  }
+}
+
+.centerContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.loader {
+  width: 36px;
+  height: 36px;
+  border: 3px solid $border-color;
+  border-top-color: $accent-color;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorText {
+  font-size: 15px;
+  color: $danger-color;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.retryButton {
+  padding: 8px 20px;
+  border: none;
+  background: $accent-color;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: darken($accent-color, 10%);
+  }
+}
+
+.emptyContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+}
+
+.emptyText {
+  font-size: 15px;
+  color: $text-secondary;
+  text-align: center;
+}

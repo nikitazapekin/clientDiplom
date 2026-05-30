@@ -190,6 +190,34 @@ $danger-color: #dc3545;
     display: none;
   }
 }
+
+.friendsButtonContainer {
+  max-width: 600px;
+  margin: 0 auto 24px;
+  padding: 0 20px;
+}
+
+.friendsButton {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #9f0fa7 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
  
 .section {
   max-width: 800px;
