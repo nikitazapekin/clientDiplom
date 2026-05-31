@@ -715,8 +715,15 @@ const generateObjectClasses = (args: ArgumentSchema[], language: string): string
   return generateSharedObjectClasses(args, language as CodeLanguage);
 };
 
-const compareOutputs = (actual: string, expected: string): boolean => {
-  return compareSharedOutputs(actual, expected);
+const compareOutputs = (
+  actual: string,
+  expected: string,
+  task?: Pick<CodeTask, "returnType" | "returnSchema">,
+): boolean => {
+  return compareSharedOutputs(actual, expected, {
+    returnType: task?.returnType,
+    returnSchema: task?.returnSchema,
+  });
 };
 
 const checkConstraints = (
@@ -1088,7 +1095,7 @@ export default function SolveProblemPage() {
           parsedResults.push({
             ...res.results[i],
             actual: actual || "пусто",
-            passed: compareOutputs(actual, expected),
+            passed: compareOutputs(actual, expected, task),
           });
         }
 

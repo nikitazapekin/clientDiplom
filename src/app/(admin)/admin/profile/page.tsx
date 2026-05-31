@@ -51,9 +51,10 @@ const AdminProfilePage = () => {
 
       setCoursesLoading(true);
       try {
-        const coursesData = await CourseService.getMyCourses();
+        const allCourses = await CourseService.getCourses({ limit: 100 });
+        const adminCourses = allCourses.courses.filter((c) => c.adminId === profileData.id);
 
-        setCourses(coursesData);
+        setCourses(adminCourses);
       } catch (coursesErr) {
         console.error("Failed to load courses:", coursesErr);
       } finally {

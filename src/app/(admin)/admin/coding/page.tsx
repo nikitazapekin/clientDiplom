@@ -1242,7 +1242,11 @@ export default function CodingPage() {
           const expected = expectedOutput.trim();
           const passed = compareSharedOutputs(
             normalizeComparableOutput(actual),
-            normalizeComparableOutput(expected)
+            normalizeComparableOutput(expected),
+            {
+              returnType: normalizedReturnType,
+              returnSchema: normalizedReturnSchema,
+            }
           );
 
           results.push({

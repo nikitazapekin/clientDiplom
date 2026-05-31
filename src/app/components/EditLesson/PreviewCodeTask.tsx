@@ -53,8 +53,11 @@ export function PreviewCodeTask({
   const [constraintResults, setConstraintResults] = useState<ConstraintResult[] | null>(null);
   const [executionTime, setExecutionTime] = useState<number | null>(null);
   const localCodeRef = useRef<string>("");
-  const activeReturnSchema =
-    block.returnType === "object" || block.returnType === "list" ? block.returnSchema : undefined;
+  const activeReturnSchema = block.returnSchema;
+  const comparisonOptions = {
+    returnType: block.returnType,
+    returnSchema: block.returnSchema,
+  };
   const getExpectedOutputValue = useCallback(
     (testCase: NonNullable<CodeTaskBlock["testCases"]>[number]) =>
       getExpectedOutputFromTestCase(testCase, block.returnType, activeReturnSchema),
@@ -525,8 +528,6 @@ export function PreviewCodeTask({
           );
           const codeToRun = objectClasses ? `${codeWithTests}\n\n${objectClasses}` : codeWithTests;
 
-          console.log("Java code to run:", codeToRun);
-
           const res = await CodeService.executeCode({
             language: "java",
             code: codeToRun,
@@ -539,8 +540,6 @@ export function PreviewCodeTask({
 
           const output = res.output || "";
           const lines = output.split("\n");
-
-          console.log("Java output:", output);
 
           for (let i = 0; i < block.testCases.length; i++) {
             const testNum = i + 1;
@@ -596,7 +595,7 @@ export function PreviewCodeTask({
                     expectedParsed = expected;
                   }
 
-                  const passed = compareOutputs(actualParsed, expectedParsed);
+                  const passed = compareOutputs(actualParsed, expectedParsed, comparisonOptions);
 
                   results.push({
                     input: getDisplayInput(
@@ -644,8 +643,6 @@ export function PreviewCodeTask({
           );
           const codeToRun = objectClasses ? `${codeWithTests}\n\n${objectClasses}` : codeWithTests;
 
-          console.log("C# code to run:", codeToRun);
-
           const res = await CodeService.executeCode({
             language: "csharp",
             code: codeToRun,
@@ -658,8 +655,6 @@ export function PreviewCodeTask({
 
           const output = res.output || "";
           const lines = output.split("\n");
-
-          console.log("C# output:", output);
 
           for (let i = 0; i < block.testCases.length; i++) {
             const testNum = i + 1;
@@ -715,7 +710,7 @@ export function PreviewCodeTask({
                     expectedParsed = expected;
                   }
 
-                  const passed = compareOutputs(actualParsed, expectedParsed);
+                  const passed = compareOutputs(actualParsed, expectedParsed, comparisonOptions);
 
                   results.push({
                     input: getDisplayInput(
@@ -826,7 +821,7 @@ export function PreviewCodeTask({
                     ),
                     expected,
                     actual,
-                    passed: compareOutputs(actualParsed, expectedParsed),
+                    passed: compareOutputs(actualParsed, expectedParsed, comparisonOptions),
                   });
                 }
                 continue;
@@ -938,7 +933,7 @@ export function PreviewCodeTask({
                     expectedParsed = expected;
                   }
 
-                  const passed = compareOutputs(actualParsed, expectedParsed);
+                  const passed = compareOutputs(actualParsed, expectedParsed, comparisonOptions);
 
                   results.push({
                     input: getDisplayInput(
@@ -1029,7 +1024,7 @@ export function PreviewCodeTask({
                     ),
                     expected,
                     actual,
-                    passed: compareOutputs(actualParsed, expectedParsed),
+                    passed: compareOutputs(actualParsed, expectedParsed, comparisonOptions),
                   });
                 }
                 continue;
@@ -1114,7 +1109,7 @@ export function PreviewCodeTask({
                     expectedParsed = expectedOutput;
                   }
 
-                  const passed = compareOutputs(actualParsed, expectedParsed);
+                  const passed = compareOutputs(actualParsed, expectedParsed, comparisonOptions);
 
                   results.push({
                     input: tc.input,

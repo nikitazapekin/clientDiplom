@@ -12,6 +12,22 @@ import type {
   ReturnSchema,
   TestCaseArgument,
 } from "./types";
+import {
+  CSHARP_TYPED_SERIALIZATION_HELPERS,
+  GO_TYPED_SERIALIZATION_HELPERS,
+  JAVA_SERIALIZATION_HELPERS,
+  JS_TYPED_SERIALIZATION_HELPERS,
+  PHP_TYPED_SERIALIZATION_HELPERS,
+  PYTHON_TYPED_SERIALIZATION_HELPERS,
+  RUBY_TYPED_SERIALIZATION_HELPERS,
+  RUST_TYPED_SERIALIZATION_HELPERS,
+} from "./resultSerialization";
+import {
+  compareOutputsWithType,
+  type CompareOutputsOptions,
+} from "./typedOutputComparison";
+
+export type { CompareOutputsOptions };
 
 export const stripMainMethod = (code: string, language: CodeLanguage): string => {
   if (language === "java") {
@@ -54,13 +70,13 @@ export const addJavaMainMethod = (
             }
             
             System.out.println("===RESULT_START===");
-            System.out.print(__serializeJson(result));
+            System.out.print(__codexSerializeResult(result));
             System.out.println("===RESULT_END===");
             
         } catch (Exception e) {
             System.setOut(originalOut);
             System.out.println("===RESULT_START===");
-            System.out.print("{\\"error\\":" + __serializeJson(e.getMessage()) + "}");
+            System.out.print("{\\"error\\":" + __codexSerializeError(e) + "}");
             System.out.println("===RESULT_END===");
         }
 `;
@@ -1295,131 +1311,7 @@ class ${className}:
 };
 
 const buildJavaRunnerCode = (mainBody: string): string => {
-  return `
-    private static String __escapeJson(String value) {
-        if (value == null) {
-            return "";
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < value.length(); i++) {
-            char ch = value.charAt(i);
-            switch (ch) {
-                case '\\\\':
-                    sb.append("\\\\\\\\");
-                    break;
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\\n':
-                    sb.append("\\\\n");
-                    break;
-                case '\\r':
-                    sb.append("\\\\r");
-                    break;
-                case '\\t':
-                    sb.append("\\\\t");
-                    break;
-                case '\\b':
-                    sb.append("\\\\b");
-                    break;
-                case '\\f':
-                    sb.append("\\\\f");
-                    break;
-                default:
-                    sb.append(ch);
-            }
-        }
-        return sb.toString();
-    }
-
-    private static String __serializeJson(Object value) {
-        return __serializeJson(value, new java.util.IdentityHashMap<>());
-    }
-
-    private static String __serializeJson(Object value, java.util.IdentityHashMap<Object, Boolean> visited) {
-        if (value == null) {
-            return "null";
-        }
-        if (value instanceof String || value instanceof Character) {
-            return '"' + __escapeJson(String.valueOf(value)) + '"';
-        }
-        if (value instanceof Number || value instanceof Boolean) {
-            return String.valueOf(value);
-        }
-
-        Class<?> clazz = value.getClass();
-
-        if (clazz.isArray()) {
-            int length = java.lang.reflect.Array.getLength(value);
-            java.util.List<String> items = new java.util.ArrayList<>();
-            for (int i = 0; i < length; i++) {
-                items.add(__serializeJson(java.lang.reflect.Array.get(value, i), visited));
-            }
-            return "[" + String.join(", ", items) + "]";
-        }
-
-        if (value instanceof java.util.Collection<?>) {
-            java.util.List<String> items = new java.util.ArrayList<>();
-            for (Object item : (java.util.Collection<?>) value) {
-                items.add(__serializeJson(item, visited));
-            }
-            return "[" + String.join(", ", items) + "]";
-        }
-
-        if (value instanceof java.util.Map<?, ?>) {
-            java.util.Map<String, String> entries = new java.util.TreeMap<>();
-            for (java.util.Map.Entry<?, ?> entry : ((java.util.Map<?, ?>) value).entrySet()) {
-                String key = String.valueOf(entry.getKey());
-                entries.put(key, '"' + __escapeJson(key) + "\\":" + __serializeJson(entry.getValue(), visited));
-            }
-            return "{" + String.join(", ", entries.values()) + "}";
-        }
-
-        if (visited.containsKey(value)) {
-            return '"' + "<circular>" + '"';
-        }
-
-        visited.put(value, Boolean.TRUE);
-
-        java.util.List<java.lang.reflect.Field> fields = new java.util.ArrayList<>();
-        Class<?> current = clazz;
-        while (current != null && current != Object.class) {
-            for (java.lang.reflect.Field field : current.getDeclaredFields()) {
-                int modifiers = field.getModifiers();
-                if (java.lang.reflect.Modifier.isStatic(modifiers) || field.isSynthetic()) {
-                    continue;
-                }
-                fields.add(field);
-            }
-            current = current.getSuperclass();
-        }
-
-        fields.sort(java.util.Comparator.comparing(java.lang.reflect.Field::getName));
-
-        java.util.List<String> serializedFields = new java.util.ArrayList<>();
-        for (java.lang.reflect.Field field : fields) {
-            try {
-                field.setAccessible(true);
-                serializedFields.add(
-                    '"' +
-                    __escapeJson(field.getName()) +
-                    "\\":" +
-                    __serializeJson(field.get(value), visited)
-                );
-            } catch (IllegalAccessException e) {
-                serializedFields.add(
-                    '"' +
-                    __escapeJson(field.getName()) +
-                    "\\":" +
-                    __serializeJson("<inaccessible>", visited)
-                );
-            }
-        }
-
-        visited.remove(value);
-        return "{" + String.join(", ", serializedFields) + "}";
-    }
+  return `${JAVA_SERIALIZATION_HELPERS}
 
     public static void main(String[] args) {
 ${mainBody}
@@ -1492,7 +1384,7 @@ export const buildCSharpTestSuite = (
                 }
                 
                 Console.WriteLine("===RESULT_START_" + ${testNum} + "===");
-                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result, jsonOptions));
+                Console.WriteLine(System.Text.Json.__CodexRuntime.SerializeTyped(result));
                 Console.WriteLine("===RESULT_END_" + ${testNum} + "===");
                 
             } catch (Exception e) {
@@ -1562,13 +1454,13 @@ export const buildJavaTestSuiteWithLogs = (
                 }
                 
                 System.out.println("===RESULT_START_" + ${index + 1} + "===");
-                System.out.print(__serializeJson(result));
+                System.out.print(__codexSerializeResult(result));
                 System.out.println("===RESULT_END_" + ${index + 1} + "===");
                 
             } catch (Exception e) {
                 System.setOut(originalOut);
                 System.out.println("===RESULT_START_" + ${index + 1} + "===");
-                System.out.print("{\\"error\\":" + __serializeJson(e.getMessage()) + "}");
+                System.out.print("{\\"error\\":" + __codexSerializeError(e) + "}");
                 System.out.println("===RESULT_END_" + ${index + 1} + "===");
             }
         }`;
@@ -1614,14 +1506,14 @@ export const buildJavaTestSuite = (
                 }
                 
                 System.out.println("===RESULT_START_" + ${testNum} + "===");
-                System.out.print(__serializeJson(result));
+                System.out.print(__codexSerializeResult(result));
                 System.out.println();
                 System.out.println("===RESULT_END_" + ${testNum} + "===");
                 
             } catch (Exception e) {
                 System.setOut(originalOut);
                 System.out.println("===RESULT_START_" + ${testNum} + "===");
-                System.out.print("{\\"error\\":" + __serializeJson(e.getMessage()) + "}");
+                System.out.print("{\\"error\\":" + __codexSerializeError(e) + "}");
                 System.out.println();
                 System.out.println("===RESULT_END_" + ${testNum} + "===");
             }
@@ -2717,6 +2609,8 @@ const buildJavaScriptLikeTestCode = (
   lang: "javascript" | "typescript"
 ) => `${userCode}
 
+${JS_TYPED_SERIALIZATION_HELPERS}
+
 const __originalConsole = {
   log: console.log,
   error: console.error,
@@ -2773,7 +2667,7 @@ try {
   }
   
   console.log('===RESULT_START===');
-  console.log(JSON.stringify(result));
+  console.log(JSON.stringify(__codexSerializeTyped(result)));
   console.log('===RESULT_END===');
   
 } catch (error${lang === "typescript" ? ": unknown" : ""}) {
@@ -2855,8 +2749,8 @@ func main() {
     }
     
     fmt.Println("===RESULT_START===")
-    jsonResult, _ := json.Marshal(result)
-    fmt.Println(string(jsonResult))
+    __codexSerializeTyped(result)
+    fmt.Println(__codexSerializeTyped(result))
     fmt.Println("===RESULT_END===")
 }`;
 };
@@ -2893,6 +2787,8 @@ import json
 import sys
 from io import StringIO
 
+${PYTHON_TYPED_SERIALIZATION_HELPERS}
+
 __old_stdout = sys.stdout
 __old_stderr = sys.stderr
 __stdout_buffer = StringIO()
@@ -2918,7 +2814,7 @@ try:
         print("===LOGS_END===")
     
     print("===RESULT_START===")
-    print(json.dumps(result))
+    print(json.dumps(__codex_serialize_typed(result)))
     print("===RESULT_END===")
     
 except Exception as e:
@@ -2947,7 +2843,7 @@ try {
     }
 
     echo "===RESULT_START===\\n";
-    echo json_encode($result);
+    echo json_encode(__codex_serialize_typed($result));
     echo "\\n===RESULT_END===\\n";
 } catch (Throwable $error) {
     if (ob_get_level() > 0) {
@@ -2981,7 +2877,7 @@ begin
   end
 
   puts "===RESULT_START==="
-  puts JSON.generate(result)
+  puts JSON.generate(__codex_serialize_typed(result))
   puts "===RESULT_END==="
 rescue => error
   $stdout = __original_stdout
@@ -3018,20 +2914,42 @@ fn main() {
   }
 };
 
-export const compareOutputs = (actual: any, expected: any): boolean => {
-  if (actual == null && expected == null) return true;
-  if (actual == null || expected == null) return false;
-
-  if (Array.isArray(actual) && Array.isArray(expected)) {
-    if (actual.length !== expected.length) return false;
-    return actual.every((item, index) => compareOutputs(item, expected[index]));
+const normalizeComparableValue = (value: unknown): unknown => {
+  if (typeof value !== "string") {
+    return value;
   }
 
-  if (typeof actual === "object" && typeof expected === "object") {
-    return Object.entries(expected).every(([key, value]) => compareOutputs(actual[key], value));
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "";
   }
 
-  return String(actual).trim() === String(expected).trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return trimmed;
+  }
+};
+
+export const compareOutputs = (
+  actual: unknown,
+  expected: unknown,
+  options?: CompareOutputsOptions,
+): boolean => {
+  const normalizedActual = normalizeComparableValue(actual);
+  const normalizedExpected = normalizeComparableValue(expected);
+
+  if (options?.returnType) {
+    return compareOutputsWithType(
+      normalizedActual,
+      normalizedExpected,
+      options.returnType,
+      options.returnSchema,
+    );
+  }
+
+  return compareOutputsWithType(normalizedActual, normalizedExpected);
 };
 
 export interface ConstraintResult {
