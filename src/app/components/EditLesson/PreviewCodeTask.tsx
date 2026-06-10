@@ -27,6 +27,7 @@ import {
   stripMainMethod,
 } from "./codeUtils";
 import type { CodeTaskBlock } from "./types";
+import { formatComparableOutputForDisplay } from "./typedResultFormat";
 
 import { CodeService } from "@/app/http/codeService";
 
@@ -1294,11 +1295,15 @@ export function PreviewCodeTask({
                   </div>
                   <div className={styles.resultField}>
                     <span className={styles.resultFieldLabel}>Ожидалось</span>
-                    <pre className={styles.resultFieldValue}>{result.expected}</pre>
+                    <pre className={styles.resultFieldValue}>
+                      {formatComparableOutputForDisplay(result.expected)}
+                    </pre>
                   </div>
                   <div className={styles.resultField}>
                     <span className={styles.resultFieldLabel}>Получено</span>
-                    <pre className={styles.resultFieldValue}>{result.actual}</pre>
+                    <pre className={styles.resultFieldValue}>
+                      {formatComparableOutputForDisplay(result.actual)}
+                    </pre>
                   </div>
                 </div>
               </div>

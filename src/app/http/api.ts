@@ -3,8 +3,19 @@ import axios from "axios";
 
 const isBrowser = typeof window !== "undefined";
 
-const BACKEND_DIRECT_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://31.128.40.81:3002";
+/** true — удалённый бэкенд, false — локальный (localhost:3002) */
+export const USE_REMOTE_BACKEND = true;
+
+const REMOTE_BACKEND_URL = "http://31.128.40.81:3002";
+const LOCAL_BACKEND_URL = "http://localhost:3002";
+
+export function getBackendDirectUrl(): string {
+  if (process.env.NEXT_PUBLIC_BACKEND_URL) {
+    return process.env.NEXT_PUBLIC_BACKEND_URL;
+  }
+
+  return USE_REMOTE_BACKEND ? REMOTE_BACKEND_URL : LOCAL_BACKEND_URL;
+}
 
 /** На HTTPS (Vercel) ходим через same-origin прокси /backend — иначе Mixed Content. */
 export function resolveApiBaseUrl(): string {
@@ -16,7 +27,7 @@ export function resolveApiBaseUrl(): string {
     return "/backend";
   }
 
-  return BACKEND_DIRECT_URL;
+  return getBackendDirectUrl();
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();

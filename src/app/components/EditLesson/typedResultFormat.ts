@@ -56,6 +56,9 @@ export const normalizeRuntimeType = (type: string): string => {
   return lowered;
 };
 
+const isNumericSchemaType = (type: string): boolean =>
+  ["int", "byte", "short", "long", "float", "double", "number"].includes(type);
+
 export const runtimeTypeMatchesSchema = (
   runtimeType: string,
   schemaType: string,
@@ -64,6 +67,10 @@ export const runtimeTypeMatchesSchema = (
 ): boolean => {
   const runtime = normalizeRuntimeType(runtimeType);
   const schema = normalizeSchemaType(schemaType);
+
+  if (isNumericSchemaType(runtime) && isNumericSchemaType(schema)) {
+    return true;
+  }
 
   if (runtime === schema) {
     if (schema === "object" && returnSchema?.className && runtimeClassName) {
@@ -133,6 +140,40 @@ export const getCodexClassName = (value: unknown): string | undefined => {
   }
 
   return typeof value.className === "string" ? value.className : undefined;
+};
+
+export const formatComparableOutputForDisplay = (value: unknown): string => {
+  let normalized: unknown = value;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return "";
+    }
+
+    try {
+      normalized = JSON.parse(trimmed);
+    } catch {
+      return value;
+    }
+  }
+
+  const unwrapped = unwrapCodexValue(normalized);
+
+  if (unwrapped == null) {
+    return "null";
+  }
+
+  if (typeof unwrapped === "string") {
+    return unwrapped;
+  }
+
+  if (typeof unwrapped === "number" || typeof unwrapped === "boolean") {
+    return String(unwrapped);
+  }
+
+  return JSON.stringify(unwrapped);
 };
 
 export const validateCodexRuntimeType = (
