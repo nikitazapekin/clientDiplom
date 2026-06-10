@@ -51,7 +51,7 @@ export class ReviewService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Create slide review error:", error);
       throw error;
     }
@@ -67,7 +67,7 @@ export class ReviewService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Create test review error:", error);
       throw error;
     }
@@ -83,7 +83,7 @@ export class ReviewService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get slide reviews error:", error);
       throw error;
     }
@@ -99,7 +99,7 @@ export class ReviewService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get test reviews error:", error);
       throw error;
     }
@@ -122,7 +122,7 @@ export class ReviewService {
       );
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get block reviews error:", error);
       throw error;
     }
@@ -142,7 +142,7 @@ export class ReviewService {
       );
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Accept slide review error:", error);
       throw error;
     }
@@ -162,7 +162,7 @@ export class ReviewService {
       );
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Accept test review error:", error);
       throw error;
     }
@@ -182,7 +182,7 @@ export class ReviewService {
       );
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Reject slide review error:", error);
       throw error;
     }
@@ -202,7 +202,7 @@ export class ReviewService {
       );
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Reject test review error:", error);
       throw error;
     }

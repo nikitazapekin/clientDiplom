@@ -8,6 +8,7 @@ import type {
   UpdateCourseRequest,
 } from "./types/course";
 import $api from "./api";
+import { getErrorMessage } from "./errorUtils";
 
 export class CourseService {
   static async createCourse(data: CreateCourseRequest): Promise<CourseResponse> {
@@ -44,9 +45,9 @@ export class CourseService {
       const response = await $api.get(url);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get courses error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch courses");
+      throw new Error(getErrorMessage(error, "Failed to fetch courses"));
     }
   }
 
@@ -55,9 +56,9 @@ export class CourseService {
       const response = await $api.get(`/courses/${id}`);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get course error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch course");
+      throw new Error(getErrorMessage(error, "Failed to fetch course"));
     }
   }
 
@@ -66,9 +67,9 @@ export class CourseService {
       const response = await $api.get(`/courses/${id}/stats`);
 
       return response.data.data ?? response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get course stats error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch course stats");
+      throw new Error(getErrorMessage(error, "Failed to fetch course stats"));
     }
   }
 
@@ -82,9 +83,9 @@ export class CourseService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Update course error:", error);
-      throw new Error(error.response?.data?.message || "Failed to update course");
+      throw new Error(getErrorMessage(error, "Failed to update course"));
     }
   }
 
@@ -99,9 +100,9 @@ export class CourseService {
       });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Delete course error:", error);
-      throw new Error(error.response?.data?.message || "Failed to delete course");
+      throw new Error(getErrorMessage(error, "Failed to delete course"));
     }
   }
 
@@ -119,9 +120,9 @@ export class CourseService {
       );
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Publish course error:", error);
-      throw new Error(error.response?.data?.message || "Failed to publish course");
+      throw new Error(getErrorMessage(error, "Failed to publish course"));
     }
   }
 
@@ -130,9 +131,9 @@ export class CourseService {
       const response = await $api.get("/courses/published");
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get published courses error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch published courses");
+      throw new Error(getErrorMessage(error, "Failed to fetch published courses"));
     }
   }
 
@@ -141,9 +142,9 @@ export class CourseService {
       const response = await $api.get(`/courses/tag/${tag}`);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get courses by tag error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch courses by tag");
+      throw new Error(getErrorMessage(error, "Failed to fetch courses by tag"));
     }
   }
 
@@ -152,9 +153,9 @@ export class CourseService {
       const response = await $api.get("/course-subscriptions/my-courses");
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get my courses error:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch your courses");
+      throw new Error(getErrorMessage(error, "Failed to fetch your courses"));
     }
   }
 }

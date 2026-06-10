@@ -1,4 +1,5 @@
 import $api from "./api";
+import { getErrorMessage } from "./errorUtils";
 
 export interface LoginRequest {
   email: string;
@@ -136,9 +137,9 @@ console.log("DATTAAAAAAAAAAAAAAAAAAA", data)
       }
 
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
-      throw new Error(error.response?.data?.message || "Login failed");
+      throw new Error(getErrorMessage(error, "Login failed"));
     }
   }
  */
@@ -174,7 +175,7 @@ console.log("DATTAAAAAAAAAAAAAAAAAAA", data)
       }
 
       return responseData;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
       throw new Error(error.response?.data?.message || error.message || "Login failed");
     }
@@ -203,9 +204,9 @@ console.log("DATTAAAAAAAAAAAAAAAAAAA", data)
       }
 
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Registration error:", error);
-      throw new Error(error.response?.data?.message || "Registration failed");
+      throw new Error(getErrorMessage(error, "Registration failed"));
     }
   }
 

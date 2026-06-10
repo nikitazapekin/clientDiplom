@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import styles from "./page.module.scss";
@@ -20,7 +20,7 @@ const StudentsPage = () => {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  const fetchStudents = async (search?: string, pageNum?: number) => {
+  const fetchStudents = useCallback(async (search?: string, pageNum?: number) => {
     try {
       setLoading(true);
       setError(null);
@@ -55,16 +55,16 @@ const StudentsPage = () => {
       setTotal(response.total);
       setTotalPages(response.totalPages);
       setPage(response.page);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || "Failed to fetch students");
     } finally {
       setLoading(false);
     }
-  };
+  }, [limit, page, searchQuery]);
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [fetchStudents]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

@@ -7,7 +7,6 @@ import styles from "./page.module.scss";
 
 import Button from "@/app/components/Button";
 import CodeEditor from "@/app/components/CodeEditor";
-import type { ArgumentSchema as SharedArgumentSchema } from "@/app/components/EditLesson/types";
 import {
   compareOutputs as compareSharedOutputs,
   generateObjectClasses as generateSharedObjectClasses,
@@ -15,6 +14,7 @@ import {
   getTypeString as getSharedTypeString,
   resolveTargetFunctionName as resolveSharedTargetFunctionName,
 } from "@/app/components/EditLesson/codeUtils";
+import type { ArgumentSchema as SharedArgumentSchema, ArgumentType } from "@/app/components/EditLesson/types";
 import type { CodeLanguage } from "@/app/http/codeService";
 import {
   type CodeConstraint,
@@ -175,7 +175,7 @@ const formatArgsForJavaOrCSharp = (
             const arr = JSON.parse(arg.value);
 
             if (Array.isArray(arr)) {
-              const formatted = arr.map((item: any) => {
+              const formatted = arr.map((item: unknown) => {
                 if (elementType === "string") return `"${item}"`;
 
                 if (elementType === "boolean") return item ? "true" : "false";
@@ -195,7 +195,7 @@ const formatArgsForJavaOrCSharp = (
         }
 
         if (arg.objectValues && Object.keys(arg.objectValues).length > 0) {
-          const elements = Object.values(arg.objectValues).map((val: any) => {
+          const elements = Object.values(arg.objectValues).map((val: unknown) => {
             if (elementType === "string") return `"${val}"`;
 
             if (elementType === "boolean") return val.toLowerCase() === "true" ? "true" : "false";
@@ -344,7 +344,7 @@ interface ConstraintCheckResult {
   errors: string[];
 }
 
-const parseArguments = (input: string): any[] => {
+const parseArguments = (input: string): unknown[] => {
   if (!input.trim()) return [];
 
   try {
@@ -355,7 +355,7 @@ const parseArguments = (input: string): any[] => {
     // Ignore JSON parsing failure and continue with manual argument splitting.
   }
 
-  const args: any[] = [];
+  const args: unknown[] = [];
   let current = "";
   let inString = false;
   let stringChar = "";
@@ -408,7 +408,7 @@ const parseArguments = (input: string): any[] => {
   return args;
 };
 
-const parseValue = (value: string): any => {
+const parseValue = (value: string): unknown => {
   if (value === "") return "";
 
   try {
@@ -448,7 +448,7 @@ const parseValue = (value: string): any => {
   return value;
 };
 
-const formatArgumentsForCode = (args: any[]): string => {
+const formatArgumentsForCode = (args: unknown[]): string => {
   return args
     .map((arg) => {
       if (typeof arg === "string") {
@@ -708,7 +708,7 @@ const parseTestOutput = (output: string, testNum: number): { logs: string[]; res
 };
 
 const _getTypeString = (type: string, language: string): string => {
-  return getSharedTypeString(type as any, language as CodeLanguage);
+  return getSharedTypeString(type as ArgumentType, language as CodeLanguage);
 };
 
 const generateObjectClasses = (args: ArgumentSchema[], language: string): string => {
@@ -1060,9 +1060,9 @@ export default function SolveProblemPage() {
           return;
         }
 
-        const argumentScheme = (task as any).argumentScheme;
+        const argumentScheme = task.argumentScheme;
         const taskTestCases =
-          (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
+          task.testCasesByLanguage?.[selectedLang] || task.testCases || [];
 
         if (selectedLang === "java") {
           codeToSubmit = buildJavaTestSuite(code, taskTestCases, funcName, argumentScheme);
@@ -1073,7 +1073,7 @@ export default function SolveProblemPage() {
 
       const res = await CodingTasksService.submitSolution(task.id, codeToSubmit, selectedLang);
 
-      const responseOutput = (res as any).output || (res as any).message || "";
+      const responseOutput = res.output || res.message || "";
 
       setRawOutput(responseOutput);
 
@@ -1100,8 +1100,8 @@ export default function SolveProblemPage() {
         }
 
         res.results = parsedResults;
-        const serverConstraintsPassed = (res as any).constraintsPassed ?? constraintsPassed;
-        const serverConstraintErrors = (res as any).constraintErrors ?? constraintErrors;
+        const serverConstraintsPassed = res.constraintsPassed ?? constraintsPassed;
+        const serverConstraintErrors = res.constraintErrors ?? constraintErrors;
 
         res.allPassed = parsedResults.every((r) => r.passed) && serverConstraintsPassed;
 
@@ -1115,14 +1115,14 @@ export default function SolveProblemPage() {
 
       await refreshStudentLevel();
 
-      const finalConstraintsPassed = (res as any).constraintsPassed ?? constraintsPassed;
+      const finalConstraintsPassed = res.constraintsPassed ?? constraintsPassed;
 
       if (res.allPassed && res.experienceGained > 0 && finalConstraintsPassed) {
         setShowSuccessModal(true);
-      } else if ((res as any).constraintErrors && (res as any).constraintErrors.length > 0) {
-        setConstraintErrors((res as any).constraintErrors);
+      } else if (res.constraintErrors && res.constraintErrors.length > 0) {
+        setConstraintErrors(res.constraintErrors);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Submit error:", e);
     
     } finally {
@@ -1189,15 +1189,15 @@ export default function SolveProblemPage() {
             </div>
           )}
 
-          {(task as any).argumentScheme && (task as any).argumentScheme.length > 0 && (
+          {task.argumentScheme && task.argumentScheme.length > 0 && (
             <div className={styles.constraintsBox}>
               <h3>Аргументы функции</h3>
-              {(task as any).argumentScheme.map((arg: ArgumentSchema, i: number) => (
+              {task.argumentScheme.map((arg: ArgumentSchema, i: number) => (
                 <div key={i} className={styles.constraintItem}>
                   <strong>{arg.name}</strong>: {TYPE_LABELS[arg.type] || arg.type}
                   {arg.objectFields && arg.objectFields.length > 0 && (
                     <ul style={{ marginLeft: "20px", marginTop: "5px" }}>
-                      {arg.objectFields.map((field: any, fi: number) => (
+                      {arg.objectFields.map((field, fi: number) => (
                         <li key={fi}>
                           {field.name}: {TYPE_LABELS[field.type] || field.type}
                         </li>
@@ -1207,7 +1207,7 @@ export default function SolveProblemPage() {
                   {arg.arrayElementObjectFields && arg.arrayElementObjectFields.length > 0 && (
                     <ul style={{ marginLeft: "20px", marginTop: "5px" }}>
                       <li>Массив объектов с полями:</li>
-                      {arg.arrayElementObjectFields.map((field: any, fi: number) => (
+                      {arg.arrayElementObjectFields.map((field, fi: number) => (
                         <li key={fi}>
                           {field.name}: {TYPE_LABELS[field.type] || field.type}
                         </li>
@@ -1219,11 +1219,11 @@ export default function SolveProblemPage() {
             </div>
           )}
 
-          {(task as any).returnType && (
+          {task.returnType && (
             <div className={styles.constraintsBox}>
               <h3>Возвращаемое значение</h3>
               <div className={styles.constraintItem}>
-                {TYPE_LABELS[(task as any).returnType] || (task as any).returnType}
+                {TYPE_LABELS[task.returnType] || task.returnType}
               </div>
             </div>
           )}
@@ -1249,9 +1249,9 @@ export default function SolveProblemPage() {
           )}
 
           {(() => {
-            const argScheme = (task as any).argumentScheme;
+            const argScheme = task.argumentScheme;
             const langTestCases =
-              (task as any).testCasesByLanguage?.[selectedLang] || task.testCases || [];
+              task.testCasesByLanguage?.[selectedLang] || task.testCases || [];
 
             if (langTestCases.length === 0) return null;
 

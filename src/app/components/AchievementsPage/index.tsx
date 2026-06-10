@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { AuthService } from "@/app/http/auth";
+import styles from "./index.module.scss";
+
 import { AchievementsService } from "@/app/http/achievements";
+import { AuthService } from "@/app/http/auth";
 import { LeadersService } from "@/app/http/leaders";
 import type { Achievement, AchievementProgress } from "@/app/http/types/achievements";
 import type { LeaderboardEntry, LeaderboardResponse } from "@/app/http/types/leaders";
-
-import styles from "./index.module.scss";
 
 const RANK_COLORS: Record<number, { background: string; border: string }> = {
   1: { background: "#fff8e1", border: "#f59e0b" },
@@ -29,6 +29,7 @@ const getTierColor = (tier: string): string => {
     professional: "#8b5cf6",
     legendary: "#f59e0b",
   };
+
   return tierColors[tier] || "#6b7280";
 };
 
@@ -43,19 +44,25 @@ const getTierLabel = (tier: string): string => {
     professional: "Профессионал",
     legendary: "Легенда",
   };
+
   return tierLabels[tier] || tier;
 };
 
 const getRankMark = (rank: number): string => {
   if (rank === 1) return "🥇";
+
   if (rank === 2) return "🥈";
+
   if (rank === 3) return "🥉";
+
   return `#${rank}`;
 };
 
 const getLeaderboardAvatarUri = (leader: LeaderboardEntry): string | null => {
   if (!leader.avatarUrl) return null;
+
   if (leader.avatarUrl.startsWith("data:")) return leader.avatarUrl;
+
   return `data:${leader.avatarMimeType || "image/jpeg"};base64,${leader.avatarUrl}`;
 };
 
@@ -64,6 +71,7 @@ const getInitials = (leader: LeaderboardEntry): string => {
     .map((v) => v?.trim()?.[0] || "")
     .join("")
     .toUpperCase();
+
   return initials || "ST";
 };
 
@@ -85,6 +93,7 @@ const AchievementsPage = () => {
 
       if (!auditoryId) {
         setError("Пользователь не авторизован");
+
         return;
       }
 
@@ -116,8 +125,11 @@ const AchievementsPage = () => {
 
   const handlePageChange = (nextPage: number) => {
     if (!leaderboard) return;
+
     if (nextPage < 1 || nextPage > leaderboard.totalPages) return;
+
     if (nextPage === currentPage) return;
+
     setCurrentPage(nextPage);
   };
 
@@ -169,6 +181,7 @@ const AchievementsPage = () => {
 
   const renderMyRankSection = () => {
     const currentUser = leaderboard?.currentUser;
+
     if (!leaderboard || !currentUser) return null;
 
     return (

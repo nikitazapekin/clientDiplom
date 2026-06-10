@@ -6,8 +6,8 @@ import Link from "next/link";
 import styles from "./index.module.scss";
 
 import CodeEditor from "@/app/components/CodeEditor";
-import type { ArticleBlock } from "@/app/http/types/community";
 import type { CodeLanguage } from "@/app/http/codeService";
+import type { ArticleBlock } from "@/app/http/types/community";
 
 interface ArticleContentRendererProps {
   blocks: ArticleBlock[];

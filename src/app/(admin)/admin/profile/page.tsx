@@ -73,7 +73,7 @@ const AdminProfilePage = () => {
         setAdminsLoading(false);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("loadProfile error:", err);
       setError(err.message || "Не удалось загрузить профиль");
     } finally {

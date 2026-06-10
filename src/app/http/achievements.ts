@@ -1,6 +1,5 @@
 import type {
   Achievement,
-  AchievementDefinitions,
   AchievementProgress,
 } from "./types/achievements";
 import $api from "./api";
@@ -11,6 +10,7 @@ export class AchievementsService {
     const response = await $api.get(`/achievements/auditory/${auditoryId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
     return response.data;
   }
 
@@ -19,6 +19,7 @@ export class AchievementsService {
     const response = await $api.get(`/achievements/progress/${auditoryId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
     return response.data;
   }
 
@@ -29,6 +30,7 @@ export class AchievementsService {
       { auditoryId },
       { headers: { Authorization: `Bearer ${token}` } }
     );
+
     return response.data;
   }
 }

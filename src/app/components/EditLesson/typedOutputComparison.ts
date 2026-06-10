@@ -124,23 +124,22 @@ export const coerceValueByType = (
     return value.map((item) => coerceValueByType(item, legacyElementType));
   }
 
-  switch (type) {
-    case "array":
-    case "list": {
-      const elementType = schema?.arrayElementType ?? "int";
+  if (type === "array" || type === "list") {
+    const elementType = schema?.arrayElementType ?? "int";
 
-      if (!Array.isArray(value)) {
-        return value;
-      }
-
-      const elementSchema: ReturnSchema | undefined =
-        elementType === "object"
-          ? { objectFields: schema?.arrayElementObjectFields }
-          : undefined;
-
-      return value.map((item) => coerceValueByType(item, elementType, elementSchema));
+    if (!Array.isArray(value)) {
+      return value;
     }
 
+    const elementSchema: ReturnSchema | undefined =
+      elementType === "object"
+        ? { objectFields: schema?.arrayElementObjectFields }
+        : undefined;
+
+    return value.map((item) => coerceValueByType(item, elementType, elementSchema));
+  }
+
+  switch (type) {
     case "object": {
       if (!isPlainObject(value)) {
         return value;
@@ -198,24 +197,19 @@ export const coerceValueByType = (
       return asString.length > 0 ? asString[0] : asString;
     }
 
-    case "int":
-    case "byte":
-    case "short":
-    case "long": {
-      const numericValue = Number(value);
-
-      return Number.isFinite(numericValue) ? Math.trunc(numericValue) : value;
-    }
-
-    case "float":
-    case "double":
-    case "number": {
-      const numericValue = Number(value);
-
-      return Number.isFinite(numericValue) ? numericValue : value;
-    }
-
     default:
+      if (type === "int" || type === "byte" || type === "short" || type === "long") {
+        const numericValue = Number(value);
+
+        return Number.isFinite(numericValue) ? Math.trunc(numericValue) : value;
+      }
+
+      if (type === "float" || type === "double" || type === "number") {
+        const numericValue = Number(value);
+
+        return Number.isFinite(numericValue) ? numericValue : value;
+      }
+
       return value;
   }
 };
@@ -423,23 +417,27 @@ const parseStructuredFieldValue = (rawValue: string, type: string): unknown => {
     return null;
   }
 
-  switch (type) {
-    case "string":
-    case "char":
-      return rawValue;
-    case "boolean":
-      return trimmedValue.toLowerCase() === "true";
-    case "int":
-    case "double":
-    case "float":
-    case "long":
-    case "short":
-    case "byte":
-    case "number":
-      return Number(trimmedValue);
-    default:
-      return rawValue;
+  if (type === "string" || type === "char") {
+    return rawValue;
   }
+
+  if (type === "boolean") {
+    return trimmedValue.toLowerCase() === "true";
+  }
+
+  if (
+    type === "int" ||
+    type === "double" ||
+    type === "float" ||
+    type === "long" ||
+    type === "short" ||
+    type === "byte" ||
+    type === "number"
+  ) {
+    return Number(trimmedValue);
+  }
+
+  return rawValue;
 };
 
 export const buildExpectedObjectOutput = (

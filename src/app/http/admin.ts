@@ -1,4 +1,5 @@
 import $api from "./api";
+import { getErrorMessage } from "./errorUtils";
 
 export interface AdminResponse {
   id: string;
@@ -29,9 +30,9 @@ export class AdminService {
       const response = await $api.get("/students/admins-list");
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get admins list error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch admins");
+      throw new Error(getErrorMessage(error, "Failed to fetch admins"));
     }
   }
 
@@ -40,9 +41,9 @@ export class AdminService {
       const response = await $api.get(`/students/auditory/${auditoryId}/admin`);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get admin by auditoryId error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch admin");
+      throw new Error(getErrorMessage(error, "Failed to fetch admin"));
     }
   }
 
@@ -56,7 +57,7 @@ export class AdminService {
       }
 
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.response?.status === 404) {
         return null;
       }

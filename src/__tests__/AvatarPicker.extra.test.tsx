@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent,render, screen } from "@testing-library/react";
 
 import AvatarPicker from "@/app/components/AvatarPicker";
 
@@ -47,6 +47,7 @@ describe("AvatarPicker extra", () => {
   it("calls onAvatarUploaded with empty string on successful delete", async () => {
     const onAvatarUploaded = jest.fn();
     const onClose = jest.fn();
+
     mockDeleteAvatar.mockResolvedValue({ success: true });
 
     render(
@@ -102,6 +103,7 @@ describe("AvatarPicker extra", () => {
     const setSpy = jest.spyOn(fileInput, "value", "set");
 
     const file = new File(["dummy"], "photo.jpg", { type: "image/jpeg" });
+
     Object.defineProperty(fileInput, "files", {
       value: [file],
       writable: false,

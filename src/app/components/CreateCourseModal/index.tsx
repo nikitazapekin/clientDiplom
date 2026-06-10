@@ -120,14 +120,6 @@ const CreateCourseModal = ({
         setFormData((prev) => ({ ...prev, logo: reader.result as string }));
       };
       reader.readAsDataURL(file);
-
-     
-      try {
-      
-      } catch (err) {
-        console.error("File upload error:", err);
-        setError("Ошибка загрузки изображения");
-      }
     }
   };
 
@@ -223,7 +215,7 @@ const CreateCourseModal = ({
       if (onSuccess) {
         onSuccess();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Create course error:", err);
       setError(err.message || "Ошибка при создании курса");
     } finally {

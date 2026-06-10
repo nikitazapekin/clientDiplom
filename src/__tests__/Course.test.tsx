@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { act,render, screen } from "@testing-library/react";
 import { fireEvent } from "@testing-library/react";
 
 import Course from "@/app/components/Course";
@@ -72,6 +72,7 @@ describe("Course", () => {
       );
     });
     const img = screen.getByRole("img");
+
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute("alt", "React Basics");
   });
@@ -85,6 +86,7 @@ describe("Course", () => {
       );
     });
     const img = screen.getByRole("img");
+
     expect(img).toBeInTheDocument();
   });
 
@@ -141,6 +143,7 @@ describe("Course", () => {
     );
     render(<Course item={baseItem} />);
     const statValues = screen.getAllByText("...");
+
     expect(statValues.length).toBe(2);
   });
 
@@ -158,6 +161,7 @@ describe("Course", () => {
       render(<Course item={baseItem} />);
     });
     const article = screen.getByRole("button");
+
     fireEvent.click(article);
     expect(mockPush).toHaveBeenCalledWith("/study/course-1/course");
   });
@@ -168,6 +172,7 @@ describe("Course", () => {
       render(<Course item={baseItem} />);
     });
     const article = screen.getByRole("button");
+
     fireEvent.click(article);
     expect(mockPush).toHaveBeenCalledWith("/admin/courses/course-1");
   });
@@ -178,6 +183,7 @@ describe("Course", () => {
       render(<Course item={baseItem} isAdmin />);
     });
     const article = screen.getByRole("button");
+
     fireEvent.click(article);
     expect(mockPush).toHaveBeenCalledWith("/admin/courses/course-1");
   });
@@ -187,6 +193,7 @@ describe("Course", () => {
       render(<Course item={baseItem} />);
     });
     const article = screen.getByRole("button");
+
     fireEvent.keyDown(article, { key: "Enter" });
     expect(mockPush).toHaveBeenCalled();
   });
@@ -196,6 +203,7 @@ describe("Course", () => {
       render(<Course item={baseItem} />);
     });
     const article = screen.getByRole("button");
+
     fireEvent.keyDown(article, { key: " " });
     expect(mockPush).toHaveBeenCalled();
   });
@@ -259,6 +267,7 @@ describe("Course", () => {
   it("handles stats fetch error gracefully", async () => {
     mockGetCourseStats.mockRejectedValue(new Error("Network error"));
     const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+
     await act(async () => {
       render(<Course item={{ ...baseItem, tags: ["react"] }} />);
     });
@@ -271,6 +280,7 @@ describe("Course", () => {
       render(<Course item={{ ...baseItem, tags: ["react"] }} />);
     });
     const article = screen.getByRole("button");
+
     expect(article).toHaveAttribute("tabIndex", "0");
   });
 });

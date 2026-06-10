@@ -1,4 +1,5 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent,render, screen } from "@testing-library/react";
+import type { StaticImageData } from "next/image";
 
 import WelcomeCard from "@/app/components/WelcomeCard";
 
@@ -12,7 +13,7 @@ const createItem = (overrides = {}) => ({
   id: 1,
   title: "Учиться",
   type: "study",
-  image: { src: "/test.png", width: 100, height: 100 } as unknown as import("next/image").StaticImageData,
+  image: { src: "/test.png", width: 100, height: 100 } as unknown as StaticImageData,
   path: "/study",
   ...overrides,
 });
@@ -24,6 +25,7 @@ describe("WelcomeCard extra", () => {
 
   it("renders with different titles", () => {
     const { rerender } = render(<WelcomeCard item={createItem({ title: "Курсы" })} />);
+
     expect(screen.getByText("Курсы")).toBeInTheDocument();
 
     rerender(<WelcomeCard item={createItem({ title: "Задачи" })} />);
@@ -33,6 +35,7 @@ describe("WelcomeCard extra", () => {
   it("renders image with correct alt attribute", () => {
     render(<WelcomeCard item={createItem()} />);
     const img = screen.getByRole("img");
+
     expect(img).toHaveAttribute("alt", "icon");
   });
 
@@ -45,6 +48,7 @@ describe("WelcomeCard extra", () => {
   it("calls router.push only once per click", () => {
     render(<WelcomeCard item={createItem()} />);
     const card = screen.getByText("Учиться");
+
     fireEvent.click(card);
     fireEvent.click(card);
     expect(mockPush).toHaveBeenCalledTimes(2);
@@ -55,9 +59,10 @@ describe("WelcomeCard extra", () => {
       id: 0,
       title: "Test",
       type: "test",
-      image: { src: "/img.png", width: 50, height: 50 } as unknown as import("next/image").StaticImageData,
+      image: { src: "/img.png", width: 50, height: 50 } as unknown as StaticImageData,
       path: "/test",
     };
+
     render(<WelcomeCard item={minimalItem} />);
     expect(screen.getByText("Test")).toBeInTheDocument();
   });

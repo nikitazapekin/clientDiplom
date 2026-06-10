@@ -9,8 +9,8 @@ import styles from "../CommunityHub/index.module.scss";
 
 import ArticleContentRenderer from "@/app/components/ArticleContentRenderer";
 import CommunityThread from "@/app/components/CommunityThread";
-import { AuthService } from "@/app/http/auth";
 import articlesService from "@/app/http/articles";
+import { AuthService } from "@/app/http/auth";
 import type { Article, CommunityComment } from "@/app/http/types/community";
 
 const formatDate = (value: string) =>

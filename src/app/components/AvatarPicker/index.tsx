@@ -53,7 +53,7 @@ const AvatarPicker: React.FC<AvatarPickerProps> = ({
            
             onClose();
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Upload error:', error);
         
         } finally {
@@ -67,7 +67,7 @@ const AvatarPicker: React.FC<AvatarPickerProps> = ({
       };
 
       reader.readAsDataURL(file);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('File error:', error);
       setLoading(false);
     
@@ -87,7 +87,7 @@ const AvatarPicker: React.FC<AvatarPickerProps> = ({
        
           onClose();
         })
-        .catch((error: any) => {
+        .catch((error: unknown) => {
           console.error('Remove error:', error);
       
         })

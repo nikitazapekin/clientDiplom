@@ -89,7 +89,7 @@ const Page = () => {
       } else {
         setOutput(result.output || "Код выполнен, но вывода нет");
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       setOutput(`Ошибка при выполнении: ${e?.message || "Неизвестная ошибка"}`);
     } finally {
       setIsLoading(false);

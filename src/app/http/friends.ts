@@ -1,4 +1,5 @@
 import $api from "./api";
+import { getErrorMessage } from "./errorUtils";
 
 export interface FriendResponse {
   id: string;
@@ -32,9 +33,10 @@ export class FriendsService {
   static async getFriendsByAuditoryId(clientAuditoryId: string): Promise<FriendResponse[]> {
     try {
       const response = await $api.get(`/friends/auditory/${clientAuditoryId}`);
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to fetch friends");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to fetch friends"));
     }
   }
 
@@ -43,9 +45,10 @@ export class FriendsService {
       const response = await $api.get(`/friends/search`, {
         params: { clientAuditoryId, query },
       });
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to search friends");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to search friends"));
     }
   }
 
@@ -54,9 +57,10 @@ export class FriendsService {
       const response = await $api.get(`/friends/search-users`, {
         params: { query: query || "" },
       });
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to search users");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to search users"));
     }
   }
 
@@ -65,8 +69,8 @@ export class FriendsService {
       await $api.delete(`/friends`, {
         params: { clientAuditoryId, friendAuditoryId },
       });
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to remove friend");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to remove friend"));
     }
   }
 
@@ -78,9 +82,10 @@ export class FriendsService {
       const response = await $api.get(`/friends/check`, {
         params: { clientAuditoryId, friendAuditoryId },
       });
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to check friendship");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to check friendship"));
     }
   }
 
@@ -93,45 +98,50 @@ export class FriendsService {
         senderAuditoryId,
         receiverAuditoryId,
       });
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to send friend request");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to send friend request"));
     }
   }
 
   static async acceptFriendRequest(requestId: string): Promise<FriendResponse> {
     try {
       const response = await $api.patch(`/friend-requests/${requestId}/accept`);
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to accept friend request");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to accept friend request"));
     }
   }
 
   static async rejectFriendRequest(requestId: string): Promise<FriendRequestResponse> {
     try {
       const response = await $api.patch(`/friend-requests/${requestId}/reject`);
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to reject friend request");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to reject friend request"));
     }
   }
 
   static async getPendingFriendRequests(userAuditoryId: string): Promise<FriendRequestResponse[]> {
     try {
       const response = await $api.get(`/friend-requests/pending/received/${userAuditoryId}`);
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to fetch pending friend requests");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to fetch pending friend requests"));
     }
   }
 
   static async getSentFriendRequests(userAuditoryId: string): Promise<FriendRequestResponse[]> {
     try {
       const response = await $api.get(`/friend-requests/pending/sent/${userAuditoryId}`);
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to fetch sent friend requests");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to fetch sent friend requests"));
     }
   }
 
@@ -143,8 +153,8 @@ export class FriendsService {
       await $api.delete(`/friend-requests/cancel`, {
         params: { senderAuditoryId, receiverAuditoryId },
       });
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to cancel friend request");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to cancel friend request"));
     }
   }
 
@@ -157,18 +167,20 @@ export class FriendsService {
       const hasRequest = sentRequests.some(
         (request) => request.receiverId === receiverAuditoryId && request.status === "pending"
       );
+
       return { hasRequest };
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to check pending request");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to check pending request"));
     }
   }
 
   static async getProfileByAuditoryId(auditoryId: string) {
     try {
       const response = await $api.get(`/profile/client/auditory/${auditoryId}/full`);
+
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to fetch profile");
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Failed to fetch profile"));
     }
   }
 }

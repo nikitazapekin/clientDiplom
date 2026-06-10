@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { act,fireEvent, render, screen } from "@testing-library/react";
 
 import CreateCourseModal from "@/app/components/CreateCourseModal";
 
@@ -14,7 +14,21 @@ jest.mock("@/app/actions/updateCourses", () => ({
 }));
 
 jest.mock("../app/components/Button", () => {
-  const MockButton = ({ text, onClick, color, width, textColor, disabled }: any) =>
+  const MockButton = ({
+    text,
+    onClick,
+    color,
+    width,
+    textColor,
+    disabled,
+  }: {
+    text: string;
+    onClick?: () => void;
+    color?: string;
+    width?: string;
+    textColor?: string;
+    disabled?: boolean;
+  }) =>
     React.createElement(
       "button",
       {
@@ -25,6 +39,7 @@ jest.mock("../app/components/Button", () => {
       },
       text
     );
+
   return MockButton;
 });
 
@@ -45,6 +60,7 @@ describe("CreateCourseModal", () => {
     const { container } = render(
       <CreateCourseModal {...defaultProps} isOpen={false} />
     );
+
     expect(container.firstChild).toBeNull();
   });
 
@@ -79,6 +95,7 @@ describe("CreateCourseModal", () => {
     const textarea = screen.getByPlaceholderText(
       /Расскажите, чему посвящён курс/i
     );
+
     expect(textarea).toBeInTheDocument();
     expect(textarea.tagName).toBe("TEXTAREA");
   });
@@ -87,6 +104,7 @@ describe("CreateCourseModal", () => {
     render(<CreateCourseModal {...defaultProps} />);
     const selects = screen.getAllByRole("combobox");
     const typeSelect = selects[0];
+
     expect(typeSelect).toBeInTheDocument();
   });
 
@@ -111,6 +129,7 @@ describe("CreateCourseModal", () => {
   it("shows validation error when description is empty", () => {
     render(<CreateCourseModal {...defaultProps} />);
     const titleInput = screen.getByPlaceholderText("Введите название");
+
     fireEvent.change(titleInput, { target: { value: "My Course" } });
     fireEvent.click(screen.getByText("Создать"));
     expect(screen.getByText("Описание курса обязательно")).toBeInTheDocument();
@@ -121,6 +140,7 @@ describe("CreateCourseModal", () => {
     fireEvent.click(screen.getByText("Создать"));
     expect(screen.getByText("Название курса обязательно")).toBeInTheDocument();
     const titleInput = screen.getByPlaceholderText("Введите название");
+
     fireEvent.change(titleInput, { target: { value: "A" } });
     expect(
       screen.queryByText("Название курса обязательно")
@@ -130,6 +150,7 @@ describe("CreateCourseModal", () => {
   it("adds a tag when clicking add button", () => {
     render(<CreateCourseModal {...defaultProps} />);
     const tagInput = screen.getByPlaceholderText("Введите тег");
+
     fireEvent.change(tagInput, { target: { value: "javascript" } });
     fireEvent.click(screen.getByText("Добавить"));
     expect(screen.getByText("javascript")).toBeInTheDocument();
@@ -138,6 +159,7 @@ describe("CreateCourseModal", () => {
   it("adds a tag on Enter key press", () => {
     render(<CreateCourseModal {...defaultProps} />);
     const tagInput = screen.getByPlaceholderText("Введите тег");
+
     fireEvent.change(tagInput, { target: { value: "react" } });
     fireEvent.keyPress(tagInput, { key: "Enter", code: "Enter", charCode: 13 });
     expect(screen.getByText("react")).toBeInTheDocument();
@@ -146,10 +168,12 @@ describe("CreateCourseModal", () => {
   it("removes a tag when clicking remove button", () => {
     render(<CreateCourseModal {...defaultProps} />);
     const tagInput = screen.getByPlaceholderText("Введите тег");
+
     fireEvent.change(tagInput, { target: { value: "javascript" } });
     fireEvent.click(screen.getByText("Добавить"));
     expect(screen.getByText("javascript")).toBeInTheDocument();
     const removeButton = screen.getByText("×");
+
     fireEvent.click(removeButton);
     expect(screen.queryByText("javascript")).not.toBeInTheDocument();
   });
@@ -162,6 +186,7 @@ describe("CreateCourseModal", () => {
 
   it("calls handleOpen when cancel is clicked", () => {
     const handleOpen = jest.fn();
+
     render(<CreateCourseModal {...defaultProps} handleOpen={handleOpen} />);
     fireEvent.click(screen.getByText("Отмена"));
     expect(handleOpen).toHaveBeenCalled();
@@ -173,6 +198,7 @@ describe("CreateCourseModal", () => {
       <CreateCourseModal {...defaultProps} handleOpen={handleOpen} />
     );
     const overlay = container.querySelector('[class*="overlay"]');
+
     if (overlay) {
       fireEvent.click(overlay);
       expect(handleOpen).toHaveBeenCalled();
@@ -182,6 +208,7 @@ describe("CreateCourseModal", () => {
   it("renders default status as draft", () => {
     render(<CreateCourseModal {...defaultProps} />);
     const statusSelect = screen.getAllByRole("combobox")[2];
+
     expect(statusSelect).toHaveValue("draft");
   });
 
@@ -236,25 +263,31 @@ describe("CreateCourseModal", () => {
     render(<CreateCourseModal {...defaultProps} />);
 
     const titleInput = screen.getByPlaceholderText("Введите название");
+
     fireEvent.change(titleInput, { target: { value: "Test" } });
     const descInput = screen.getByPlaceholderText(
       "Коротко опишите курс для карточки и списка курсов"
     );
+
     fireEvent.change(descInput, { target: { value: "Test desc" } });
     const fullDesc = screen.getByPlaceholderText(
       /Расскажите, чему посвящён курс/i
     );
+
     fireEvent.change(fullDesc, {
       target: { value: "Full description content here" },
     });
 
     const typeSelect = screen.getAllByRole("combobox")[0];
+
     fireEvent.change(typeSelect, { target: { value: "Практический" } });
     const langSelect = screen.getAllByRole("combobox")[1];
+
     fireEvent.change(langSelect, { target: { value: "JavaScript" } });
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(["dummy"], "logo.png", { type: "image/png" });
+
     Object.defineProperty(fileInput, "files", { value: [file] });
     fireEvent.change(fileInput);
 

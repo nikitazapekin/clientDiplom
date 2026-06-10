@@ -56,6 +56,7 @@ describe("CourseCategory", () => {
       mockCourse({ id: "2", title: "TS" }),
       mockCourse({ id: "3", title: "React" }),
     ];
+
     render(<CourseCategory title="Frontend" courses={courses} />);
     expect(screen.getByText("JS")).toBeInTheDocument();
     expect(screen.getByText("TS")).toBeInTheDocument();
@@ -64,6 +65,7 @@ describe("CourseCategory", () => {
 
   it("renders course descriptions", () => {
     const courses = [mockCourse({ description: "Master TypeScript" })];
+
     render(<CourseCategory title="Frontend" courses={courses} />);
     expect(screen.getByText("Master TypeScript")).toBeInTheDocument();
   });

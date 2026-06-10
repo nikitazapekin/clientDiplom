@@ -22,13 +22,21 @@ export const isCodexTypedEnvelope = (value: unknown): value is CodexTypedEnvelop
 
 export const normalizeSchemaType = (type: string): string => {
   if (type === "array_int") return "array";
+
   if (type === "array_string") return "array";
+
   if (type === "array_double") return "array";
+
   if (type === "array_float") return "array";
+
   if (type === "array_long") return "array";
+
   if (type === "array_boolean") return "array";
+
   if (type === "array_char") return "array";
+
   if (type === "number") return "double";
+
   return type;
 };
 
@@ -36,9 +44,13 @@ export const normalizeRuntimeType = (type: string): string => {
   const lowered = type.toLowerCase();
 
   if (lowered === "str") return "string";
+
   if (lowered === "bool") return "boolean";
+
   if (lowered === "integer" || lowered === "int32" || lowered === "int64") return "int";
+
   if (lowered === "single") return "float";
+
   if (lowered === "decimal") return "double";
 
   return lowered;

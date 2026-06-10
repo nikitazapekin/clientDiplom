@@ -29,6 +29,7 @@ describe("WelcomeComponent", () => {
   it("renders images for all cards", () => {
     render(<WelcomeComponent />);
     const images = screen.getAllByRole("img");
+
     expect(images).toHaveLength(5);
   });
 });

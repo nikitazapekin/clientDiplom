@@ -2,6 +2,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
+import styles from "./index.module.scss";
+
 import { AuthService } from "@/app/http/auth";
 import {
   type FriendRequestResponse,
@@ -9,18 +11,20 @@ import {
   FriendsService,
 } from "@/app/http/friends";
 
-import styles from "./index.module.scss";
-
 type TabType = "my-friends" | "find-friends" | "requests";
 
-const getAvatarUrl = (item: Record<string, any>): string | null => {
+const getAvatarUrl = (item: Record<string, unknown>): string | null => {
   const avatar = item.avatar as { imageUrl?: string; mimeType?: string } | undefined;
+
   if (avatar?.imageUrl) {
     if (avatar.imageUrl.startsWith("data:")) return avatar.imageUrl;
+
     if (avatar.imageUrl.startsWith("http://") || avatar.imageUrl.startsWith("https://"))
       return avatar.imageUrl;
+
     if (avatar.mimeType) return `data:${avatar.mimeType};base64,${avatar.imageUrl}`;
   }
+
   return null;
 };
 
@@ -41,16 +45,20 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
   const loadFriends = useCallback(async () => {
     try {
       const userData = AuthService.getCurrentUser();
+
       if (!userData.userId) {
         setError("User not authenticated");
         setLoading(false);
+
         return;
       }
+
       setUserAuditoryId(userData.userId);
       const [friendsData, requestsData] = await Promise.all([
         FriendsService.getFriendsByAuditoryId(userData.userId),
         FriendsService.getPendingFriendRequests(userData.userId),
       ]);
+
       setFriends(friendsData);
       setPendingRequests(requestsData);
       setError(null);
@@ -65,13 +73,17 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
   const loadAllUsers = useCallback(async () => {
     try {
       const userData = AuthService.getCurrentUser();
+
       if (!userData.userId) {
         setError("User not authenticated");
         setLoading(false);
+
         return;
       }
+
       setUserAuditoryId(userData.userId);
       const usersData = await FriendsService.searchUsers("");
+
       setAllUsers(usersData);
       setError(null);
     } catch (err: unknown) {
@@ -84,6 +96,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+
     if (activeTab === "find-friends") {
       await loadAllUsers();
     } else {
@@ -95,25 +108,26 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
     loadData();
   }, [loadData]);
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadData();
-  };
-
   const handleSearch = useCallback(async () => {
     if (!userAuditoryId) return;
+
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setIsSearching(false);
+
       return;
     }
+
     try {
       setIsSearching(true);
+
       if (activeTab === "my-friends") {
         const results = await FriendsService.searchFriends(userAuditoryId, searchQuery);
+
         setSearchResults(results);
       } else if (activeTab === "find-friends") {
         const results = await FriendsService.searchUsers(searchQuery);
+
         setSearchResults(results);
       }
     } catch {
@@ -125,6 +139,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
 
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+
     searchTimerRef.current = setTimeout(() => {
       if (searchQuery.trim()) {
         handleSearch();
@@ -133,6 +148,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
         setIsSearching(false);
       }
     }, 500);
+
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
@@ -158,7 +174,9 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
 
   const handleRemoveFriend = async (friendAuditoryId: string) => {
     if (!confirm("Вы уверены, что хотите удалить этого друга?")) return;
+
     if (!userAuditoryId) return;
+
     try {
       await FriendsService.removeFriend(userAuditoryId, friendAuditoryId);
       await loadFriends();
@@ -169,17 +187,24 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
 
   const handleAddFriend = async (friendAuditoryId: string) => {
     if (!userAuditoryId) return;
+
     try {
       const status = await FriendsService.checkFriendship(userAuditoryId, friendAuditoryId);
+
       if (status.isFriend) {
         alert("Этот пользователь уже в друзьях");
+
         return;
       }
+
       const pending = await FriendsService.checkPendingRequest(userAuditoryId, friendAuditoryId);
+
       if (pending.hasRequest) {
         alert("Запрос уже отправлен");
+
         return;
       }
+
       await FriendsService.sendFriendRequest(userAuditoryId, friendAuditoryId);
       alert("Запрос отправлен!");
     } catch (err: unknown) {
@@ -187,11 +212,13 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
-  const renderAvatar = (item: Record<string, any>, fallbackLetter?: string) => {
+  const renderAvatar = (item: Record<string, unknown>, fallbackLetter?: string) => {
     const url = getAvatarUrl(item);
+
     if (url) {
       return <img src={url} alt="" className={styles.avatarImage} />;
     }
+
     return <div className={styles.avatarFallback}>{fallbackLetter || "?"}</div>;
   };
 
@@ -204,8 +231,11 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
 
   const getCurrentData = () => {
     if (searchResults.length > 0) return searchResults;
+
     if (activeTab === "my-friends") return friends;
+
     if (activeTab === "find-friends") return allUsers;
+
     return [];
   };
 
@@ -284,10 +314,11 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                 pendingRequests.map((item) => {
                   const fullName = `${item.senderFirstName || ""} ${item.senderMiddleName || ""} ${item.senderLastName || ""}`.trim();
                   const initial = item.senderFirstName?.[0]?.toUpperCase();
+
                   return (
                     <div key={item.id} className={styles.requestCard}>
                       <div className={styles.avatarContainer}>
-                        {renderAvatar(item as Record<string, any>, initial)}
+                        {renderAvatar(item as Record<string, unknown>, initial)}
                       </div>
                       <div className={styles.requestInfo}>
                         <div className={styles.friendName}>{fullName || "Unknown"}</div>
@@ -328,10 +359,11 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                   {pendingRequests.map((item) => {
                     const fullName = `${item.senderFirstName || ""} ${item.senderMiddleName || ""} ${item.senderLastName || ""}`.trim();
                     const initial = item.senderFirstName?.[0]?.toUpperCase();
+
                     return (
                       <div key={item.id} className={styles.requestCard}>
                         <div className={styles.avatarContainer}>
-                          {renderAvatar(item as Record<string, any>, initial)}
+                          {renderAvatar(item as Record<string, unknown>, initial)}
                         </div>
                         <div className={styles.requestInfo}>
                           <div className={styles.friendName}>{fullName || "Unknown"}</div>
@@ -380,7 +412,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                           onClick={() => handleRemoveFriend(item.friendId)}
                         >
                           <div className={styles.avatarContainer}>
-                            {renderAvatar(item as Record<string, any>, initial)}
+                            {renderAvatar(item as Record<string, unknown>, initial)}
                           </div>
                           <div className={styles.friendInfo}>
                             <div className={styles.friendName}>{fullName || "Unknown"}</div>
@@ -414,7 +446,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                         onDoubleClick={() => handleRemoveFriend(item.friendId)}
                       >
                         <div className={styles.avatarContainer}>
-                          {renderAvatar(item as Record<string, any>, initial)}
+                          {renderAvatar(item as Record<string, unknown>, initial)}
                         </div>
                         <div className={styles.friendInfo}>
                           <div className={styles.friendName}>{fullName || "Unknown"}</div>
@@ -437,7 +469,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                     <div key={item.id} className={styles.friendCard}>
                       <div className={styles.friendInfoClickable}>
                         <div className={styles.avatarContainer}>
-                          {renderAvatar(item as Record<string, any>, initial)}
+                          {renderAvatar(item as Record<string, unknown>, initial)}
                         </div>
                         <div className={styles.friendInfo}>
                           <div className={styles.friendName}>{fullName || "Unknown"}</div>

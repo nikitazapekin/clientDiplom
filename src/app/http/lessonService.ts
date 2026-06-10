@@ -43,7 +43,7 @@ export class LessonService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Create lesson error:", error);
       throw error;
     }
@@ -59,7 +59,7 @@ export class LessonService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get lesson error:", error);
       throw error;
     }
@@ -75,7 +75,7 @@ export class LessonService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get lesson by map element id error:", error);
       throw error;
     }
@@ -91,7 +91,7 @@ export class LessonService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Update lesson error:", error);
       throw error;
     }
@@ -108,7 +108,7 @@ export class LessonService {
       });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Delete lesson error:", error);
       throw error;
     }

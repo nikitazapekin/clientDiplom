@@ -15,7 +15,7 @@ export interface TestCase {
 
 export interface CodeConstraint {
   type: string;
-  value: any;
+  value: string | number | boolean;
 }
 
 export interface ArgumentSchema {
@@ -89,6 +89,8 @@ export interface SubmitSolutionResult {
   newExperience: number;
   constraintsPassed: boolean;
   constraintErrors: string[];
+  output?: string;
+  message?: string;
 }
 
 export interface StudentLevel {

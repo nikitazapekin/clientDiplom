@@ -1,4 +1,5 @@
 import $api from "./api";
+import { getErrorMessage } from "./errorUtils";
 
 export interface StudentResponse {
   id: string;
@@ -31,7 +32,7 @@ export interface GetStudentsParams {
   search?: string;
 }
 
-const normalizeStudent = (student: any): StudentResponse => ({
+const normalizeStudent = (student: Record<string, unknown>): StudentResponse => ({
   id: student.id,
   auditoryId: student.auditoryId || student.auditory?.auditoryId || "",
   email: student.email || student.auditory?.email || student.user?.email || "",
@@ -78,9 +79,9 @@ export class StudentsService {
           ? response.data.students.map(normalizeStudent)
           : [],
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get students error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch students");
+      throw new Error(getErrorMessage(error, "Failed to fetch students"));
     }
   }
 
@@ -103,9 +104,9 @@ export class StudentsService {
       const response = await $api.get(`/students/auditory/${auditoryId}`);
 
       return normalizeStudent(response.data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get student error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch student");
+      throw new Error(getErrorMessage(error, "Failed to fetch student"));
     }
   }
 }

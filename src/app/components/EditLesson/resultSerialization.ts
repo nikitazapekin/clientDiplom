@@ -562,6 +562,7 @@ public static class __CodexRuntime {
 }
 `;
 
+/* eslint-disable no-useless-escape -- Rust source embedded in template literal */
 export const RUST_TYPED_SERIALIZATION_HELPERS = `
 fn __codex_escape(value: &str) -> String {
     value

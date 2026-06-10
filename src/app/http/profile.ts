@@ -8,6 +8,7 @@ import type {
   UpdateAvatarRequest,
 } from "./types/profile";
 import $api, { $apiNoRedirect } from "./api";
+import { getErrorMessage, getErrorResponse } from "./errorUtils";
 
 export class ProfileService {
   /**
@@ -20,19 +21,21 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorResponse = getErrorResponse(error);
+
       console.error("Get full profile error:", error);
-      console.error("Error response status:", error.response?.status);
-      console.error("Error response headers:", error.response?.headers);
-      console.error("Error response data:", error.response?.data);
-      
-      const responseData = error.response?.data;
+      console.error("Error response status:", errorResponse?.status);
+      console.error("Error response headers:", errorResponse?.headers);
+      console.error("Error response data:", errorResponse?.data);
+
+      const responseData = errorResponse?.data;
 
       if (typeof responseData === 'string' && responseData.includes('<!DOCTYPE')) {
         throw new Error("Server returned HTML instead of JSON - possible redirect or auth error");
       }
       
-      throw new Error(error.response?.data?.message || "Failed to fetch profile");
+      throw new Error(getErrorMessage(error, "Failed to fetch profile"));
     }
   }
 
@@ -46,9 +49,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Get full profile error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch profile");
+    } catch (error: unknown) {
+      console.error("Get full profile error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to fetch profile"));
     }
   }
 
@@ -79,9 +82,9 @@ export class ProfileService {
       console.log('Create avatar response:', response.data);
 
       return response.data;
-    } catch (error: any) {
-      console.error("Create avatar base64 error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to create avatar");
+    } catch (error: unknown) {
+      console.error("Create avatar base64 error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to create avatar"));
     }
   }
 
@@ -109,9 +112,9 @@ export class ProfileService {
       console.log('Update avatar response:', response.data);
 
       return response.data;
-    } catch (error: any) {
-      console.error("Update avatar base64 error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to update avatar");
+    } catch (error: unknown) {
+      console.error("Update avatar base64 error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to update avatar"));
     }
   }
 
@@ -139,9 +142,9 @@ export class ProfileService {
       console.log('Update avatar by user response:', response.data);
 
       return response.data;
-    } catch (error: any) {
-      console.error("Update avatar by user base64 error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to update avatar");
+    } catch (error: unknown) {
+      console.error("Update avatar by user base64 error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to update avatar"));
     }
   }
 
@@ -155,8 +158,8 @@ export class ProfileService {
       try {
         existingAvatar = await this.getAvatarByAuditoryId(auditoryId);
         console.log('Existing avatar found:', existingAvatar?.id);
-      } catch (error: any) {
-        if (error.message.includes('not found') || error.response?.status === 404) {
+      } catch (error: unknown) {
+        if (getErrorMessage(error, "").includes('not found') || getErrorResponse(error)?.status === 404) {
           console.log('No existing avatar, will create new one');
         } else {
           throw error;
@@ -172,7 +175,7 @@ export class ProfileService {
 
         return await this.createAvatarBase64(auditoryId, base64Image, mimeType);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Upload avatar base64 error:", error);
       throw error;
     }
@@ -188,9 +191,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Get avatar error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch avatar");
+    } catch (error: unknown) {
+      console.error("Get avatar error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to fetch avatar"));
     }
   }
 
@@ -204,9 +207,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Get avatar by user error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch avatar");
+    } catch (error: unknown) {
+      console.error("Get avatar by user error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to fetch avatar"));
     }
   }
 
@@ -218,14 +221,14 @@ export class ProfileService {
       await $api.delete(`/profile/avatar/${id}`);
 
       return { success: true };
-    } catch (error: any) {
-      console.error("Delete avatar error:", error.response?.data || error.message);
+    } catch (error: unknown) {
+      console.error("Delete avatar error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
 
-      if (error.response?.status === 404) {
+      if (getErrorResponse(error)?.status === 404) {
         return { success: true };
       }
 
-      throw new Error(error.response?.data?.message || "Failed to delete avatar");
+      throw new Error(getErrorMessage(error, "Failed to delete avatar"));
     }
   }
 
@@ -237,14 +240,14 @@ export class ProfileService {
       await $api.delete(`/profile/avatar/user/${auditoryId}`);
 
       return { success: true };
-    } catch (error: any) {
-      console.error("Delete avatar by user error:", error.response?.data || error.message);
+    } catch (error: unknown) {
+      console.error("Delete avatar by user error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
 
-      if (error.response?.status === 404) {
+      if (getErrorResponse(error)?.status === 404) {
         return { success: true };
       }
 
-      throw new Error(error.response?.data?.message || "Failed to delete avatar");
+      throw new Error(getErrorMessage(error, "Failed to delete avatar"));
     }
   }
 
@@ -261,9 +264,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Create student result error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to create student result");
+    } catch (error: unknown) {
+      console.error("Create student result error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to create student result"));
     }
   }
 
@@ -277,9 +280,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Get student result error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch student result");
+    } catch (error: unknown) {
+      console.error("Get student result error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to fetch student result"));
     }
   }
 
@@ -293,9 +296,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Get student results error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch student results");
+    } catch (error: unknown) {
+      console.error("Get student results error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to fetch student results"));
     }
   }
 
@@ -309,9 +312,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Get lesson results error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch lesson results");
+    } catch (error: unknown) {
+      console.error("Get lesson results error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to fetch lesson results"));
     }
   }
 
@@ -325,9 +328,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Get student progress error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch student progress");
+    } catch (error: unknown) {
+      console.error("Get student progress error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to fetch student progress"));
     }
   }
 
@@ -342,9 +345,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Update student result error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to update student result");
+    } catch (error: unknown) {
+      console.error("Update student result error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to update student result"));
     }
   }
 
@@ -356,14 +359,14 @@ export class ProfileService {
       await $api.delete(`/profile/student-results/${id}`);
 
       return { success: true };
-    } catch (error: any) {
-      console.error("Delete student result error:", error.response?.data || error.message);
+    } catch (error: unknown) {
+      console.error("Delete student result error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
 
-      if (error.response?.status === 404) {
+      if (getErrorResponse(error)?.status === 404) {
         return { success: true };
       }
 
-      throw new Error(error.response?.data?.message || "Failed to delete student result");
+      throw new Error(getErrorMessage(error, "Failed to delete student result"));
     }
   }
 
@@ -375,14 +378,14 @@ export class ProfileService {
       await $api.delete(`/profile/student-results/client/${clientId}`);
 
       return { success: true };
-    } catch (error: any) {
-      console.error("Delete all student results error:", error.response?.data || error.message);
+    } catch (error: unknown) {
+      console.error("Delete all student results error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
 
-      if (error.response?.status === 404) {
+      if (getErrorResponse(error)?.status === 404) {
         return { success: true };
       }
 
-      throw new Error(error.response?.data?.message || "Failed to delete student results");
+      throw new Error(getErrorMessage(error, "Failed to delete student results"));
     }
   }
 
@@ -397,9 +400,9 @@ export class ProfileService {
       );
 
       return response.data;
-    } catch (error: any) {
-      console.error("Get course progress error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch course progress");
+    } catch (error: unknown) {
+      console.error("Get course progress error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
+      throw new Error(getErrorMessage(error, "Failed to fetch course progress"));
     }
   }
 }

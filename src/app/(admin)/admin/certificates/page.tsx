@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import styles from "./page.module.scss";
 
@@ -32,7 +32,7 @@ const CertificatesPage = () => {
   const [searchDateFrom, setSearchDateFrom] = useState("");
   const [searchDateTo, setSearchDateTo] = useState("");
 
-  const fetchCertificates = async (params?: Partial<CertificateSearchParams>) => {
+  const fetchCertificates = useCallback(async (params?: Partial<CertificateSearchParams>) => {
     try {
       setLoading(true);
       setError(null);
@@ -52,16 +52,16 @@ const CertificatesPage = () => {
       setTotal(response.total);
       setTotalPages(response.totalPages);
       setPage(response.page);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || "Failed to fetch certificates");
     } finally {
       setLoading(false);
     }
-  };
+  }, [limit, page, searchCourseName, searchDateFrom, searchDateTo, searchFirstName, searchLastName]);
 
   useEffect(() => {
     fetchCertificates();
-  }, []);
+  }, [fetchCertificates]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +107,7 @@ const CertificatesPage = () => {
       });
       setEditingId(null);
       fetchCertificates({ page });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || "Failed to update certificate");
     }
   };
@@ -128,7 +128,7 @@ const CertificatesPage = () => {
       await CertificateService.deleteCertificate(id);
       setShowDeleteConfirm(null);
       fetchCertificates({ page });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || "Failed to delete certificate");
     }
   };

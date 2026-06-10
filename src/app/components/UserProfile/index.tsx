@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 
-import AvatarPicker from '../AvatarPicker';
 import FriendsModal from '../FriendsModal';
 
 import styles from './index.module.scss';
@@ -318,8 +317,6 @@ const UserProfile: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [certificates, setCertificates] = useState<CertificateResponse[]>([]);
   const [certificatesLoading, setCertificatesLoading] = useState(false);
-  const [activeCertIndex, setActiveCertIndex] = useState(0);
- 
   const [codingTasks, setCodingTasks] = useState<CodeTask[]>([]);
   const [studentLevel, setStudentLevel] = useState<StudentLevel | null>(null);
   const [codingLoading, setCodingLoading] = useState(false);
@@ -380,7 +377,7 @@ const UserProfile: React.FC = () => {
       } finally {
         setCodingLoading(false);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Failed to load profile');
     } finally {
       setLoading(false);
@@ -412,11 +409,6 @@ const UserProfile: React.FC = () => {
     loadProfile();
   }, [loadProfile]);
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadProfile();
-  };
-
   const handleAvatarPress = () => {
     setAvatarPickerVisible(true);
   };
@@ -439,7 +431,7 @@ const UserProfile: React.FC = () => {
           await ProfileService.uploadAvatarBase64(userId, base64Only, mimeType);
           handleAvatarUploaded(base64);
           setAvatarPickerVisible(false);
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('Avatar upload error:', err);
           alert('Failed to upload avatar: ' + (err.message || 'Unknown error'));
         } finally {
@@ -451,7 +443,7 @@ const UserProfile: React.FC = () => {
         alert('Failed to read file');
       };
       reader.readAsDataURL(file);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setUploadingAvatar(false);
       alert('Failed to upload avatar: ' + (err.message || 'Unknown error'));
     }
@@ -500,8 +492,6 @@ const UserProfile: React.FC = () => {
       </div>
     );
   }
-
-  const auditoryId = profile.auditoryId;
 
   return (
     <>

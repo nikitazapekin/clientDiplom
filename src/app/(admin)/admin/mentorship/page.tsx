@@ -100,20 +100,20 @@ const MentorshipPage = () => {
       const studentsData = await studentsRes.json();
       const adminsData = await adminsRes.json();
 
-      const students = (studentsData.students || []).map((student: any) => ({
+      const students = (studentsData.students || []).map((student: Record<string, unknown>) => ({
         ...student,
         name: `${student.lastName} ${student.firstName}`,
         role: "client",
       }));
 
-      const admins = (adminsData || []).map((admin: any) => ({
+      const admins = (adminsData || []).map((admin: Record<string, unknown>) => ({
         ...admin,
         name: `${admin.lastName} ${admin.firstName}`,
         role: "admin",
       }));
 
       setUsers([...admins, ...students]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load users:", err);
     } finally {
       setUsersLoading(false);
@@ -133,7 +133,7 @@ const MentorshipPage = () => {
 
         setAnnouncements(data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load announcements:", err);
     }
   };
@@ -170,7 +170,7 @@ const MentorshipPage = () => {
 
         setError(errorData.message || "Не удалось создать администратора");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || "Не удалось создать администратора");
     }
   };
@@ -229,7 +229,7 @@ const MentorshipPage = () => {
 
         setError(errorData.message || "Не удалось создать анонс");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || "Не удалось создать анонс");
     }
   };
@@ -263,7 +263,7 @@ const MentorshipPage = () => {
           createdAt: new Date().toISOString(),
         },
       ]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || "Не удалось загрузить данные");
     } finally {
       setLoading(false);

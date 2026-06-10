@@ -171,7 +171,7 @@ const StudentProfilePage = () => {
       } finally {
         setTasksLoading(false);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("loadProfile error:", err);
       console.error("Error response:", err.response);
       setError(err.message || "Не удалось загрузить профиль");
@@ -445,7 +445,7 @@ const StudentProfilePage = () => {
             )}
           </div>
           <div className={styles.tasksList}>
-            {displayTasks.map((task: any) => {
+            {displayTasks.map((task: unknown) => {
               const diffInfo = DIFFICULTIES[task.difficulty] || DIFFICULTIES.easy;
 
               return (

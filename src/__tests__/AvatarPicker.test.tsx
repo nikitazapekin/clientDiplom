@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent,render, screen } from "@testing-library/react";
 
 import AvatarPicker from "@/app/components/AvatarPicker";
 
@@ -27,6 +27,7 @@ describe("AvatarPicker", () => {
 
   it("renders nothing when not visible", () => {
     const { container } = render(<AvatarPicker {...defaultProps} visible={false} />);
+
     expect(container.firstChild).toBeNull();
   });
 
@@ -40,17 +41,21 @@ describe("AvatarPicker", () => {
 
   it("closes modal when clicking overlay", () => {
     const onClose = jest.fn();
+
     render(<AvatarPicker {...defaultProps} onClose={onClose} />);
 
     const overlay = document.querySelector("div")!;
+
     fireEvent.click(overlay);
   });
 
   it("does not close modal when clicking content", () => {
     const onClose = jest.fn();
+
     render(<AvatarPicker {...defaultProps} onClose={onClose} />);
 
     const modalContent = screen.getByText("Аватар профиля").closest("div")!;
+
     fireEvent.click(modalContent);
   });
 
@@ -83,6 +88,7 @@ describe("AvatarPicker", () => {
 
   it("calls onClose when cancel is clicked", () => {
     const onClose = jest.fn();
+
     render(<AvatarPicker {...defaultProps} onClose={onClose} />);
 
     fireEvent.click(screen.getByText("Отмена"));

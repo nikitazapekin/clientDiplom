@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { StaticImageData } from "next/image";
 
 import WelcomeCard from "@/app/components/WelcomeCard";
 
@@ -13,7 +14,7 @@ const createItem = (overrides = {}) => ({
   id: 1,
   title: "Учиться",
   type: "study",
-  image: { src: "/test.png", width: 100, height: 100 } as unknown as import("next/image").StaticImageData,
+  image: { src: "/test.png", width: 100, height: 100 } as unknown as StaticImageData,
   path: "/study",
   ...overrides,
 });
@@ -31,6 +32,7 @@ describe("WelcomeCard", () => {
   it("renders item image", () => {
     render(<WelcomeCard item={createItem()} />);
     const img = screen.getByRole("img");
+
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute("alt", "icon");
   });

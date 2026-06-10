@@ -79,7 +79,7 @@ const RegisterForm = () => {
       setTimeout(() => {
         router.push("/login?registered=true");
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Registration error:", err);
       setError(err.message || "Ошибка регистрации. Пожалуйста, попробуйте снова.");
     } finally {

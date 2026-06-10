@@ -16,6 +16,7 @@ describe("Footer", () => {
   it("renders current year", () => {
     render(<Footer />);
     const currentYear = new Date().getFullYear().toString();
+
     expect(screen.getByText(new RegExp(currentYear))).toBeInTheDocument();
   });
 

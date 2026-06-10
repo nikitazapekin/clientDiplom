@@ -97,7 +97,7 @@ export interface CreateMapElementRequest {
   rotation?: number;
   isActive?: boolean;
   stars?: number;
-  breakpoints?: Record<string, any>;
+  breakpoints?: Record<string, BreakpointSettings>;
 }
 
 export interface UpdateMapElementRequest extends Partial<CreateMapElementRequest> {}

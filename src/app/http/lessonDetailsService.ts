@@ -74,7 +74,7 @@ export class LessonDetailsService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Create lesson details error:", error);
       throw error;
     }
@@ -90,7 +90,7 @@ export class LessonDetailsService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get lesson details error:", error);
       throw error;
     }
@@ -106,7 +106,7 @@ export class LessonDetailsService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get lesson details by lesson id error:", error);
       throw error;
     }
@@ -124,7 +124,7 @@ export class LessonDetailsService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get lesson details by checkpoint id error:", error);
       throw error;
     }
@@ -143,7 +143,7 @@ export class LessonDetailsService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Update lesson details error:", error);
       throw error;
     }
@@ -159,7 +159,7 @@ export class LessonDetailsService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Delete lesson details error:", error);
       throw error;
     }
@@ -175,7 +175,7 @@ export class LessonDetailsService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Delete lesson details by lesson id error:", error);
       throw error;
     }
@@ -193,7 +193,7 @@ export class LessonDetailsService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Delete lesson details by checkpoint id error:", error);
       throw error;
     }

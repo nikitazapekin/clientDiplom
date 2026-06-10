@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import type { LessonResponse } from "@/app/http/lessonService";
 import { LessonService } from "@/app/http/lessonService";
@@ -57,13 +57,7 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
     instructions: "",
   });
  
-  useEffect(() => {
-    if (element.id && (element.type === "lesson" || element.type === "checkpoint")) {
-      loadElementData();
-    }
-  }, [element.id, element.type]);
-
-  const loadElementData = async () => {
+  const loadElementData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -117,7 +111,7 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
           throw new Error(`HTTP error! status: ${response.status}`);
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error loading element data:", error);
       setError("Не удалось загрузить данные элемента");
  
@@ -137,7 +131,13 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [element.id, element.title, element.type]);
+
+  useEffect(() => {
+    if (element.id && (element.type === "lesson" || element.type === "checkpoint")) {
+      loadElementData();
+    }
+  }, [element.id, element.type, loadElementData]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -205,7 +205,7 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
       setTimeout(() => setSaveSuccess(false), 3000);
  
       onUpdate();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving element data:", error);
       setError("Не удалось сохранить изменения");
     } finally {

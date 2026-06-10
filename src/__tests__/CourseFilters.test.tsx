@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent,render, screen } from "@testing-library/react";
 
 import CourseFilters from "@/app/components/CourseFilters";
 
@@ -72,6 +72,7 @@ describe("CourseFilters", () => {
 
   it("calls handleOpen when create button is clicked", () => {
     const handleOpen = jest.fn();
+
     render(<CourseFilters {...defaultProps} showCreateButton handleOpen={handleOpen} />);
     fireEvent.click(screen.getByText("Создать курс"));
     expect(handleOpen).toHaveBeenCalled();
@@ -82,6 +83,7 @@ describe("CourseFilters", () => {
       { label: "По названию", value: "alphabet" },
       { label: "По дате", value: "date" },
     ];
+
     render(<CourseFilters {...defaultProps} sortOptions={sortOptions} />);
     expect(screen.getByText("По названию")).toBeInTheDocument();
     expect(screen.getByText("По дате")).toBeInTheDocument();

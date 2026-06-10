@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent,render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import SearchCourses from "@/app/components/SearchCourses";
@@ -28,6 +28,7 @@ describe("SearchCourses", () => {
   it("calls onSearchChange when typing", async () => {
     render(<SearchCourses {...defaultProps} />);
     const input = screen.getByPlaceholderText("Введите название курса");
+
     await userEvent.type(input, "react");
     expect(defaultProps.onSearchChange).toHaveBeenCalledWith("react");
   });
@@ -42,6 +43,7 @@ describe("SearchCourses", () => {
       { label: "A-Z", value: "alphabet" },
       { label: "Newest", value: "newest" },
     ];
+
     render(<SearchCourses {...defaultProps} sortOptions={sortOptions} />);
     expect(screen.getByText("A-Z")).toBeInTheDocument();
     expect(screen.getByText("Newest")).toBeInTheDocument();
@@ -49,6 +51,7 @@ describe("SearchCourses", () => {
 
   it("calls onSortChange when sort option changes", () => {
     const onSortChange = jest.fn();
+
     render(
       <SearchCourses
         onSearchChange={jest.fn()}
@@ -60,6 +63,7 @@ describe("SearchCourses", () => {
       />
     );
     const select = screen.getByRole("combobox");
+
     fireEvent.change(select, { target: { value: "date" } });
     expect(onSortChange).toHaveBeenCalledWith("date");
   });
@@ -74,6 +78,7 @@ describe("SearchCourses", () => {
       <SearchCourses {...defaultProps} onApplyFilters={jest.fn()} />
     );
     const filterButton = screen.getByRole("button", { name: "" });
+
     fireEvent.click(filterButton);
     expect(screen.getByText("Фильтры курсов")).toBeInTheDocument();
   });
@@ -83,6 +88,7 @@ describe("SearchCourses", () => {
       <SearchCourses {...defaultProps} onApplyFilters={jest.fn()} />
     );
     const filterButton = screen.getAllByRole("button")[0];
+
     fireEvent.click(filterButton);
 
     expect(screen.getByText("Ключевые слова")).toBeInTheDocument();
@@ -94,13 +100,16 @@ describe("SearchCourses", () => {
 
   it("calls onApplyFilters with draft filter values", () => {
     const onApplyFilters = jest.fn();
+
     render(
       <SearchCourses {...defaultProps} onApplyFilters={onApplyFilters} />
     );
     const filterButton = screen.getAllByRole("button")[0];
+
     fireEvent.click(filterButton);
 
     const keywordInput = screen.getByPlaceholderText("Например: frontend, react");
+
     fireEvent.change(keywordInput, { target: { value: "react" } });
 
     fireEvent.click(screen.getByText("Применить"));
@@ -114,6 +123,7 @@ describe("SearchCourses", () => {
       <SearchCourses {...defaultProps} onApplyFilters={jest.fn()} />
     );
     const filterButton = screen.getAllByRole("button")[0];
+
     fireEvent.click(filterButton);
 
     fireEvent.click(screen.getByText("✕"));
@@ -122,6 +132,7 @@ describe("SearchCourses", () => {
 
   it("calls onResetFilters when reset button is clicked", () => {
     const onResetFilters = jest.fn();
+
     render(
       <SearchCourses
         {...defaultProps}
@@ -130,6 +141,7 @@ describe("SearchCourses", () => {
       />
     );
     const filterButton = screen.getAllByRole("button")[0];
+
     fireEvent.click(filterButton);
 
     fireEvent.click(screen.getByText("Сбросить"));
@@ -147,6 +159,7 @@ describe("SearchCourses", () => {
       minLessons: "",
       minStudents: "",
     };
+
     render(
       <SearchCourses
         {...defaultProps}
@@ -166,13 +179,16 @@ describe("SearchCourses", () => {
 
   it("updates hashtag filter and strips # symbols", () => {
     const onApplyFilters = jest.fn();
+
     render(
       <SearchCourses {...defaultProps} onApplyFilters={onApplyFilters} />
     );
     const filterButton = screen.getAllByRole("button")[0];
+
     fireEvent.click(filterButton);
 
     const hashtagInput = screen.getByPlaceholderText("Например: javascript, basic");
+
     fireEvent.change(hashtagInput, { target: { value: "#react" } });
 
     fireEvent.click(screen.getByText("Применить"));
@@ -186,9 +202,11 @@ describe("SearchCourses", () => {
       <SearchCourses {...defaultProps} onApplyFilters={jest.fn()} />
     );
     const filterButton = screen.getAllByRole("button")[0];
+
     fireEvent.click(filterButton);
 
     const fromInputs = screen.getAllByPlaceholderText("От");
+
     expect(fromInputs.length).toBeGreaterThanOrEqual(1);
   });
 });

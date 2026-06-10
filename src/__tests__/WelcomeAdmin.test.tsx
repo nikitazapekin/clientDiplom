@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import WelcomeAdmin from "@/app/components/WelcomeAdmin";
 
 const mockPush = jest.fn();
+
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
@@ -51,12 +52,14 @@ describe("WelcomeAdmin", () => {
   it("renders card images for all admin navigation items", () => {
     render(<WelcomeAdmin />);
     const images = screen.getAllByRole("img");
+
     expect(images).toHaveLength(6);
   });
 
   it("navigates on card click", () => {
     render(<WelcomeAdmin />);
     const courseCard = screen.getByText("Курсы");
+
     courseCard.click();
     expect(mockPush).toHaveBeenCalledWith("/admin/courses");
   });

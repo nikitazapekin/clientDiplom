@@ -8,6 +8,7 @@ export class LeadersService {
       headers: { Authorization: `Bearer ${token}` },
       params: { page },
     });
+
     return response.data;
   }
 }

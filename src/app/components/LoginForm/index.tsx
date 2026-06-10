@@ -50,7 +50,7 @@ const LoginForm = () => {
       }
 
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       let errorMessage = "Ошибка при входе";
 
       if (error.message) {

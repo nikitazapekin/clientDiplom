@@ -1,4 +1,5 @@
 import $api, { $apiNoRedirect } from "./api";
+import { getErrorMessage } from "./errorUtils";
 
 export interface CertificateResponse {
   id: string;
@@ -95,9 +96,9 @@ export class CertificateService {
       const response = await $api.get(url);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Search certificates error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to search certificates");
+      throw new Error(getErrorMessage(error, "Failed to search certificates"));
     }
   }
 
@@ -109,18 +110,18 @@ export class CertificateService {
       const response = await $api.put(`/certificates/${id}`, data);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Update certificate error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to update certificate");
+      throw new Error(getErrorMessage(error, "Failed to update certificate"));
     }
   }
 
   static async deleteCertificate(id: string): Promise<void> {
     try {
       await $api.delete(`/certificates/${id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Delete certificate error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to delete certificate");
+      throw new Error(getErrorMessage(error, "Failed to delete certificate"));
     }
   }
 
@@ -129,9 +130,9 @@ export class CertificateService {
       const response = await $api.get(`/certificates/${id}`);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get certificate error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch certificate");
+      throw new Error(getErrorMessage(error, "Failed to fetch certificate"));
     }
   }
 
@@ -148,9 +149,9 @@ export class CertificateService {
       console.log(" Certificate created:", response.data);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(" Create certificate error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to create certificate");
+      throw new Error(getErrorMessage(error, "Failed to create certificate"));
     }
   }
 
@@ -159,9 +160,9 @@ export class CertificateService {
       const response = await $api.put(`/certificates/setIsViewed`, { id });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("setIsViewed error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to set isViewed");
+      throw new Error(getErrorMessage(error, "Failed to set isViewed"));
     }
   }
 
@@ -172,9 +173,9 @@ export class CertificateService {
       const response = await $apiNoRedirect.get(`/certificates/auditory/${auditoryId}`);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get certificates error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch certificates");
+      throw new Error(getErrorMessage(error, "Failed to fetch certificates"));
     }
   }
 
@@ -183,9 +184,9 @@ export class CertificateService {
       const response = await $apiNoRedirect.get(`/certificates/client/${clientId}`);
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(" Get certificates error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to fetch certificates");
+      throw new Error(getErrorMessage(error, "Failed to fetch certificates"));
     }
   }
 

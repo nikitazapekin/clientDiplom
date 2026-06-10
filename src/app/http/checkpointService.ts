@@ -52,7 +52,7 @@ export class CheckpointService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Create checkpoint error:", error);
       throw error;
     }
@@ -68,7 +68,7 @@ export class CheckpointService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get checkpoint error:", error);
       throw error;
     }
@@ -84,7 +84,7 @@ export class CheckpointService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Get checkpoint by map element id error:", error);
       throw error;
     }
@@ -103,7 +103,7 @@ export class CheckpointService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Update checkpoint error:", error);
       throw error;
     }
@@ -120,7 +120,7 @@ export class CheckpointService {
       });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Delete checkpoint error:", error);
       throw error;
     }

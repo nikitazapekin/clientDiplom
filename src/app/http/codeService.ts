@@ -1,4 +1,5 @@
 import $api from "./api";
+import { getErrorMessage, getErrorResponse } from "./errorUtils";
 
 export type CodeLanguage =
   | "javascript"
@@ -44,14 +45,15 @@ export class CodeService {
       );
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Execute code error:", error);
 
-      const message =
-        error?.response?.data?.error ||
-        error?.response?.data?.message ||
-        error?.message ||
-        "Не удалось выполнить код";
+      const responseData = getErrorResponse(error)?.data;
+      const responseError =
+        responseData && typeof responseData === "object" && "error" in responseData
+          ? String((responseData as { error?: string }).error ?? "")
+          : "";
+      const message = responseError || getErrorMessage(error, "Не удалось выполнить код");
 
       return { output: "", error: `Ошибка: ${message}` };
     }
