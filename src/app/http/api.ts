@@ -1,11 +1,27 @@
 import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import axios from "axios";
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://31.128.40.81:3002";
+const isBrowser = typeof window !== "undefined";
+
+const BACKEND_DIRECT_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://31.128.40.81:3002";
+
+/** На HTTPS (Vercel) ходим через same-origin прокси /backend — иначе Mixed Content. */
+export function resolveApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  if (isBrowser && window.location.protocol === "https:") {
+    return "/backend";
+  }
+
+  return BACKEND_DIRECT_URL;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 const BASE_URL = API_BASE_URL;
-
-const isBrowser = typeof window !== "undefined";
 
 export const $api = axios.create({
   baseURL: BASE_URL,
@@ -67,6 +83,8 @@ class TokenManager {
 $api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (isBrowser) {
+      config.baseURL = resolveApiBaseUrl();
+
       const token = TokenManager.getAccessToken();
 
       if (token && config.headers) {
@@ -123,6 +141,8 @@ export const $apiNoRedirect = axios.create({
 $apiNoRedirect.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (isBrowser) {
+      config.baseURL = resolveApiBaseUrl();
+
       const token = TokenManager.getAccessToken();
 
       if (token && config.headers) {

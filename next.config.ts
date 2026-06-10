@@ -1,5 +1,15 @@
+const backendUrl = process.env.BACKEND_URL || "http://31.128.40.81:3002";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/backend/:path*",
+        destination: `${backendUrl}/:path*`,
+      },
+    ];
+  },
   // 1. ОТКЛЮЧАЕТ почти все логи разработки (запросы, fetch и т.д.)
   // Поддерживается с Next.js 15+
   logging: false,
