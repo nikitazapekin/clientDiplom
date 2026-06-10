@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { type CodeLanguage, CodeService } from "@/app/http/codeService";
+import { getErrorMessage } from "@/app/http/errorUtils";
 
 const defaultSnippets: Record<CodeLanguage, string> = {
   javascript: `// JavaScript
@@ -90,7 +91,7 @@ const Page = () => {
         setOutput(result.output || "Код выполнен, но вывода нет");
       }
     } catch (e: unknown) {
-      setOutput(`Ошибка при выполнении: ${e?.message || "Неизвестная ошибка"}`);
+      setOutput(`Ошибка при выполнении: ${getErrorMessage(e, "Неизвестная ошибка")}`);
     } finally {
       setIsLoading(false);
     }

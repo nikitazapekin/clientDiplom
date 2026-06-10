@@ -13,8 +13,12 @@ import {
 
 type TabType = "my-friends" | "find-friends" | "requests";
 
-const getAvatarUrl = (item: Record<string, unknown>): string | null => {
-  const avatar = item.avatar as { imageUrl?: string; mimeType?: string } | undefined;
+const getAvatarUrl = (item: unknown): string | null => {
+  if (typeof item !== "object" || item === null || !("avatar" in item)) {
+    return null;
+  }
+
+  const avatar = (item as { avatar?: { imageUrl?: string; mimeType?: string } }).avatar;
 
   if (avatar?.imageUrl) {
     if (avatar.imageUrl.startsWith("data:")) return avatar.imageUrl;
@@ -212,7 +216,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
-  const renderAvatar = (item: Record<string, unknown>, fallbackLetter?: string) => {
+  const renderAvatar = (item: unknown, fallbackLetter?: string) => {
     const url = getAvatarUrl(item);
 
     if (url) {
@@ -318,7 +322,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                   return (
                     <div key={item.id} className={styles.requestCard}>
                       <div className={styles.avatarContainer}>
-                        {renderAvatar(item as Record<string, unknown>, initial)}
+                        {renderAvatar(item, initial)}
                       </div>
                       <div className={styles.requestInfo}>
                         <div className={styles.friendName}>{fullName || "Unknown"}</div>
@@ -363,7 +367,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                     return (
                       <div key={item.id} className={styles.requestCard}>
                         <div className={styles.avatarContainer}>
-                          {renderAvatar(item as Record<string, unknown>, initial)}
+                          {renderAvatar(item, initial)}
                         </div>
                         <div className={styles.requestInfo}>
                           <div className={styles.friendName}>{fullName || "Unknown"}</div>
@@ -412,7 +416,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                           onClick={() => handleRemoveFriend(item.friendId)}
                         >
                           <div className={styles.avatarContainer}>
-                            {renderAvatar(item as Record<string, unknown>, initial)}
+                            {renderAvatar(item, initial)}
                           </div>
                           <div className={styles.friendInfo}>
                             <div className={styles.friendName}>{fullName || "Unknown"}</div>
@@ -446,7 +450,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                         onDoubleClick={() => handleRemoveFriend(item.friendId)}
                       >
                         <div className={styles.avatarContainer}>
-                          {renderAvatar(item as Record<string, unknown>, initial)}
+                          {renderAvatar(item, initial)}
                         </div>
                         <div className={styles.friendInfo}>
                           <div className={styles.friendName}>{fullName || "Unknown"}</div>
@@ -469,7 +473,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                     <div key={item.id} className={styles.friendCard}>
                       <div className={styles.friendInfoClickable}>
                         <div className={styles.avatarContainer}>
-                          {renderAvatar(item as Record<string, unknown>, initial)}
+                          {renderAvatar(item, initial)}
                         </div>
                         <div className={styles.friendInfo}>
                           <div className={styles.friendName}>{fullName || "Unknown"}</div>

@@ -195,7 +195,7 @@ const formatArgsForJavaOrCSharp = (
         }
 
         if (arg.objectValues && Object.keys(arg.objectValues).length > 0) {
-          const elements = Object.values(arg.objectValues).map((val: unknown) => {
+          const elements = Object.values(arg.objectValues).map((val) => {
             if (elementType === "string") return `"${val}"`;
 
             if (elementType === "boolean") return val.toLowerCase() === "true" ? "true" : "false";
@@ -739,10 +739,11 @@ const checkConstraints = (
     switch (type) {
       case "maxLines": {
         const lineCount = code.split("\n").length;
+        const maxLines = constraint.value as number;
 
-        if (lineCount > constraint.value) {
+        if (lineCount > maxLines) {
           errors.push(
-            `Превышено максимальное количество строк: ${lineCount} > ${constraint.value}`
+            `Превышено максимальное количество строк: ${lineCount} > ${maxLines}`
           );
         }
 
@@ -822,9 +823,10 @@ const checkConstraints = (
 
       case "maxComplexity": {
         const complexity = estimateCodeComplexity(code, language);
+        const maxComplexity = constraint.value as number;
 
-        if (complexity > constraint.value) {
-          errors.push(`Превышена максимальная сложность кода: ${complexity} > ${constraint.value}`);
+        if (complexity > maxComplexity) {
+          errors.push(`Превышена максимальная сложность кода: ${complexity} > ${maxComplexity}`);
         }
 
         break;
@@ -1060,7 +1062,7 @@ export default function SolveProblemPage() {
           return;
         }
 
-        const argumentScheme = task.argumentScheme;
+        const argumentScheme = task.argumentScheme as ArgumentSchema[] | undefined;
         const taskTestCases =
           task.testCasesByLanguage?.[selectedLang] || task.testCases || [];
 
@@ -1192,7 +1194,7 @@ export default function SolveProblemPage() {
           {task.argumentScheme && task.argumentScheme.length > 0 && (
             <div className={styles.constraintsBox}>
               <h3>Аргументы функции</h3>
-              {task.argumentScheme.map((arg: ArgumentSchema, i: number) => (
+              {(task.argumentScheme as ArgumentSchema[]).map((arg, i: number) => (
                 <div key={i} className={styles.constraintItem}>
                   <strong>{arg.name}</strong>: {TYPE_LABELS[arg.type] || arg.type}
                   {arg.objectFields && arg.objectFields.length > 0 && (
@@ -1249,7 +1251,7 @@ export default function SolveProblemPage() {
           )}
 
           {(() => {
-            const argScheme = task.argumentScheme;
+            const argScheme = task.argumentScheme as ArgumentSchema[] | undefined;
             const langTestCases =
               task.testCasesByLanguage?.[selectedLang] || task.testCases || [];
 

@@ -1,6 +1,8 @@
 import CourseDetails from "@/app/components/CourseDetails";
 import { CourseService } from "@/app/http/courses";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{
     courseid: string;

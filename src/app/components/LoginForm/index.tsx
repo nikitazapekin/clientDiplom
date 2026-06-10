@@ -11,6 +11,7 @@ import { z } from "zod";
 import styles from "./index.module.scss";
 
 import AuthService from "@/app/http/auth";
+import { getErrorMessage, getErrorResponse } from "@/app/http/errorUtils";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Почта обязательна").email("Некорректный формат почты"),
@@ -51,32 +52,28 @@ const LoginForm = () => {
 
       router.refresh();
     } catch (error: unknown) {
-      let errorMessage = "Ошибка при входе";
+      let errorMessage = getErrorMessage(error, "Ошибка при входе");
 
-      if (error.message) {
-        errorMessage = error.message;
-
-        if (
-          error.message.includes("Invalid credentials") ||
-          error.message.includes("Неверные учетные данные")
-        ) {
-          errorMessage = "Неверный email или пароль";
-        } else if (
-          error.message.includes("User not found") ||
-          error.message.includes("Пользователь не найден")
-        ) {
-          errorMessage = "Пользователь с таким email не найден";
-        } else if (
-          error.message.includes("Registration failed") ||
-          error.message.includes("Login failed")
-        ) {
-          errorMessage = "Ошибка сервера. Попробуйте позже";
-        }
+      if (
+        errorMessage.includes("Invalid credentials") ||
+        errorMessage.includes("Неверные учетные данные")
+      ) {
+        errorMessage = "Неверный email или пароль";
+      } else if (
+        errorMessage.includes("User not found") ||
+        errorMessage.includes("Пользователь не найден")
+      ) {
+        errorMessage = "Пользователь с таким email не найден";
+      } else if (
+        errorMessage.includes("Registration failed") ||
+        errorMessage.includes("Login failed")
+      ) {
+        errorMessage = "Ошибка сервера. Попробуйте позже";
       }
 
       setLoginError(errorMessage);
 
-      if (error.response?.status === 401) {
+      if (getErrorResponse(error)?.status === 401) {
         AuthService.logout().catch(console.error);
       }
     } finally {

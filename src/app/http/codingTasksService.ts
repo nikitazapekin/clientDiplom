@@ -15,7 +15,7 @@ export interface TestCase {
 
 export interface CodeConstraint {
   type: string;
-  value: string | number | boolean;
+  value: string | number | boolean | string[];
 }
 
 export interface ArgumentSchema {

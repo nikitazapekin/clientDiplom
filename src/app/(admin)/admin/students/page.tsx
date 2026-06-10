@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import styles from "./page.module.scss";
 
+import { getErrorMessage } from "@/app/http/errorUtils";
 import { ProfileService } from "@/app/http/profile";
 import type { StudentResponse} from "@/app/http/students";
 import {StudentsService } from "@/app/http/students";
@@ -56,7 +57,7 @@ const StudentsPage = () => {
       setTotalPages(response.totalPages);
       setPage(response.page);
     } catch (err: unknown) {
-      setError(err.message || "Failed to fetch students");
+      setError(getErrorMessage(err, "Failed to fetch students"));
     } finally {
       setLoading(false);
     }

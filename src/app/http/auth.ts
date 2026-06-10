@@ -177,7 +177,7 @@ console.log("DATTAAAAAAAAAAAAAAAAAAA", data)
       return responseData;
     } catch (error: unknown) {
       console.error("Login error:", error);
-      throw new Error(error.response?.data?.message || error.message || "Login failed");
+      throw new Error(getErrorMessage(error, "Login failed"));
     }
   }
 

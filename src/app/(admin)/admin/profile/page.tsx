@@ -7,6 +7,7 @@ import styles from "./page.module.scss";
 
 import { type AdminResponse, AdminService, type AvatarResponse } from "@/app/http/admin";
 import { CourseService } from "@/app/http/courses";
+import { getErrorMessage } from "@/app/http/errorUtils";
 import type { CourseResponse } from "@/app/http/types/course";
 
 const AdminProfilePage = () => {
@@ -75,7 +76,7 @@ const AdminProfilePage = () => {
 
     } catch (err: unknown) {
       console.error("loadProfile error:", err);
-      setError(err.message || "Не удалось загрузить профиль");
+      setError(getErrorMessage(err, "Не удалось загрузить профиль"));
     } finally {
       setLoading(false);
     }

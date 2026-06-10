@@ -29,14 +29,10 @@ const nextConfig = {
       },
     ],
   },
-  // Turbopack конфигурация
-  experimental: {
-    turbo: {
-      resolveAlias: {
-        // Настройка алиасов для Turbopack
-        "@styles": "./src/app/styles",
-        "@components": "./src/app/components",
-      },
+  turbopack: {
+    resolveAlias: {
+      "@styles": "./src/app/styles",
+      "@components": "./src/app/components",
     },
   },
 

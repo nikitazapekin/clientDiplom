@@ -1,5 +1,5 @@
 import $api from "./api";
-import { getErrorMessage } from "./errorUtils";
+import { getErrorMessage, getErrorResponse } from "./errorUtils";
 
 export interface AdminResponse {
   id: string;
@@ -31,7 +31,7 @@ export class AdminService {
 
       return response.data;
     } catch (error: unknown) {
-      console.error("Get admins list error:", error.response?.data || error.message);
+      console.error("Get admins list error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to fetch admins"));
     }
   }
@@ -42,7 +42,7 @@ export class AdminService {
 
       return response.data;
     } catch (error: unknown) {
-      console.error("Get admin by auditoryId error:", error.response?.data || error.message);
+      console.error("Get admin by auditoryId error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to fetch admin"));
     }
   }
@@ -58,11 +58,11 @@ export class AdminService {
 
       return data;
     } catch (error: unknown) {
-      if (error.response?.status === 404) {
+      if (getErrorResponse(error)?.status === 404) {
         return null;
       }
 
-      console.error("Get avatar error:", error.response?.data || error.message);
+      console.error("Get avatar error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
 
       return null;
     }

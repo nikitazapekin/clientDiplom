@@ -5,6 +5,8 @@ import React from "react";
 
 import styles from "./page.module.scss";
 
+import { getErrorMessage } from "@/app/http/errorUtils";
+
 type Announcement = {
   id: string;
   adminId: string;
@@ -171,7 +173,7 @@ const MentorshipPage = () => {
         setError(errorData.message || "Не удалось создать администратора");
       }
     } catch (err: unknown) {
-      setError(err.message || "Не удалось создать администратора");
+      setError(getErrorMessage(err, "Не удалось создать администратора"));
     }
   };
 
@@ -230,7 +232,7 @@ const MentorshipPage = () => {
         setError(errorData.message || "Не удалось создать анонс");
       }
     } catch (err: unknown) {
-      setError(err.message || "Не удалось создать анонс");
+      setError(getErrorMessage(err, "Не удалось создать анонс"));
     }
   };
 
@@ -264,7 +266,7 @@ const MentorshipPage = () => {
         },
       ]);
     } catch (err: unknown) {
-      setError(err.message || "Не удалось загрузить данные");
+      setError(getErrorMessage(err, "Не удалось загрузить данные"));
     } finally {
       setLoading(false);
     }

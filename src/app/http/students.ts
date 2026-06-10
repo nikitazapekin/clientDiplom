@@ -1,5 +1,5 @@
 import $api from "./api";
-import { getErrorMessage } from "./errorUtils";
+import { getErrorMessage, getErrorResponse } from "./errorUtils";
 
 export interface StudentResponse {
   id: string;
@@ -32,20 +32,33 @@ export interface GetStudentsParams {
   search?: string;
 }
 
-const normalizeStudent = (student: Record<string, unknown>): StudentResponse => ({
-  id: student.id,
-  auditoryId: student.auditoryId || student.auditory?.auditoryId || "",
-  email: student.email || student.auditory?.email || student.user?.email || "",
-  role: student.role || student.auditory?.role || "student",
-  firstName: student.firstName || student.auditory?.firstName || "",
-  lastName: student.lastName || student.auditory?.lastName || "",
-  middleName: student.middleName || student.auditory?.middleName,
-  phone: student.phone || student.auditory?.phone || "",
-  country: student.country || student.auditory?.country || "",
-  description: student.description || student.auditory?.description,
-  registeredAt: student.registeredAt || student.createdAt || student.auditory?.registeredAt || "",
-  updatedAt: student.updatedAt || student.auditory?.updatedAt || "",
-  lastLoginAt: student.lastLoginAt || student.auditory?.lastLoginAt,
+type StudentSource = Record<string, unknown> & {
+  auditory?: Record<string, unknown>;
+  user?: Record<string, unknown>;
+};
+
+const asString = (value: unknown, fallback = ""): string =>
+  typeof value === "string" ? value : fallback;
+
+const asOptionalString = (value: unknown): string | undefined =>
+  typeof value === "string" ? value : undefined;
+
+const normalizeStudent = (student: StudentSource): StudentResponse => ({
+  id: asString(student.id),
+  auditoryId: asString(student.auditoryId || student.auditory?.auditoryId),
+  email: asString(student.email || student.auditory?.email || student.user?.email),
+  role: asString(student.role || student.auditory?.role, "student"),
+  firstName: asString(student.firstName || student.auditory?.firstName),
+  lastName: asString(student.lastName || student.auditory?.lastName),
+  middleName: asOptionalString(student.middleName || student.auditory?.middleName),
+  phone: asString(student.phone || student.auditory?.phone),
+  country: asString(student.country || student.auditory?.country),
+  description: asOptionalString(student.description || student.auditory?.description),
+  registeredAt: asString(
+    student.registeredAt || student.createdAt || student.auditory?.registeredAt
+  ),
+  updatedAt: asString(student.updatedAt || student.auditory?.updatedAt),
+  lastLoginAt: asOptionalString(student.lastLoginAt || student.auditory?.lastLoginAt),
   isActive:
     typeof student.isActive === "boolean"
       ? student.isActive
@@ -80,7 +93,7 @@ export class StudentsService {
           : [],
       };
     } catch (error: unknown) {
-      console.error("Get students error:", error.response?.data || error.message);
+      console.error("Get students error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to fetch students"));
     }
   }
@@ -105,7 +118,7 @@ export class StudentsService {
 
       return normalizeStudent(response.data);
     } catch (error: unknown) {
-      console.error("Get student error:", error.response?.data || error.message);
+      console.error("Get student error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to fetch student"));
     }
   }

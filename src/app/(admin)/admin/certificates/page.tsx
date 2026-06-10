@@ -6,6 +6,7 @@ import styles from "./page.module.scss";
 
 import type { CertificateResponse, CertificateSearchParams} from "@/app/http/certificate";
 import {CertificateService } from "@/app/http/certificate";
+import { getErrorMessage } from "@/app/http/errorUtils";
 
 const CertificatesPage = () => {
   const [certificates, setCertificates] = useState<CertificateResponse[]>([]);
@@ -53,7 +54,7 @@ const CertificatesPage = () => {
       setTotalPages(response.totalPages);
       setPage(response.page);
     } catch (err: unknown) {
-      setError(err.message || "Failed to fetch certificates");
+      setError(getErrorMessage(err, "Failed to fetch certificates"));
     } finally {
       setLoading(false);
     }
@@ -108,7 +109,7 @@ const CertificatesPage = () => {
       setEditingId(null);
       fetchCertificates({ page });
     } catch (err: unknown) {
-      setError(err.message || "Failed to update certificate");
+      setError(getErrorMessage(err, "Failed to update certificate"));
     }
   };
 
@@ -129,7 +130,7 @@ const CertificatesPage = () => {
       setShowDeleteConfirm(null);
       fetchCertificates({ page });
     } catch (err: unknown) {
-      setError(err.message || "Failed to delete certificate");
+      setError(getErrorMessage(err, "Failed to delete certificate"));
     }
   };
 

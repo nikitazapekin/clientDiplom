@@ -10,6 +10,7 @@ import type { CourseModalProps } from "./types";
 
 import { updateCourses } from "@/app/actions/updateCourses";
 import { CourseService } from "@/app/http/courses";
+import { getErrorMessage } from "@/app/http/errorUtils";
 import type { CourseStatus } from "@/app/http/types/course";
 
 interface Field {
@@ -217,7 +218,7 @@ const CreateCourseModal = ({
       }
     } catch (err: unknown) {
       console.error("Create course error:", err);
-      setError(err.message || "Ошибка при создании курса");
+      setError(getErrorMessage(err, "Ошибка при создании курса"));
     } finally {
       setLoading(false);
     }

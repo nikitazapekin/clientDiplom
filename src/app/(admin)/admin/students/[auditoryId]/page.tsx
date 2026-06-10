@@ -11,8 +11,11 @@ import {
   CodingTasksService,
   type StudentLevel,
 } from "@/app/http/codingTasksService";
+import { getErrorMessage, getErrorResponse } from "@/app/http/errorUtils";
 import { ProfileService } from "@/app/http/profile";
 import type { FullClientInfo } from "@/app/http/types/profile";
+
+type SolvedTask = CodeTask & { solvedAt: string };
 
 const CIRCLE_SIZE = 140;
 const CIRCLE_RADIUS = (CIRCLE_SIZE - 16) / 2;
@@ -173,8 +176,8 @@ const StudentProfilePage = () => {
       }
     } catch (err: unknown) {
       console.error("loadProfile error:", err);
-      console.error("Error response:", err.response);
-      setError(err.message || "Не удалось загрузить профиль");
+      console.error("Error response:", getErrorResponse(err));
+      setError(getErrorMessage(err, "Не удалось загрузить профиль"));
     } finally {
       setLoading(false);
     }
@@ -186,7 +189,7 @@ const StudentProfilePage = () => {
     loadProfile();
   }, [loadProfile]);
 
-  const getSolvedTasks = () => {
+  const getSolvedTasks = (): SolvedTask[] => {
     if (!studentLevel?.solvedTasks) return [];
 
     return studentLevel.solvedTasks
@@ -195,8 +198,8 @@ const StudentProfilePage = () => {
 
         return task ? { ...task, solvedAt: solved.solvedAt } : null;
       })
-      .filter(Boolean)
-      .sort((a, b) => new Date(b!.solvedAt).getTime() - new Date(a!.solvedAt).getTime());
+      .filter((task): task is SolvedTask => task !== null)
+      .sort((a, b) => new Date(b.solvedAt).getTime() - new Date(a.solvedAt).getTime());
   };
 
   const formatDate = (dateString: string) => {
@@ -445,7 +448,7 @@ const StudentProfilePage = () => {
             )}
           </div>
           <div className={styles.tasksList}>
-            {displayTasks.map((task: unknown) => {
+            {displayTasks.map((task) => {
               const diffInfo = DIFFICULTIES[task.difficulty] || DIFFICULTIES.easy;
 
               return (

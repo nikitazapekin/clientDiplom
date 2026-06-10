@@ -10,6 +10,7 @@ import { AuthService } from '@/app/http/auth';
 import type { CertificateResponse } from '@/app/http/certificate';
 import { CertificateService } from '@/app/http/certificate';
 import { type CodeTask, CodingTasksService, type StudentLevel } from '@/app/http/codingTasksService';
+import { getErrorMessage } from '@/app/http/errorUtils';
 import { ProfileService } from '@/app/http/profile';
 import type { FullClientInfo } from '@/app/http/types/profile';
 
@@ -378,7 +379,7 @@ const UserProfile: React.FC = () => {
         setCodingLoading(false);
       }
     } catch (err: unknown) {
-      setError(err.message || 'Failed to load profile');
+      setError(getErrorMessage(err, 'Failed to load profile'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -433,7 +434,7 @@ const UserProfile: React.FC = () => {
           setAvatarPickerVisible(false);
         } catch (err: unknown) {
           console.error('Avatar upload error:', err);
-          alert('Failed to upload avatar: ' + (err.message || 'Unknown error'));
+          alert('Failed to upload avatar: ' + getErrorMessage(err, 'Unknown error'));
         } finally {
           setUploadingAvatar(false);
         }
@@ -445,7 +446,7 @@ const UserProfile: React.FC = () => {
       reader.readAsDataURL(file);
     } catch (err: unknown) {
       setUploadingAvatar(false);
-      alert('Failed to upload avatar: ' + (err.message || 'Unknown error'));
+      alert('Failed to upload avatar: ' + getErrorMessage(err, 'Unknown error'));
     }
   };
 

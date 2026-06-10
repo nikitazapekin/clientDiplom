@@ -13,6 +13,7 @@ import { z } from "zod";
 import styles from "./index.module.scss";
 
 import AuthService from "@/app/http/auth";
+import { getErrorMessage } from "@/app/http/errorUtils";
 
 const registerSchema = z
   .object({
@@ -81,7 +82,7 @@ const RegisterForm = () => {
       }, 2000);
     } catch (err: unknown) {
       console.error("Registration error:", err);
-      setError(err.message || "Ошибка регистрации. Пожалуйста, попробуйте снова.");
+      setError(getErrorMessage(err, "Ошибка регистрации. Пожалуйста, попробуйте снова."));
     } finally {
       setIsLoading(false);
     }

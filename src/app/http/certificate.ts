@@ -1,5 +1,5 @@
 import $api, { $apiNoRedirect } from "./api";
-import { getErrorMessage } from "./errorUtils";
+import { getErrorMessage, getErrorResponse } from "./errorUtils";
 
 export interface CertificateResponse {
   id: string;
@@ -97,7 +97,7 @@ export class CertificateService {
 
       return response.data;
     } catch (error: unknown) {
-      console.error("Search certificates error:", error.response?.data || error.message);
+      console.error("Search certificates error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to search certificates"));
     }
   }
@@ -111,7 +111,7 @@ export class CertificateService {
 
       return response.data;
     } catch (error: unknown) {
-      console.error("Update certificate error:", error.response?.data || error.message);
+      console.error("Update certificate error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to update certificate"));
     }
   }
@@ -120,7 +120,7 @@ export class CertificateService {
     try {
       await $api.delete(`/certificates/${id}`);
     } catch (error: unknown) {
-      console.error("Delete certificate error:", error.response?.data || error.message);
+      console.error("Delete certificate error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to delete certificate"));
     }
   }
@@ -131,7 +131,7 @@ export class CertificateService {
 
       return response.data;
     } catch (error: unknown) {
-      console.error("Get certificate error:", error.response?.data || error.message);
+      console.error("Get certificate error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to fetch certificate"));
     }
   }
@@ -150,7 +150,7 @@ export class CertificateService {
 
       return response.data;
     } catch (error: unknown) {
-      console.error(" Create certificate error:", error.response?.data || error.message);
+      console.error(" Create certificate error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to create certificate"));
     }
   }
@@ -161,7 +161,7 @@ export class CertificateService {
 
       return response.data;
     } catch (error: unknown) {
-      console.error("setIsViewed error:", error.response?.data || error.message);
+      console.error("setIsViewed error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to set isViewed"));
     }
   }
@@ -174,7 +174,7 @@ export class CertificateService {
 
       return response.data;
     } catch (error: unknown) {
-      console.error("Get certificates error:", error.response?.data || error.message);
+      console.error("Get certificates error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to fetch certificates"));
     }
   }
@@ -185,7 +185,7 @@ export class CertificateService {
 
       return response.data;
     } catch (error: unknown) {
-      console.error(" Get certificates error:", error.response?.data || error.message);
+      console.error(" Get certificates error:", getErrorResponse(error)?.data || getErrorMessage(error, ""));
       throw new Error(getErrorMessage(error, "Failed to fetch certificates"));
     }
   }

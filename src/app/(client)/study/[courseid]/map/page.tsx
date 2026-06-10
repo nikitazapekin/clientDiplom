@@ -1,6 +1,8 @@
 import StudyMap from "@/app/components/StudyMap";
 import { CourseService } from "@/app/http/courses";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{
     courseid: string;
