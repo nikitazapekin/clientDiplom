@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import DislikeIcon from "@assets/icons/utils/dislike.png";
 import Image from "next/image";
+import Link from "next/link";
 
 import styles from "../CommunityHub/index.module.scss";
 
@@ -248,7 +249,7 @@ const ForumHub = () => {
             </div>
 
             <div className={styles.formActions}>
-              <button className={styles.secondaryButton} onClick={() => void loadQuestions()} type="button">
+              <button className={styles.primaryButton} onClick={() => void loadQuestions()} type="button">
                 Применить фильтры
               </button>
             </div>
@@ -276,27 +277,29 @@ const ForumHub = () => {
           <section className={styles.list}>
             {questions.map((question) => (
               <article className={styles.card} key={question.id}>
-                <div className={styles.cardTop}>
-                  <span
-                    className={`${styles.statusPill} ${
-                      question.status === "closed" ? styles.statusClosed : styles.statusOpen
-                    }`}
-                  >
-                    {question.status === "closed" ? "Закрыт" : "Открыт"}
-                  </span>
-                  <span className={styles.cardDate}>{formatDate(question.createdAt)}</span>
-                </div>
-
-                <h2 className={styles.cardTitle}>{question.title}</h2>
-                <p className={styles.cardText}>{question.content}</p>
-
-                <div className={styles.tags}>
-                  {question.tags.map((item) => (
-                    <span className={styles.tag} key={`${question.id}-${item}`}>
-                      #{item}
+                <Link className={styles.cardMain} href={`/forum/${question.id}`}>
+                  <div className={styles.cardTop}>
+                    <span
+                      className={`${styles.statusPill} ${
+                        question.status === "closed" ? styles.statusClosed : styles.statusOpen
+                      }`}
+                    >
+                      {question.status === "closed" ? "Закрыт" : "Открыт"}
                     </span>
-                  ))}
-                </div>
+                    <span className={styles.cardDate}>{formatDate(question.createdAt)}</span>
+                  </div>
+
+                  <h2 className={styles.cardTitle}>{question.title}</h2>
+                  <p className={`${styles.cardText} ${styles.cardTextClamped}`}>{question.content}</p>
+
+                  <div className={styles.tags}>
+                    {question.tags.map((item) => (
+                      <span className={styles.tag} key={`${question.id}-${item}`}>
+                        #{item}
+                      </span>
+                    ))}
+                  </div>
+                </Link>
 
                 <div className={styles.cardFooter}>
                   <div className={styles.voteRow}>

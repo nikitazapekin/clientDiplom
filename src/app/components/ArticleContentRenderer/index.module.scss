@@ -1,0 +1,108 @@
+@use "../../styles/mixins.scss" as *;
+@use "../../styles/variables.scss" as *;
+
+.content {
+  display: grid;
+  gap: px($spacing-lg);
+}
+
+.textBlock {
+  color: rgba(34, 33, 33, 0.82);
+  line-height: 1.75;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.mediaBlock {
+  display: grid;
+  gap: px($spacing-sm);
+}
+
+.image {
+  border-radius: px($radius-large);
+  height: auto;
+  max-width: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.caption {
+  color: rgba(34, 33, 33, 0.56);
+  font-size: px($font-xs);
+  margin: 0;
+}
+
+.linkCard {
+  background: rgba(159, 15, 167, 0.06);
+  border: 1px solid rgba(159, 15, 167, 0.16);
+  border-radius: px($radius-large);
+  color: inherit;
+  display: grid;
+  gap: px($spacing-sm);
+  padding: px($spacing-md) px($spacing-lg);
+  text-decoration: none;
+}
+
+.linkLabel {
+  color: $color-purple;
+  font-weight: 700;
+}
+
+.linkUrl {
+  color: rgba(34, 33, 33, 0.56);
+  font-size: px($font-xs);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.tableCard {
+  border: 1px solid rgba(34, 33, 33, 0.1);
+  border-radius: px($radius-medium);
+  display: grid;
+  min-width: 100%;
+  overflow: hidden;
+}
+
+.tableRow {
+  display: grid;
+  grid-auto-columns: minmax(120px, 1fr);
+  grid-auto-flow: column;
+}
+
+.tableCell {
+  border-bottom: 1px solid rgba(34, 33, 33, 0.08);
+  border-right: 1px solid rgba(34, 33, 33, 0.08);
+  padding: px($spacing-sm) px($spacing-md);
+}
+
+.tableHeaderCell {
+  background: rgba(34, 33, 33, 0.05);
+}
+
+.tableCellText {
+  color: rgba(34, 33, 33, 0.82);
+  font-size: px($font-xs);
+  margin: 0;
+}
+
+.tableHeaderText {
+  font-weight: 700;
+}
+
+.codeBlock {
+  display: grid;
+  gap: px($spacing-sm);
+}
+
+.codeLabel {
+  color: rgba(34, 33, 33, 0.56);
+  font-size: px($font-xs);
+  font-weight: 700;
+  margin: 0;
+}

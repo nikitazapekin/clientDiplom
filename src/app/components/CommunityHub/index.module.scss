@@ -106,6 +106,7 @@
 .primaryButton:hover,
 .secondaryButton:hover,
 .ghostButton:hover,
+.editButton:hover,
 .voteButton:hover,
 .statusButton:hover {
   transform: translateY(-1px);
@@ -345,4 +346,146 @@ color: black;
 .statusClosed {
   background: #880000;
   color: #fff;
+}
+
+.cardMain {
+  color: inherit;
+  display: block;
+  text-decoration: none;
+}
+
+.cardMain:hover .cardTitle {
+  color: $color-purple;
+}
+
+.cardTextClamped {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+.cardTextClampedArticle {
+  -webkit-line-clamp: 4;
+}
+
+.backRow {
+  margin-bottom: px($spacing-sm);
+}
+
+.backButton {
+  background: transparent;
+  border: 0;
+  color: $color-purple;
+  cursor: pointer;
+  font: inherit;
+  font-size: px($font-xs);
+  font-weight: 700;
+  padding: 0;
+}
+
+.backButton:hover {
+  opacity: 0.8;
+}
+
+.detailDate {
+  color: rgba(34, 33, 33, 0.54);
+  font-size: px($font-xs);
+  margin-top: px($spacing-sm);
+}
+
+.detailBody {
+  color: rgba(34, 33, 33, 0.82);
+  line-height: 1.75;
+  margin: px($spacing-md) 0 0;
+  white-space: pre-wrap;
+}
+
+.detailMetaRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-md);
+  justify-content: space-between;
+  margin-top: px($spacing-lg);
+}
+
+.manageRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-sm);
+  margin-top: px($spacing-lg);
+}
+
+.outlineButton,
+.successButton,
+.editButton,
+.dangerButton {
+  border: 0;
+  border-radius: px($radius-circle);
+  cursor: pointer;
+  font: inherit;
+  font-size: px($font-xs);
+  font-weight: 700;
+  padding: px($spacing-sm) px($spacing-md);
+}
+
+.outlineButton {
+  background: rgba(34, 33, 33, 0.06);
+  color: rgba(34, 33, 33, 0.72);
+}
+
+.successButton,
+.editButton {
+  background: linear-gradient(135deg, $color-purple, #c131c9);
+  color: $color-white;
+}
+
+.dangerButton {
+  background: #880000;
+  color: $color-white;
+}
+
+.sectionHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin: px($spacing-lg) 0 px($spacing-md);
+}
+
+.sectionTitle {
+  color: $color-dark;
+  font-size: px($font-sx);
+  font-weight: 800;
+  margin: 0;
+}
+
+.composerCard {
+  display: grid;
+  gap: px($spacing-md);
+  margin-top: px($spacing-lg);
+  padding: px($spacing-xl);
+}
+
+.composerTitle {
+  color: $color-dark;
+  font-size: px($font-sx);
+  font-weight: 800;
+  margin: 0;
+}
+
+.cancelLink {
+  background: transparent;
+  border: 0;
+  color: $color-purple;
+  cursor: pointer;
+  font: inherit;
+  font-size: px($font-xs);
+  font-weight: 700;
+  justify-self: start;
+  padding: 0;
+}
+
+.contentPanel {
+  margin-top: px($spacing-lg);
 }

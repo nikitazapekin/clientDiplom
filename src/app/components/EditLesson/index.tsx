@@ -1223,49 +1223,51 @@ export default function EditLesson({ mode = "lesson" }: EditLessonProps) {
           </div>
         )}
 
-        <div className={styles.slideActions}>
-          {!isCheckpointMode && (
+        <div className={styles.slidesControl}>
+          <div className={styles.slideActions}>
+            {!isCheckpointMode && (
+              <Button
+                color="#9F0FA7"
+                width="180px"
+                textColor="#fff"
+                text="Слайд (урок)"
+                onClick={() => addSlide("lesson")}
+              />
+            )}
             <Button
-              color="#9F0FA7"
+              color="#6a0f6e"
               width="180px"
               textColor="#fff"
-              text="Слайд (урок)"
-              onClick={() => addSlide("lesson")}
+              text={isCheckpointMode ? "Добавить задание" : "Слайд (тест)"}
+              onClick={() => addSlide("test")}
             />
-          )}
-          <Button
-            color="#6a0f6e"
-            width="180px"
-            textColor="#fff"
-            text={isCheckpointMode ? "Добавить задание" : "Слайд (тест)"}
-            onClick={() => addSlide("test")}
-          />
-        </div>
-
-        {slides.length > 0 && (
-          <div className={styles.slideTabs}>
-            {slides.map((slide, index) => (
-              <div key={slide.id} className={styles.slideTabWrapper}>
-                <button
-                  type="button"
-                  className={selectedSlideIndex === index ? styles.slideTabActive : styles.slideTab}
-                  onClick={() => setSelectedSlideIndex(index)}
-                >
-                  {slide.type === "test" ? (isCheckpointMode ? "Задание" : "Тест") : "Урок"}{" "}
-                  {index + 1}: {slide.title || "—"}
-                </button>
-                <button
-                  type="button"
-                  className={styles.slideTabDelete}
-                  onClick={() => deleteSlide(index)}
-                  title="Удалить слайд"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
           </div>
-        )}
+
+          {slides.length > 0 && (
+            <div className={styles.slideTabs}>
+              {slides.map((slide, index) => (
+                <div key={slide.id} className={styles.slideTabWrapper}>
+                  <button
+                    type="button"
+                    className={selectedSlideIndex === index ? styles.slideTabActive : styles.slideTab}
+                    onClick={() => setSelectedSlideIndex(index)}
+                  >
+                    {slide.type === "test" ? (isCheckpointMode ? "Задание" : "Тест") : "Урок"}{" "}
+                    {index + 1}: {slide.title || "—"}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.slideTabDelete}
+                    onClick={() => deleteSlide(index)}
+                    title="Удалить слайд"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {selectedSlide && selectedSlideIndex !== null && (
           <form className={styles.form} onSubmit={(e) => e.preventDefault()}>

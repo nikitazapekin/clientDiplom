@@ -250,10 +250,20 @@ column-gap: 10px;
   }
 }
 
+.slidesControl {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: px($spacing-sm);
+}
+
 .slideActions {
   display: flex;
   gap: px($spacing-sm);
   flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
 
   button {
     width: min(100%, 300px) !important;
@@ -263,7 +273,9 @@ column-gap: 10px;
 .slideTabs {
   display: flex;
   flex-wrap: wrap;
-  gap: px($spacing-xs);
+  gap: px($spacing-sm);
+  justify-content: center;
+  width: 100%;
 }
 
 .slideTab,
@@ -1035,18 +1047,23 @@ column-gap: 10px;
 }
 
 .slideTabWrapper {
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: px($spacing-xs);
 }
 
 .slideTabDelete {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + #{px($spacing-xs)});
+  transform: translateY(-50%);
   background: none;
   border: none;
   color: $color-red;
   cursor: pointer;
   font-size: 14px;
   padding: px($spacing-xs);
+  white-space: nowrap;
 
   &:hover {
     opacity: 0.8;

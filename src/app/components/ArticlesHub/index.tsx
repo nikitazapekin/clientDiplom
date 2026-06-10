@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import DislikeIcon from "@assets/icons/utils/dislike.png";
 import Image from "next/image";
+import Link from "next/link";
 
 import styles from "../CommunityHub/index.module.scss";
 
@@ -232,7 +233,7 @@ const ArticlesHub = () => {
               />
             </div>
             <div className={styles.formActions}>
-              <button className={styles.secondaryButton} onClick={() => void loadArticles()} type="button">
+              <button className={styles.primaryButton} onClick={() => void loadArticles()} type="button">
                 Найти статьи
               </button>
             </div>
@@ -260,24 +261,28 @@ const ArticlesHub = () => {
           <section className={styles.list}>
             {articles.map((article) => (
               <article className={styles.card} key={article.id}>
-                <div className={styles.cardTop}>
-                  <span className={styles.cardDate}>{formatDate(article.createdAt)}</span>
-                  <span className={styles.cardBadge}>
-                    {article.likes - article.dislikes >= 0 ? "+" : ""}
-                    {article.likes - article.dislikes}
-                  </span>
-                </div>
-
-                <h2 className={styles.cardTitle}>{article.title}</h2>
-                <p className={styles.cardText}>{article.excerpt}</p>
-
-                <div className={styles.tags}>
-                  {article.tags.map((item) => (
-                    <span className={styles.tag} key={`${article.id}-${item}`}>
-                      #{item}
+                <Link className={styles.cardMain} href={`/articles/${article.id}`}>
+                  <div className={styles.cardTop}>
+                    <span className={styles.cardDate}>{formatDate(article.createdAt)}</span>
+                    <span className={styles.cardBadge}>
+                      {article.likes - article.dislikes >= 0 ? "+" : ""}
+                      {article.likes - article.dislikes}
                     </span>
-                  ))}
-                </div>
+                  </div>
+
+                  <h2 className={styles.cardTitle}>{article.title}</h2>
+                  <p className={`${styles.cardText} ${styles.cardTextClamped} ${styles.cardTextClampedArticle}`}>
+                    {article.excerpt}
+                  </p>
+
+                  <div className={styles.tags}>
+                    {article.tags.map((item) => (
+                      <span className={styles.tag} key={`${article.id}-${item}`}>
+                        #{item}
+                      </span>
+                    ))}
+                  </div>
+                </Link>
 
                 <div className={styles.cardFooter}>
                   <div className={styles.voteRow}>

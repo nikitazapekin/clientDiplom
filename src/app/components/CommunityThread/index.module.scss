@@ -1,0 +1,121 @@
+@use "../../styles/mixins.scss" as *;
+@use "../../styles/variables.scss" as *;
+
+.thread {
+  display: grid;
+  gap: px($spacing-md);
+}
+
+.emptyState {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(34, 33, 33, 0.08);
+  border-radius: px($radius-large);
+  padding: px($spacing-lg);
+  text-align: center;
+}
+
+.emptyStateText {
+  color: rgba(34, 33, 33, 0.54);
+  font-size: px($font-xs);
+  margin: 0;
+}
+
+.commentCard {
+  background: #f9f9f9;
+  border: 1px solid rgba(34, 33, 33, 0.08);
+  border-radius: px($radius-medium);
+  padding: px($spacing-md);
+}
+
+.replyCard {
+  margin-top: px($spacing-sm);
+}
+
+.commentHeader {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-sm);
+  justify-content: space-between;
+  margin-bottom: px($spacing-sm);
+}
+
+.authorName {
+  color: $color-dark;
+  font-size: px($font-xs);
+  font-weight: 700;
+}
+
+.commentDate {
+  color: rgba(34, 33, 33, 0.48);
+  font-size: px($font-xs);
+}
+
+.commentText {
+  color: $color-dark;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.actionsRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: px($spacing-md);
+  margin-top: px($spacing-md);
+}
+
+.commentAction {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: rgba(34, 33, 33, 0.64);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: px($spacing-sm);
+  padding: 0;
+}
+
+.commentActionActive {
+  color: $color-purple;
+  font-weight: 700;
+}
+
+.commentActionIcon {
+  height: 18px;
+  width: 18px;
+}
+
+.commentActionIconRotated {
+  transform: rotate(180deg);
+}
+
+.linkButton {
+  background: transparent;
+  border: 0;
+  color: rgba(34, 33, 33, 0.64);
+  cursor: pointer;
+  font: inherit;
+  font-size: px($font-xs);
+  padding: 0;
+}
+
+.linkButton:hover {
+  color: $color-purple;
+}
+
+.dangerText {
+  color: $color-red;
+}
+
+.replyContainer {
+  border-left: 2px solid rgba(34, 33, 33, 0.1);
+  margin-top: px($spacing-md);
+  padding-left: px($spacing-md);
+}
+
+.repliesWrap {
+  margin-top: px($spacing-sm);
+}

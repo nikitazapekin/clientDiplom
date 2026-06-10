@@ -1,5 +1,4 @@
-/** Runtime type tags in JSON between ===RESULT=== markers. */
-
+ 
 export const JAVA_SERIALIZATION_HELPERS = `
     private static String __codexEscapeJson(String value) {
         StringBuilder escaped = new StringBuilder();
