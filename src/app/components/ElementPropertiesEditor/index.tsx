@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 
+import { API_BASE_URL } from "@/app/http/api";
 import type { LessonResponse } from "@/app/http/lessonService";
 import { LessonService } from "@/app/http/lessonService";
- 
+
 enum CheckpointType {
   QUIZ = "quiz",
   PRACTICAL_TASK = "practical_task",
@@ -44,19 +45,19 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    
+
     content: "",
     duration: 0,
     orderIndex: 0,
     isPublished: false,
-   
+
     type: "quiz" as CheckpointType,
     passingScore: 70,
     maxAttempts: 3,
     timeLimit: 60,
     instructions: "",
   });
- 
+
   const loadElementData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -80,15 +81,11 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
           instructions: "",
         });
       } else if (element.type === "checkpoint") {
-      
-        const response = await fetch(
-          `http://localhost:3002/checkpoints/map-element/${element.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-            },
-          }
-        );
+        const response = await fetch(`${API_BASE_URL}/checkpoints/map-element/${element.id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+        });
 
         if (response.ok) {
           const data = (await response.json()) as CheckpointResponse;
@@ -114,7 +111,7 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
     } catch (error: unknown) {
       console.error("Error loading element data:", error);
       setError("Не удалось загрузить данные элемента");
- 
+
       setFormData({
         title: element.title || "",
         description: "",
@@ -170,10 +167,9 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
           isPublished: formData.isPublished,
         });
       } else if (element.type === "checkpoint") {
-    
         const url = checkpointData?.id
-          ? `http://localhost:3002/checkpoints/${checkpointData.id}`
-          : `http://localhost:3002/checkpoints`;
+          ? `${API_BASE_URL}/checkpoints/${checkpointData.id}`
+          : `${API_BASE_URL}/checkpoints`;
 
         const method = checkpointData?.id ? "PUT" : "POST";
 
@@ -203,7 +199,7 @@ const ElementPropertiesEditor: React.FC<ElementPropertiesEditorProps> = ({ eleme
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
- 
+
       onUpdate();
     } catch (error: unknown) {
       console.error("Error saving element data:", error);

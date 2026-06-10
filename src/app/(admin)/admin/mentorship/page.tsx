@@ -5,6 +5,7 @@ import React from "react";
 
 import styles from "./page.module.scss";
 
+import { API_BASE_URL } from "@/app/http/api";
 import { getErrorMessage } from "@/app/http/errorUtils";
 
 type Announcement = {
@@ -87,12 +88,12 @@ const MentorshipPage = () => {
       setUsersLoading(true);
 
       const [studentsRes, adminsRes] = await Promise.all([
-        fetch("http://localhost:3002/students?page=1&limit=1000", {
+        fetch(`${API_BASE_URL}/students?page=1&limit=1000`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }),
-        fetch("http://localhost:3002/students/admins-list", {
+        fetch(`${API_BASE_URL}/students/admins-list`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
@@ -124,7 +125,7 @@ const MentorshipPage = () => {
 
   const loadAnnouncements = async () => {
     try {
-      const response = await fetch("http://localhost:3002/announcements", {
+      const response = await fetch(`${API_BASE_URL}/announcements`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
         },
@@ -143,7 +144,7 @@ const MentorshipPage = () => {
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3002/auth/register", {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -213,7 +214,7 @@ const MentorshipPage = () => {
   const handleCreateAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3002/announcements", {
+      const response = await fetch(`${API_BASE_URL}/announcements`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -633,10 +634,7 @@ const MentorshipPage = () => {
                   >
                     Отмена
                   </button>
-                  <button
-                    type="submit"
-                    className={styles.modal__btn_primary}
-                  >
+                  <button type="submit" className={styles.modal__btn_primary}>
                     Создать
                   </button>
                 </div>

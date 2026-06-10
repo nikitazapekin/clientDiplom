@@ -1,7 +1,9 @@
 import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import axios from "axios";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://31.128.40.81:3002";
+
+const BASE_URL = API_BASE_URL;
 
 const isBrowser = typeof window !== "undefined";
 

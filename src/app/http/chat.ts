@@ -1,9 +1,9 @@
-import type { Socket } from 'socket.io-client';
-import { io } from 'socket.io-client';
+import type { Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 
-import $api from './api';
+import $api, { API_BASE_URL } from "./api";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+const BASE_URL = API_BASE_URL;
 
 export interface Message {
   id: string;
@@ -70,21 +70,21 @@ class ChatService {
     this.currentUserId = userId;
     this.socket = io(BASE_URL, {
       query: { userId },
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       withCredentials: true,
       reconnection: true,
     });
 
-    this.socket.on('connect', () => {
-      console.log('Connected to chat server');
+    this.socket.on("connect", () => {
+      console.log("Connected to chat server");
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from chat server');
+    this.socket.on("disconnect", () => {
+      console.log("Disconnected from chat server");
     });
 
-    this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+    this.socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
     });
   }
 
@@ -101,10 +101,10 @@ class ChatService {
       return () => undefined;
     }
 
-    this.socket.on('newMessage', callback);
+    this.socket.on("newMessage", callback);
 
     return () => {
-      this.socket?.off('newMessage', callback);
+      this.socket?.off("newMessage", callback);
     };
   }
 
@@ -113,58 +113,71 @@ class ChatService {
       return () => undefined;
     }
 
-    this.socket.on('messagesRead', callback);
+    this.socket.on("messagesRead", callback);
 
     return () => {
-      this.socket?.off('messagesRead', callback);
+      this.socket?.off("messagesRead", callback);
     };
   }
 
   sendMessage(receiverId: string, content: string): Promise<Message> {
     if (!this.socket || !this.currentUserId) {
-      throw new Error('Not connected to chat server');
+      throw new Error("Not connected to chat server");
     }
 
     return new Promise((resolve, reject) => {
-      this.socket!.emit('sendMessage', { receiverId, content, senderId: this.currentUserId }, (response: SocketMessageResponse) => {
-        if (response.success && response.message) {
-          resolve(response.message);
-        } else {
-          reject(new Error(response.error || 'Failed to send message'));
+      this.socket!.emit(
+        "sendMessage",
+        { receiverId, content, senderId: this.currentUserId },
+        (response: SocketMessageResponse) => {
+          if (response.success && response.message) {
+            resolve(response.message);
+          } else {
+            reject(new Error(response.error || "Failed to send message"));
+          }
         }
-      });
+      );
     });
   }
 
   joinConversation(userId1: string, userId2: string) {
     if (!this.socket) return;
 
-    this.socket.emit('joinConversation', { userId1, userId2 });
+    this.socket.emit("joinConversation", { userId1, userId2 });
   }
 
   leaveConversation(userId1: string, userId2: string) {
     if (!this.socket) return;
 
-    this.socket.emit('leaveConversation', { userId1, userId2 });
+    this.socket.emit("leaveConversation", { userId1, userId2 });
   }
 
   markAsRead(senderId: string, receiverId: string): Promise<SocketStatusResponse> {
     if (!this.socket) {
-      throw new Error('Not connected to chat server');
+      throw new Error("Not connected to chat server");
     }
 
     return new Promise((resolve, reject) => {
-      this.socket!.emit('markAsRead', { senderId, receiverId }, (response: SocketStatusResponse) => {
-        if (response.success) {
-          resolve(response);
-        } else {
-          reject(new Error(response.error || 'Failed to mark as read'));
+      this.socket!.emit(
+        "markAsRead",
+        { senderId, receiverId },
+        (response: SocketStatusResponse) => {
+          if (response.success) {
+            resolve(response);
+          } else {
+            reject(new Error(response.error || "Failed to mark as read"));
+          }
         }
-      });
+      );
     });
   }
 
-  async getConversationMessages(userId1: string, userId2: string, limit = 50, offset = 0): Promise<Message[]> {
+  async getConversationMessages(
+    userId1: string,
+    userId2: string,
+    limit = 50,
+    offset = 0
+  ): Promise<Message[]> {
     const response = await $api.get(`/chat/messages/${userId1}/${userId2}`, {
       params: { limit, offset },
     });
@@ -189,13 +202,13 @@ class ChatService {
   }
 
   async getUnreadCount(): Promise<number> {
-    const response = await $api.get('/chat/unread-count');
+    const response = await $api.get("/chat/unread-count");
 
     return response.data.data.count;
   }
 
   async searchUsers(query: string): Promise<User[]> {
-    const response = await $api.get('/users/search', {
+    const response = await $api.get("/users/search", {
       params: { q: query },
     });
 
@@ -227,15 +240,16 @@ class ChatService {
         lastName: profile.lastName,
         middleName: profile.middleName,
         email: profile.email,
-        fullName:
-          profile.fullName ?? `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim(),
+        fullName: profile.fullName ?? `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim(),
       };
     }
   }
 
-  async getMultipleProfiles(userIds: string[]): Promise<Record<string, { firstName: string; lastName: string; fullName: string }>> {
-    const response = await $api.get('/users/profiles', {
-      params: { ids: userIds.join(',') },
+  async getMultipleProfiles(
+    userIds: string[]
+  ): Promise<Record<string, { firstName: string; lastName: string; fullName: string }>> {
+    const response = await $api.get("/users/profiles", {
+      params: { ids: userIds.join(",") },
     });
 
     return response.data.data;
