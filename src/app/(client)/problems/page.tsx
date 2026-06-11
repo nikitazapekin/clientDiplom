@@ -31,12 +31,19 @@ export default function ProblemsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [solvedTaskIds, setSolvedTaskIds] = useState<Set<string>>(new Set());
 
   const loadTasks = useCallback(async () => {
     try {
-      const data = await CodingTasksService.getAllTasks();
+      const [data, level] = await Promise.all([
+        CodingTasksService.getAllTasks(),
+        CodingTasksService.getStudentLevel().catch(() => null),
+      ]);
 
       setTasks(data);
+      setSolvedTaskIds(
+        new Set(level?.solvedTasks?.map((item) => item.codeTaskId) ?? []),
+      );
     } catch (e) {
       console.error("Failed to load tasks:", e);
     } finally {
@@ -47,6 +54,24 @@ export default function ProblemsPage() {
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    const handleStudentLevelUpdated = () => {
+      void CodingTasksService.getStudentLevel()
+        .then((level) => {
+          setSolvedTaskIds(
+            new Set(level.solvedTasks?.map((item) => item.codeTaskId) ?? []),
+          );
+        })
+        .catch(() => undefined);
+    };
+
+    window.addEventListener("student-level-updated", handleStudentLevelUpdated);
+
+    return () => {
+      window.removeEventListener("student-level-updated", handleStudentLevelUpdated);
+    };
+  }, []);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filtered = tasks.filter((task) => {
@@ -128,6 +153,9 @@ export default function ProblemsPage() {
                     <span className={styles.badge} style={{ backgroundColor: diff.color }}>
                       {diff.label}
                     </span>
+                    {solvedTaskIds.has(task.id) ? (
+                      <span className={styles.solvedBadge}>Решено</span>
+                    ) : null}
                   </span>
                   <span className={styles.colLang}>
                     {(task.languages || []).map((l) => LANG_LABELS[l] || l).join(", ")}

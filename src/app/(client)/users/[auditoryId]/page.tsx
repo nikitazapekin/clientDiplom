@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import styles from "./page.module.scss";
 
 import Button from "@/app/components/Button";
+import StudentLevelWheel from "@/app/components/StudentLevelWheel";
 import { AuthService } from "@/app/http/auth";
 import { CodingTasksService, type StudentLevel } from "@/app/http/codingTasksService";
 import { getErrorMessage } from "@/app/http/errorUtils";
@@ -109,6 +110,15 @@ export default function StudentProfilePage() {
           <p className={styles.email}>{profile.email}</p>
         </div>
 
+        {studentLevel ? (
+          <div className={styles.levelSection}>
+            <StudentLevelWheel
+              level={studentLevel.level}
+              experience={studentLevel.experience}
+            />
+          </div>
+        ) : null}
+
         <div className={styles.stats}>
           <div className={styles.statItem}>
             <span className={styles.statValue}>{profile.totalLessons}</span>
@@ -117,10 +127,6 @@ export default function StudentProfilePage() {
           <div className={styles.statItem}>
             <span className={styles.statValue}>{studentLevel?.solvedTasks?.length ?? 0}</span>
             <span className={styles.statLabel}>Задач</span>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statValue}>{profile.averageStars.toFixed(1)}</span>
-            <span className={styles.statLabel}>Средняя оценка</span>
           </div>
         </div>
 

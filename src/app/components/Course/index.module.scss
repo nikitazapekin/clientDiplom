@@ -104,9 +104,9 @@
   }
 
   &__badgeSubscribed {
-    background: rgba($color-purple, 0.12);
-    border-color: rgba($color-purple, 0.24);
-    color: $color-purple;
+    background: #4caf50;
+    border-color: #4caf50;
+    color: $color-white;
   }
 
   &__title {
@@ -211,12 +211,14 @@
 
     &__stats {
       flex-wrap: nowrap;
-      gap: px($spacing-md);
+      justify-content: center;
+      gap: px($spacing-lg);
     }
 
     &__stat {
       min-width: 0;
       flex: 0 1 auto;
+      text-align: center;
     }
   }
 }

@@ -135,6 +135,11 @@
   align-items: center;
 }
 
+.colDiff {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .taskName {
   font-weight: 600;
   color: $color-gray-900;
@@ -165,6 +170,15 @@
 .badge {
   padding: 4px 12px;
   border-radius: 12px;
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.solvedBadge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: #4caf50;
   color: $color-white;
   font-size: 12px;
   font-weight: 600;

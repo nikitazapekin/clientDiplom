@@ -81,9 +81,15 @@
   font-size: 14px;
 }
 
+.levelSection {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+}
+
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 

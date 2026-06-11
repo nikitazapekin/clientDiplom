@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import FriendsModal from '../FriendsModal';
+import StudentLevelWheel from '../StudentLevelWheel';
 
 import styles from './index.module.scss';
 
@@ -21,88 +22,6 @@ const DIFFICULTIES: Record<string, { label: string; color: string }> = {
   hard: { label: 'Сложный', color: '#f44336' },
 };
 
- 
-const CircularProgress = ({
-  progress,
-  level,
-  experience,
-  nextLevelExp,
-}: {
-  progress: number;
-  level: number;
-  experience: number;
-  nextLevelExp: number;
-}) => {
-  const CIRCLE_SIZE = 150;
-  const strokeWidth = 8;
-  const center = CIRCLE_SIZE / 2;
-  const radius = (CIRCLE_SIZE / 2) * 0.85;
-  const circumference = 2 * Math.PI * radius;
-
-  const clampedProgress = Math.min(Math.max(progress, 0), 1);
-  const strokeDashoffset = circumference * (1 - clampedProgress);
-
-  return (
-    <div className={styles.circularProgressContainer}>
-      <svg width={CIRCLE_SIZE} height={CIRCLE_SIZE} viewBox={`0 0 ${CIRCLE_SIZE} ${CIRCLE_SIZE}`}>
-       
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke="#e9ecef"
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-
-       
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke="#48bb78"
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          transform={`rotate(-90, ${center}, ${center})`}
-        />
-
-         
-        <text
-          x={center}
-          y={center - 8}
-          fontSize="24"
-          fontWeight="bold"
-          fill="#212529"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
-          {level}
-        </text>
-
-        <text
-          x={center}
-          y={center + 16}
-          fontSize="12"
-          fill="#6c757d"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
-          УРОВЕНЬ
-        </text>
-      </svg>
-
-      <div className={styles.expInfoContainer}>
-        <span className={styles.expValue}>{experience}</span>
-        <span className={styles.expSeparator}>/</span>
-        <span className={styles.expTotal}>{nextLevelExp}</span>
-        <span className={styles.expLabel}>XP</span>
-      </div>
-    </div>
-  );
-};
  
 const SolvedTaskCard = ({
   task,
@@ -406,9 +325,31 @@ const UserProfile: React.FC = () => {
     }
   };
 
+  const refreshStudentLevel = useCallback(async () => {
+    try {
+      const levelData = await CodingTasksService.getStudentLevel();
+
+      setStudentLevel(levelData);
+    } catch (codingErr) {
+      console.error('Failed to refresh student level:', codingErr);
+    }
+  }, []);
+
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  useEffect(() => {
+    const handleStudentLevelUpdated = () => {
+      void refreshStudentLevel();
+    };
+
+    window.addEventListener('student-level-updated', handleStudentLevelUpdated);
+
+    return () => {
+      window.removeEventListener('student-level-updated', handleStudentLevelUpdated);
+    };
+  }, [refreshStudentLevel]);
 
   const handleAvatarPress = () => {
     setAvatarPickerVisible(true);
@@ -457,12 +398,8 @@ const UserProfile: React.FC = () => {
   };
 
  
-  const getRequiredExp = (level: number) => Math.pow(10, level - 1);
-
   const currentLevel = studentLevel?.level || 1;
   const currentExp = studentLevel?.experience || 0;
-  const requiredExp = getRequiredExp(currentLevel);
-  const progress = currentExp / requiredExp;
 
   const solvedTasksCount = studentLevel?.solvedTasks?.length ?? 0;
 
@@ -561,12 +498,7 @@ const UserProfile: React.FC = () => {
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Мой прогресс в задачах</h3>
             <div className={styles.levelSection}>
-              <CircularProgress
-                progress={progress}
-                level={currentLevel}
-                experience={currentExp}
-                nextLevelExp={requiredExp}
-              />
+              <StudentLevelWheel level={currentLevel} experience={currentExp} />
             </div>
           </div>
         )}

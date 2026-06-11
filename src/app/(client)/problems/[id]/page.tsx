@@ -954,41 +954,61 @@ const estimateCodeComplexity = (code: string, language: CodeLanguage): number =>
   return Math.floor(complexity);
 };
 
-const SuccessModal = ({
+const TaskSuccessModal = ({
   isOpen,
   onClose,
   experienceGained,
   newLevel,
+  passedTests,
+  totalTests,
+  constraintsPassed,
 }: {
   isOpen: boolean;
   onClose: () => void;
   experienceGained: number;
   newLevel: number;
+  passedTests: number;
+  totalTests: number;
+  constraintsPassed: boolean;
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalIcon}></div>
-        <h2 className={styles.modalTitle}>Задача решена!</h2>
-        <div className={styles.modalBody}>
-          <p>Поздравляем! Вы успешно решили задачу.</p>
-          <p className={styles.modalSubtext}>Все тесты пройдены и все ограничения соблюдены.</p>
-          <div className={styles.modalRewards}>
-            <div className={styles.modalReward}>
-              <span>Получено опыта:</span>
-              <strong>+{experienceGained} XP</strong>
-            </div>
-            <div className={styles.modalReward}>
-              <span>Текущий уровень:</span>
-              <strong>{newLevel}</strong>
-            </div>
+    <div className={styles.resultsModalOverlay} onClick={onClose}>
+      <div className={styles.resultsCard} onClick={(event) => event.stopPropagation()}>
+        <button type="button" className={styles.resultsModalClose} onClick={onClose}>
+          ×
+        </button>
+
+        <h2 className={styles.resultsModalTitle}>Задача решена!</h2>
+
+        <div className={styles.xpHighlight}>
+          <span className={styles.summaryLabel}>Получено опыта</span>
+          <span className={styles.summaryValue}>+{experienceGained} XP</span>
+        </div>
+
+        <div className={styles.resultsSummary}>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryLabel}>Пройдено тестов:</span>
+            <span className={styles.summaryValue}>
+              {passedTests}/{totalTests}
+            </span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryLabel}>Ограничения:</span>
+            <span className={styles.summaryValue}>
+              {constraintsPassed ? "Пройдены" : "Не пройдены"}
+            </span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryLabel}>Текущий уровень:</span>
+            <span className={styles.summaryValue}>{newLevel}</span>
           </div>
         </div>
-        <button className={styles.modalButton} onClick={onClose}>
-          Отлично!
-        </button>
+
+        <div className={styles.resultsModalActions}>
+          <Button color="#9F0FA7" width="200px" textColor="#fff" text="Закрыть" onClick={onClose} />
+        </div>
       </div>
     </div>
   );
@@ -1026,6 +1046,7 @@ export default function SolveProblemPage() {
   const [studentLevel, setStudentLevel] = useState<StudentLevel | null>(null);
   const [rawOutput, setRawOutput] = useState<string>("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isTaskSolved, setIsTaskSolved] = useState(false);
   const [constraintErrors, setConstraintErrors] = useState<string[]>([]);
   const [constraintsPassed, setConstraintsPassed] = useState<boolean | null>(null);
 
@@ -1042,6 +1063,7 @@ export default function SolveProblemPage() {
       setSelectedLang(firstLang);
       setCode(data.startCodes?.[firstLang] || "");
       setStudentLevel(level);
+      setIsTaskSolved(level?.solvedTasks?.some((item) => item.codeTaskId === taskId) ?? false);
     } catch (e) {
       console.error("Failed to load task:", e);
     } finally {
@@ -1058,6 +1080,7 @@ export default function SolveProblemPage() {
       const level = await CodingTasksService.getStudentLevel();
 
       setStudentLevel(level);
+      setIsTaskSolved(level.solvedTasks?.some((item) => item.codeTaskId === taskId) ?? false);
     } catch (e) {
       console.error("Failed to refresh student level:", e);
     }
@@ -1231,9 +1254,19 @@ export default function SolveProblemPage() {
       await refreshStudentLevel();
 
       const finalConstraintsPassed = res.constraintsPassed ?? constraintsPassed;
+      const finalResult = clientTestResults
+        ? {
+            ...res,
+            results: clientTestResults,
+            allPassed:
+              clientTestResults.every((item) => item.passed) && (res.constraintsPassed ?? true),
+          }
+        : res;
 
-      if (res.allPassed && res.experienceGained > 0 && finalConstraintsPassed) {
+      if (finalResult.allPassed && finalConstraintsPassed) {
+        setIsTaskSolved(true);
         setShowSuccessModal(true);
+        window.dispatchEvent(new CustomEvent("student-level-updated"));
       } else if (res.constraintErrors && res.constraintErrors.length > 0) {
         setConstraintErrors(res.constraintErrors);
       }
@@ -1276,6 +1309,7 @@ export default function SolveProblemPage() {
               <span className={styles.badge} style={{ backgroundColor: diffColor }}>
                 {diffLabel}
               </span>
+              {isTaskSolved ? <span className={styles.solvedBadge}>Решено</span> : null}
               <span className={styles.xpBadge}>+{task.experienceReward} XP</span>
               <span className={styles.authorTag}>Автор: {task.authorName}</span>
             </div>
@@ -1551,11 +1585,14 @@ export default function SolveProblemPage() {
         </div>
       </div>
 
-      <SuccessModal
+      <TaskSuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
         experienceGained={result?.experienceGained || 0}
         newLevel={result?.newLevel || studentLevel?.level || 1}
+        passedTests={passedCount}
+        totalTests={totalCount}
+        constraintsPassed={result?.constraintsPassed ?? constraintsPassed ?? true}
       />
     </div>
   );
