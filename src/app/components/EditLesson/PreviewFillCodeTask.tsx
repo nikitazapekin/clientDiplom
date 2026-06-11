@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Button from "../Button";
 
@@ -23,6 +23,7 @@ interface PreviewFillCodeTaskProps {
     matchedCaseIndex: number | null;
     totalCases: number;
   }) => void;
+  onAdvanceNext?: () => void;
 }
 
 export function PreviewFillCodeTask({
@@ -33,16 +34,42 @@ export function PreviewFillCodeTask({
   setError,
   onCorrect,
   onResult,
+  onAdvanceNext,
 }: PreviewFillCodeTaskProps) {
   const [successMessage, setSuccessMessage] = useState("");
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const advanceTimerRef = useRef<number | null>(null);
   const normalizedBlock = useMemo(() => normalizeFillTaskBlock(block), [block]);
   const slotIds = useMemo(
     () => extractFillTaskInputs(normalizedBlock.templateCode ?? ""),
     [normalizedBlock.templateCode]
   );
 
+  useEffect(
+    () => () => {
+      if (advanceTimerRef.current) {
+        window.clearTimeout(advanceTimerRef.current);
+      }
+    },
+    []
+  );
+
+  const scheduleAdvance = () => {
+    if (!onAdvanceNext) {
+      return;
+    }
+
+    advanceTimerRef.current = window.setTimeout(() => {
+      onAdvanceNext();
+    }, 2000);
+  };
+
   const updateAnswer = (slotId: string, optionId: string | null) => {
+    if (isLocked) {
+      return;
+    }
+
     setAnswers({
       ...answers,
       [slotId]: optionId ?? "",
@@ -52,6 +79,10 @@ export function PreviewFillCodeTask({
   };
 
   const handleCheck = () => {
+    if (isLocked) {
+      return;
+    }
+
     if (slotIds.length === 0) {
       setSuccessMessage("");
       setError("В задаче не найдено ни одного слота вида [[slot-name]].");
@@ -81,19 +112,20 @@ export function PreviewFillCodeTask({
     );
 
     onResult?.(result);
+    setIsLocked(true);
 
     if (result.passed) {
       setError("");
-      setSuccessMessage(
-        `Верно. Подошёл вариант ${result.matchedCaseIndex !== null ? result.matchedCaseIndex + 1 : 1}.`
-      );
+      setSuccessMessage("Верно");
       onCorrect();
+      scheduleAdvance();
 
       return;
     }
 
     setSuccessMessage("");
-    setError(`Решение не совпало ни с одним из ${result.totalCases} допустимых вариантов.`);
+    setError("Неверно");
+    scheduleAdvance();
   };
 
   return (
@@ -111,6 +143,7 @@ export function PreviewFillCodeTask({
         options={normalizedBlock.options}
         onAssign={updateAnswer}
         selectedOptionId={selectedOptionId}
+        readOnly={isLocked}
       />
 
       <div className={styles.fillTaskInfo}>
@@ -134,9 +167,14 @@ export function PreviewFillCodeTask({
               setSelectedOptionId(option.id);
             }}
             onDragEnd={() => setSelectedOptionId(null)}
-            onClick={() =>
-              setSelectedOptionId((current) => (current === option.id ? null : option.id))
-            }
+            onClick={() => {
+              if (isLocked) {
+                return;
+              }
+
+              setSelectedOptionId((current) => (current === option.id ? null : option.id));
+            }}
+            disabled={isLocked}
           >
             {option.value || "(пустое значение)"}
           </button>
@@ -149,6 +187,7 @@ export function PreviewFillCodeTask({
         textColor="#fff"
         text="Проверить"
         onClick={handleCheck}
+        disabled={isLocked}
       />
 
       {successMessage && <p className={styles.fillTaskSuccess}>{successMessage}</p>}

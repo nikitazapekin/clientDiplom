@@ -291,10 +291,6 @@
     content: "Тесты";
   }
 
-  .colAction::before {
-    content: "Действие";
-  }
-
   .taskName,
   .taskAuthor,
   .colLang {
@@ -302,10 +298,13 @@
   }
 
   .colAction {
-    align-items: stretch;
+    align-items: center;
+    justify-content: center;
 
     .solveBtn {
       width: 100%;
+      text-align: center;
+      justify-content: center;
     }
   }
 }

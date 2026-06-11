@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import styles from "./index.module.scss";
 
@@ -33,6 +34,7 @@ const getAvatarUrl = (item: unknown): string | null => {
 };
 
 const FriendModal = ({ onClose }: { onClose: () => void }) => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("my-friends");
   const [friends, setFriends] = useState<FriendResponse[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequestResponse[]>([]);
@@ -187,6 +189,15 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Failed to remove friend");
     }
+  };
+
+  const openFriendProfile = (friendAuditoryId: string) => {
+    if (!friendAuditoryId) {
+      return;
+    }
+
+    onClose();
+    router.push(`/users/${friendAuditoryId}`);
   };
 
   const handleAddFriend = async (friendAuditoryId: string) => {
@@ -410,16 +421,23 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
 
                   if (searchResults.length > 0) {
                     return (
-                      <div key={item.id} className={styles.friendCard}>
+                      <div
+                        key={item.id}
+                        className={`${styles.friendCard} ${isFindFriendsTab ? styles.friendCardStacked : ""}`}
+                      >
                         <div
                           className={styles.friendInfoClickable}
-                          onClick={() => handleRemoveFriend(item.friendId)}
+                          onClick={() => openFriendProfile(item.friendId)}
                         >
                           <div className={styles.avatarContainer}>
                             {renderAvatar(item, initial)}
                           </div>
                           <div className={styles.friendInfo}>
-                            <div className={styles.friendName}>{fullName || "Unknown"}</div>
+                            <div
+                              className={`${styles.friendName} ${isMyFriendsTab ? styles.friendNameSingleLine : ""}`}
+                            >
+                              {fullName || "Unknown"}
+                            </div>
                             <div className={styles.friendEmail}>{item.friendId}</div>
                           </div>
                         </div>
@@ -433,7 +451,10 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                         ) : (
                           <button
                             className={styles.addFriendButton}
-                            onClick={() => handleAddFriend(item.friendId)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleAddFriend(item.friendId);
+                            }}
                           >
                             + Добавить
                           </button>
@@ -444,23 +465,29 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
 
                   if (isMyFriendsTab) {
                     return (
-                      <div
-                        key={item.id}
-                        className={styles.friendCard}
-                        onDoubleClick={() => handleRemoveFriend(item.friendId)}
-                      >
-                        <div className={styles.avatarContainer}>
-                          {renderAvatar(item, initial)}
-                        </div>
-                        <div className={styles.friendInfo}>
-                          <div className={styles.friendName}>{fullName || "Unknown"}</div>
-                          <div className={styles.friendSince}>
-                            Добавлен {new Date(item.createdAt).toLocaleDateString()}
+                      <div key={item.id} className={styles.friendCard}>
+                        <div
+                          className={styles.friendInfoClickable}
+                          onClick={() => openFriendProfile(item.friendId)}
+                        >
+                          <div className={styles.avatarContainer}>
+                            {renderAvatar(item, initial)}
+                          </div>
+                          <div className={styles.friendInfo}>
+                            <div className={`${styles.friendName} ${styles.friendNameSingleLine}`}>
+                              {fullName || "Unknown"}
+                            </div>
+                            <div className={styles.friendSince}>
+                              Добавлен {new Date(item.createdAt).toLocaleDateString()}
+                            </div>
                           </div>
                         </div>
                         <button
                           className={styles.removeFriendButton}
-                          onClick={() => handleRemoveFriend(item.friendId)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleRemoveFriend(item.friendId);
+                          }}
                           title="Удалить из друзей"
                         >
                           ✕
@@ -470,8 +497,11 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                   }
 
                   return (
-                    <div key={item.id} className={styles.friendCard}>
-                      <div className={styles.friendInfoClickable}>
+                    <div key={item.id} className={`${styles.friendCard} ${styles.friendCardStacked}`}>
+                      <div
+                        className={styles.friendInfoClickable}
+                        onClick={() => openFriendProfile(item.friendId)}
+                      >
                         <div className={styles.avatarContainer}>
                           {renderAvatar(item, initial)}
                         </div>
@@ -481,7 +511,10 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                       </div>
                       <button
                         className={styles.addFriendButton}
-                        onClick={() => handleAddFriend(item.friendId)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleAddFriend(item.friendId);
+                        }}
                       >
                         + Добавить
                       </button>

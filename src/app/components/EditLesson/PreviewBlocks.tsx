@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Button from "../Button";
 
@@ -86,36 +86,67 @@ function PreviewTheoryQuestion({
   testAnswer,
   setTestAnswer,
   onCorrect,
+  onAdvanceNext,
 }: {
   block: TheoryQuestionBlock;
   testAnswer: string | number | undefined;
   setTestAnswer: (v: string | number) => void;
   onCorrect: () => void;
+  onAdvanceNext?: () => void;
 }) {
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const advanceTimerRef = useRef<number | null>(null);
   const selected = useMemo(
     () => (typeof testAnswer === "number" ? testAnswer : -1),
     [testAnswer]
   );
 
+  useEffect(
+    () => () => {
+      if (advanceTimerRef.current) {
+        window.clearTimeout(advanceTimerRef.current);
+      }
+    },
+    []
+  );
+
+  const scheduleAdvance = () => {
+    if (!onAdvanceNext) {
+      return;
+    }
+
+    advanceTimerRef.current = window.setTimeout(() => {
+      onAdvanceNext();
+    }, 2000);
+  };
+
   const submit = () => {
+    if (isLocked) {
+      return;
+    }
+
     if (selected < 0) {
       setFeedback({ type: "error", message: "Выберите один вариант ответа." });
 
       return;
     }
 
+    setIsLocked(true);
+
     if (selected === block.correctIndex) {
-      setFeedback({ type: "success", message: "Верно. Ответ принят." });
+      setFeedback({ type: "success", message: "Верно" });
       onCorrect();
+      scheduleAdvance();
 
       return;
     }
 
-    setFeedback({ type: "error", message: "Неверный ответ. Попробуйте ещё раз." });
+    setFeedback({ type: "error", message: "Неверно" });
+    scheduleAdvance();
   };
 
   return (
@@ -139,6 +170,7 @@ function PreviewTheoryQuestion({
               type="radio"
               name={`theory_${block.id}`}
               checked={selected === i}
+              disabled={isLocked}
               onChange={() => {
                 setTestAnswer(i);
                 setFeedback(null);
@@ -154,7 +186,7 @@ function PreviewTheoryQuestion({
         textColor="#fff"
         text="Ответить"
         onClick={submit}
-        disabled={selected < 0}
+        disabled={selected < 0 || isLocked}
       />
       {feedback?.type === "success" ? (
         <p className={styles.fillTaskSuccess}>{feedback.message}</p>
@@ -179,6 +211,7 @@ export function PreviewBlock({
   onCorrect,
   onResults,
   onFillTaskResult,
+  onAdvanceNext,
 }: {
   block: SlideBlock;
   slideId: string;
@@ -198,6 +231,7 @@ export function PreviewBlock({
     matchedCaseIndex: number | null;
     totalCases: number;
   }) => void;
+  onAdvanceNext?: () => void;
 }) {
   void slideId;
 
@@ -272,6 +306,7 @@ export function PreviewBlock({
         setError={setTestError}
         onCorrect={onCorrect}
         onResult={onFillTaskResult}
+        onAdvanceNext={onAdvanceNext}
       />
     );
   }
@@ -284,6 +319,7 @@ export function PreviewBlock({
         testAnswer={testAnswer}
         setTestAnswer={setTestAnswer}
         onCorrect={onCorrect}
+        onAdvanceNext={onAdvanceNext}
       />
     );
   }

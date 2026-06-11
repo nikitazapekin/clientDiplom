@@ -158,4 +158,36 @@ export class CourseService {
       throw new Error(getErrorMessage(error, "Failed to fetch your courses"));
     }
   }
+
+  static async checkSubscription(courseId: string): Promise<boolean> {
+    try {
+      const response = await $api.get<{ subscribed: boolean }>(
+        `/course-subscriptions/check/${courseId}`,
+      );
+
+      return Boolean(response.data.subscribed);
+    } catch (error: unknown) {
+      console.error("Check subscription error:", error);
+
+      return false;
+    }
+  }
+
+  static async subscribe(courseId: string): Promise<void> {
+    try {
+      await $api.post(`/course-subscriptions/subscribe/${courseId}`);
+    } catch (error: unknown) {
+      console.error("Subscribe error:", error);
+      throw new Error(getErrorMessage(error, "Не удалось подписаться на курс"));
+    }
+  }
+
+  static async unsubscribe(courseId: string): Promise<void> {
+    try {
+      await $api.delete(`/course-subscriptions/unsubscribe/${courseId}`);
+    } catch (error: unknown) {
+      console.error("Unsubscribe error:", error);
+      throw new Error(getErrorMessage(error, "Не удалось отписаться от курса"));
+    }
+  }
 }

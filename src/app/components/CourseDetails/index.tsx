@@ -2,6 +2,7 @@
 
 import Certificate from "@assets/courses/Certificate.png";
 import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import Button from "../Button";
@@ -10,24 +11,80 @@ import styles from "./index.module.scss";
 import type { CourseResponse } from "./types";
 
 import { AuthService } from "@/app/http/auth";
+import { CourseService } from "@/app/http/courses";
 
 const CourseDetails = ({ course }: CourseResponse) => {
   const router = useRouter();
   const detailedDescription = course.fullDescription?.trim() || course.description;
-
-  const handleRedirect = () => {
-    const userRole = AuthService.getCurrentUser().role;
-    const isUserAdmin = userRole === "admin";
-
-    if (isUserAdmin) {
-      router.push(`/admin/courses/${course.id}/map`);
-    } else {
-      router.push(`/study/${course.id}/map`);
-    }
-  };
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [lessonCount, setLessonCount] = useState(0);
+  const [studentCount, setStudentCount] = useState(0);
 
   const userRole = AuthService.getCurrentUser().role;
   const isAdmin = userRole === "admin";
+
+  const loadCourseMeta = useCallback(async () => {
+    setSubscriptionLoading(true);
+
+    try {
+      const [stats, subscribed] = await Promise.all([
+        CourseService.getCourseStats(course.id),
+        isAdmin ? Promise.resolve(false) : CourseService.checkSubscription(course.id),
+      ]);
+
+      setLessonCount(stats.lessonCount ?? 0);
+      setStudentCount(stats.studentCount ?? 0);
+      setIsSubscribed(subscribed);
+    } catch (loadError) {
+      console.error("Failed to load course meta:", loadError);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, [course.id, isAdmin]);
+
+  useEffect(() => {
+    void loadCourseMeta();
+  }, [loadCourseMeta]);
+
+  const handleRedirect = () => {
+    if (isUserAdmin) {
+      router.push(`/admin/courses/${course.id}/map`);
+
+      return;
+    }
+
+    router.push(`/study/${course.id}/map`);
+  };
+
+  const isUserAdmin = userRole === "admin";
+
+  const handleSubscribe = async () => {
+    setActionLoading(true);
+
+    try {
+      await CourseService.subscribe(course.id);
+      setIsSubscribed(true);
+    } catch (subscribeError) {
+      console.error(subscribeError);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    setActionLoading(true);
+
+    try {
+      await CourseService.unsubscribe(course.id);
+      setIsSubscribed(false);
+    } catch (unsubscribeError) {
+      console.error(unsubscribeError);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <div className={styles.courses}>
@@ -46,6 +103,9 @@ const CourseDetails = ({ course }: CourseResponse) => {
             <div className={styles.courses__infoPreview}>
               <h1 className={styles.courses__title}>{course.title}</h1>
               {isAdmin && <p className={styles.courses__edit}>Редактировать</p>}
+              {!isAdmin && isSubscribed ? (
+                <span className={styles.courses__subscribedBadge}>Вы подписаны</span>
+              ) : null}
             </div>
 
             <h2 className={styles.courses__description}>{course.description}</h2>
@@ -67,7 +127,7 @@ const CourseDetails = ({ course }: CourseResponse) => {
                     />
                   </svg>
                 </div>
-                <span>0 уроков</span>
+                <span>{lessonCount} уроков</span>
               </div>
               <div className={styles.courses__stat}>
                 <div className={styles.courses__iconBox}>
@@ -85,7 +145,7 @@ const CourseDetails = ({ course }: CourseResponse) => {
                     />
                   </svg>
                 </div>
-                <span>0 студентов</span>
+                <span>{studentCount} студентов</span>
               </div>
             </div>
 
@@ -124,12 +184,35 @@ const CourseDetails = ({ course }: CourseResponse) => {
         </div>
 
         <div className={styles.courses__actions}>
+          {!isAdmin ? (
+            isSubscribed ? (
+              <Button
+                text={actionLoading ? "Отписка..." : "Отписаться от курса"}
+                onClick={() => void handleUnsubscribe()}
+                width="313px"
+                color="#d8d8d8"
+                textColor="#000"
+                disabled={actionLoading || subscriptionLoading}
+              />
+            ) : (
+              <Button
+                text={actionLoading ? "Подписка..." : "Подписаться на курс"}
+                onClick={() => void handleSubscribe()}
+                width="313px"
+                color="#9F0FA7"
+                textColor="#fff"
+                disabled={actionLoading || subscriptionLoading}
+              />
+            )
+          ) : null}
+
           <Button
             text={isAdmin ? "Просмотреть карту курса" : "Начать изучение курса"}
             onClick={handleRedirect}
             width="313px"
             color="#9F0FA7"
             textColor="#fff"
+            disabled={!isAdmin && !isSubscribed}
           />
         </div>
       </div>

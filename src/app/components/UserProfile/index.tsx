@@ -525,7 +525,7 @@ const UserProfile: React.FC = () => {
           </div>
 
           <h1 className={styles.name}>
-            {profile.firstName} {profile.lastName}
+            {profile.lastName} {profile.firstName}
             {profile.middleName ? ` ${profile.middleName}` : ''}
           </h1>
 

@@ -8,14 +8,21 @@ import styles from "./page.module.scss";
 import Button from "@/app/components/Button";
 import CodeEditor from "@/app/components/CodeEditor";
 import {
+  buildTestCode,
   compareOutputs as compareSharedOutputs,
+  formatArgsForDynamicLang,
   generateObjectClasses as generateSharedObjectClasses,
+  generateObjectClassesForPreview,
   getDisplayInput as getSharedDisplayInput,
   getTypeString as getSharedTypeString,
   resolveTargetFunctionName as resolveSharedTargetFunctionName,
 } from "@/app/components/EditLesson/codeUtils";
-import type { ArgumentSchema as SharedArgumentSchema, ArgumentType } from "@/app/components/EditLesson/types";
-import type { CodeLanguage } from "@/app/http/codeService";
+import type {
+  ArgumentSchema as SharedArgumentSchema,
+  ArgumentType,
+  ReturnSchema as SharedReturnSchema,
+} from "@/app/components/EditLesson/types";
+import { CodeService, type CodeLanguage } from "@/app/http/codeService";
 import {
   type CodeConstraint,
   type CodeTask,
@@ -707,6 +714,61 @@ const parseTestOutput = (output: string, testNum: number): { logs: string[]; res
   return { logs, result: result.trim() };
 };
 
+const runClientSideDynamicTests = async (
+  task: CodeTask,
+  code: string,
+  language: CodeLanguage,
+): Promise<{
+  allPassed: boolean;
+  results: SubmitSolutionResult["results"];
+  output: string;
+}> => {
+  const funcName = resolveSharedTargetFunctionName(task.functionName, code, language);
+
+  if (!funcName) {
+    throw new Error("NO_FUNCTION");
+  }
+
+  const argumentScheme = task.argumentScheme as ArgumentSchema[] | undefined;
+  const langTestCases = task.testCasesByLanguage?.[language] || task.testCases || [];
+  const objectClasses = generateObjectClasses(argumentScheme || [], language);
+  const codeWithClasses = objectClasses ? `${code}\n\n${objectClasses}` : code;
+  const results: SubmitSolutionResult["results"] = [];
+  let fullOutput = "";
+
+  for (let i = 0; i < langTestCases.length; i++) {
+    const testCase = langTestCases[i];
+    const argsInput = formatArgsForDynamicLang(testCase.args, argumentScheme ?? [], language);
+    const inputToUse = (argumentScheme?.length ?? 0) > 0 ? argsInput : testCase.input || "";
+    const codeToRun = buildTestCode(codeWithClasses, "", language, funcName, inputToUse);
+    const execution = await CodeService.executeCode({ language, code: codeToRun });
+
+    if (execution.error) {
+      throw new Error(execution.error);
+    }
+
+    const output = execution.output || "";
+    fullOutput += `${output}\n`;
+    const { result: actualResult } = parseTestOutput(output, 1);
+    const expected = testCase.expectedOutput;
+    const actual = actualResult || "";
+
+    results.push({
+      index: i,
+      passed: compareOutputs(actual, expected, task),
+      input: getDisplayInput(testCase, argumentScheme, language),
+      expected,
+      actual: actual || "пусто",
+    });
+  }
+
+  return {
+    allPassed: results.every((item) => item.passed),
+    results,
+    output: fullOutput.trim(),
+  };
+};
+
 const _getTypeString = (type: string, language: string): string => {
   return getSharedTypeString(type as ArgumentType, language as CodeLanguage);
 };
@@ -1045,6 +1107,46 @@ export default function SolveProblemPage() {
 
     try {
       let codeToSubmit = code;
+      let clientTestResults: SubmitSolutionResult["results"] | null = null;
+      let clientOutput = "";
+
+      if (selectedLang === "javascript" || selectedLang === "typescript") {
+        try {
+          const clientRun = await runClientSideDynamicTests(task, code, selectedLang);
+
+          clientTestResults = clientRun.results;
+          clientOutput = clientRun.output;
+          setRawOutput(clientOutput);
+
+          if (!clientRun.allPassed) {
+            setResult({
+              allPassed: false,
+              results: clientRun.results,
+              experienceGained: 0,
+              newLevel: studentLevel?.level ?? 1,
+              newExperience: studentLevel?.experience ?? 0,
+              constraintsPassed: true,
+              constraintErrors: [],
+              output: clientOutput,
+            });
+            setSubmitLoading(false);
+
+            return;
+          }
+        } catch (clientError) {
+          const message =
+            clientError instanceof Error && clientError.message === "NO_FUNCTION"
+              ? "Не удалось найти имя функции в коде. Убедитесь, что функция определена правильно."
+              : clientError instanceof Error
+                ? clientError.message
+                : "Ошибка выполнения тестов";
+
+          alert(message);
+          setSubmitLoading(false);
+
+          return;
+        }
+      }
 
       if (selectedLang === "java" || selectedLang === "csharp") {
         const funcName = resolveSharedTargetFunctionName(
@@ -1065,11 +1167,13 @@ export default function SolveProblemPage() {
         const argumentScheme = task.argumentScheme as ArgumentSchema[] | undefined;
         const taskTestCases =
           task.testCasesByLanguage?.[selectedLang] || task.testCases || [];
+        const objectClasses = generateObjectClasses(argumentScheme || [], selectedLang);
+        const codeWithClasses = objectClasses ? `${objectClasses}\n\n${code}` : code;
 
         if (selectedLang === "java") {
-          codeToSubmit = buildJavaTestSuite(code, taskTestCases, funcName, argumentScheme);
+          codeToSubmit = buildJavaTestSuite(codeWithClasses, taskTestCases, funcName, argumentScheme);
         } else if (selectedLang === "csharp") {
-          codeToSubmit = buildCSharpTestSuite(code, taskTestCases, funcName, argumentScheme);
+          codeToSubmit = buildCSharpTestSuite(codeWithClasses, taskTestCases, funcName, argumentScheme);
         }
       }
 
@@ -1113,7 +1217,16 @@ export default function SolveProblemPage() {
         }
       }
 
-      setResult(res);
+      if (clientTestResults) {
+        setResult({
+          ...res,
+          results: clientTestResults,
+          allPassed: clientTestResults.every((item) => item.passed) && (res.constraintsPassed ?? true),
+          output: clientOutput || res.output,
+        });
+      } else {
+        setResult(res);
+      }
 
       await refreshStudentLevel();
 
@@ -1261,10 +1374,20 @@ export default function SolveProblemPage() {
 
             return (
               <div className={styles.examplesBox}>
-                {objectClassesCode && (selectedLang === "java" || selectedLang === "csharp") && (
+                {objectClassesCode &&
+                  (selectedLang === "java" ||
+                    selectedLang === "csharp" ||
+                    selectedLang === "javascript" ||
+                    selectedLang === "typescript") && (
                   <>
                     <h3>Классы объектов</h3>
-                    <pre className={styles.codeBlock}>{objectClassesCode}</pre>
+                    <pre className={styles.codeBlock}>
+                      {generateObjectClassesForPreview(
+                        argScheme || [],
+                        selectedLang,
+                        task.returnSchema as SharedReturnSchema | undefined,
+                      ) || objectClassesCode}
+                    </pre>
                   </>
                 )}
 
@@ -1337,6 +1460,29 @@ export default function SolveProblemPage() {
               />
             </div>
           </div>
+
+          {(() => {
+            const argScheme = task.argumentScheme as ArgumentSchema[] | undefined;
+            const objectSchemaCode = generateObjectClassesForPreview(
+              argScheme || [],
+              selectedLang,
+              task.returnSchema as SharedReturnSchema | undefined,
+            );
+
+            if (
+              !objectSchemaCode ||
+              (selectedLang !== "javascript" && selectedLang !== "typescript")
+            ) {
+              return null;
+            }
+
+            return (
+              <div className={styles.objectSchemaBox}>
+                <h3 className={styles.objectSchemaTitle}>Схема объектов</h3>
+                <pre className={styles.codeBlock}>{objectSchemaCode}</pre>
+              </div>
+            );
+          })()}
 
           <div className={styles.editorWrap}>
             <CodeEditor

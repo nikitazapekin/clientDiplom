@@ -4,30 +4,20 @@
   background: #fff;
 }
 
-.lessonLayout {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  width: min(1280px, 100%);
-  margin: 0 auto;
-  padding-right: 10px;
-}
-
 .pageInner {
-  flex: 1;
-  min-width: 0;
+  width: min(1180px, 100%);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
 .sideRail {
-  position: sticky;
-  top: 96px;
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 10px;
-  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .sideRailButton {
@@ -474,21 +464,13 @@
     padding: 0 0 28px;
   }
 
-  .lessonLayout {
-    flex-direction: column;
-    padding: 0 10px;
-  }
-
   .sideRail {
-    position: static;
     width: 100%;
-    flex-direction: row;
-    justify-content: flex-end;
+    align-items: stretch;
   }
 
   .sideRailButton {
-    min-width: 0;
-    flex: 1;
+    width: 100%;
   }
 
   .header {

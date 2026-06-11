@@ -246,9 +246,24 @@
     height: auto;
   }
 
+  &__subscribedBadge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba($color-purple, 0.12);
+    color: $color-purple;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
   &__actions {
     display: flex;
     justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
     padding: px($spacing-lg);
   }
 }

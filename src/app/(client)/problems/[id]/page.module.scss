@@ -300,6 +300,19 @@
   gap: 8px;
 }
 
+.objectSchemaBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.objectSchemaTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: $color-gray-700;
+}
+
 .editorWrap {
   border-radius: 10px;
   overflow: hidden;

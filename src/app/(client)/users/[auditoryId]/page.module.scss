@@ -1,0 +1,128 @@
+@use "../../../styles/variables.scss" as *;
+@use "../../../styles/mixins.scss" as *;
+
+.page {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: px($spacing-lg) px($spacing-md);
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 48px 16px;
+  color: $color-gray-600;
+}
+
+.error {
+  color: #c62828;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: $color-purple;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  margin-bottom: 16px;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.card {
+  background: $color-white;
+  border: 1px solid $color-gray-200;
+  border-radius: 16px;
+  padding: px($spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: px($spacing-lg);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.avatar,
+.avatarPlaceholder {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-purple;
+  color: $color-white;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.name {
+  margin: 0;
+  font-size: 24px;
+  color: $color-gray-900;
+}
+
+.email {
+  margin: 0;
+  color: $color-gray-500;
+  font-size: 14px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: $color-gray-50;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: $color-gray-900;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: $color-gray-500;
+}
+
+.description {
+  h2 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: $color-gray-800;
+  }
+
+  p {
+    margin: 0;
+    color: $color-gray-600;
+    line-height: 1.5;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}

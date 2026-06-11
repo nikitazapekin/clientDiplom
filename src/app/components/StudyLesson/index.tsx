@@ -387,9 +387,10 @@ const StudyLesson = ({
       if (theoryQuestions.length > 0) {
         totalTheoryQuestions += theoryQuestions.length;
 
-        const answer = testAnswer[slide.id];
         const theoryCorrectCount = theoryQuestions.filter(
-          (question) => typeof answer === "number" && answer === question.correctIndex
+          (question) =>
+            typeof testAnswer[question.id] === "number" &&
+            testAnswer[question.id] === question.correctIndex,
         ).length;
 
         correctTheoryAnswers += theoryCorrectCount;
@@ -438,7 +439,9 @@ const StudyLesson = ({
             slideTitle: slide.title,
             title: "Задание с выбором ответа",
             taskNumber,
-            passed: typeof testAnswer[slide.id] === "number" && testAnswer[slide.id] === block.correctIndex,
+            passed:
+              typeof testAnswer[block.id] === "number" &&
+              testAnswer[block.id] === block.correctIndex,
             kind: "theory",
           });
         }
@@ -586,8 +589,7 @@ const StudyLesson = ({
 
   return (
     <section className={styles.page}>
-      <div className={styles.lessonLayout}>
-        <div className={styles.pageInner}>
+      <div className={styles.pageInner}>
         <div className={styles.header}>
           <div className={styles.headerMain}>
         
@@ -606,12 +608,22 @@ const StudyLesson = ({
 
         <div className={styles.surface}>
           <div className={styles.surfaceTop}>
-            <div>
-           {/*} 
-              <h2 className={styles.slideTitle}>{currentSlide.title}</h2> 
-              */}
-            </div>
-
+            <aside className={styles.sideRail}>
+              <button
+                type="button"
+                className={styles.sideRailButton}
+                onClick={() => openSourcesModal(currentSlideSources)}
+              >
+                Источники
+              </button>
+              <button
+                type="button"
+                className={styles.sideRailButton}
+                onClick={() => setCommentsModalOpen(true)}
+              >
+                Комментарии
+              </button>
+            </aside>
           </div>
 
           <div className={styles.content}>
@@ -623,10 +635,11 @@ const StudyLesson = ({
                 runCode={runCode}
                 codeRunOutput={codeRunOutput[block.id]}
                 codeRunLoading={codeRunLoading[block.id]}
-                testAnswer={testAnswer[currentSlide.id]}
+                testAnswer={testAnswer[block.id]}
                 setTestAnswer={(value) =>
-                  setTestAnswer((prev) => ({ ...prev, [currentSlide.id]: value }))
+                  setTestAnswer((prev) => ({ ...prev, [block.id]: value }))
                 }
+                onAdvanceNext={goToNext}
                 fillAnswers={fillTaskAnswers[block.id] ?? {}}
                 setFillAnswers={(values) => {
                   setFillTaskAnswers((prev) => ({ ...prev, [block.id]: values }));
@@ -642,7 +655,7 @@ const StudyLesson = ({
                 testError={
                   block.type === "fillCodeTask"
                     ? fillTaskErrors[block.id]
-                    : testErrors[currentSlide.id]
+                    : testErrors[block.id]
                 }
                 setTestError={(value) => {
                   if (block.type === "fillCodeTask") {
@@ -699,24 +712,6 @@ const StudyLesson = ({
             />
           </div>
         </div>
-        </div>
-
-        <aside className={styles.sideRail}>
-          <button
-            type="button"
-            className={styles.sideRailButton}
-            onClick={() => openSourcesModal(currentSlideSources)}
-          >
-            Источники
-          </button>
-          <button
-            type="button"
-            className={styles.sideRailButton}
-            onClick={() => setCommentsModalOpen(true)}
-          >
-            Комментарии
-          </button>
-        </aside>
       </div>
 
       <SourceModal
