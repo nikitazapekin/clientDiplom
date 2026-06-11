@@ -845,7 +845,9 @@ column-gap: 10px;
   font-size: 13px;
   line-height: 1.55;
   white-space: pre-wrap;
-  overflow-x: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow-x: hidden;
 }
 
 .testError {
@@ -863,7 +865,9 @@ column-gap: 10px;
     font-size: 13px;
     line-height: 1.6;
     white-space: pre-wrap;
-    overflow-x: auto;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    overflow-x: hidden;
   }
 }
 

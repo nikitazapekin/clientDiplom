@@ -1165,12 +1165,15 @@ export function PreviewCodeTask({
             .filter((r) => !r.passed)
             .map(
               (r) =>
-                ` Тест ${results.findIndex((tr) => tr === r) + 1}: вход=${r.input}, ожидалось=${r.expected}, получено=${r.actual}`
+                ` Тест ${results.findIndex((tr) => tr === r) + 1}: вход=${r.input}, ожидалось=${formatComparableOutputForDisplay(r.expected)}, получено=${formatComparableOutputForDisplay(r.actual)}`
             );
 
           const failedConstraints = constraintCheckResults
             .filter((c) => !c.passed)
-            .map((c) => ` ${c.name}: ожидалось ${c.expected}, получено ${c.actual}`);
+            .map(
+              (c) =>
+                ` ${c.name}: ожидалось ${formatComparableOutputForDisplay(c.expected)}, получено ${formatComparableOutputForDisplay(c.actual)}`,
+            );
 
           const errorMessages = [];
 
@@ -1200,7 +1203,9 @@ export function PreviewCodeTask({
         onCorrect();
         setTestError("");
       } else {
-        setTestError(`Неверно. Ожидалось: ${block.expectedOutput}, получено: ${out}`);
+        setTestError(
+          `Неверно. Ожидалось: ${formatComparableOutputForDisplay(block.expectedOutput)}, получено: ${formatComparableOutputForDisplay(out)}`,
+        );
       }
     }
   };
@@ -1342,11 +1347,15 @@ export function PreviewCodeTask({
                 <div className={styles.constraintDetails}>
                   <div className={styles.resultField}>
                     <span className={styles.resultFieldLabel}>Ожидалось</span>
-                    <pre className={styles.resultFieldValue}>{constraint.expected}</pre>
+                    <pre className={styles.resultFieldValue}>
+                      {formatComparableOutputForDisplay(constraint.expected)}
+                    </pre>
                   </div>
                   <div className={styles.resultField}>
                     <span className={styles.resultFieldLabel}>Получено</span>
-                    <pre className={styles.resultFieldValue}>{constraint.actual}</pre>
+                    <pre className={styles.resultFieldValue}>
+                      {formatComparableOutputForDisplay(constraint.actual)}
+                    </pre>
                   </div>
                 </div>
               </div>

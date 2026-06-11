@@ -142,24 +142,38 @@ export const getCodexClassName = (value: unknown): string | undefined => {
   return typeof value.className === "string" ? value.className : undefined;
 };
 
-export const formatComparableOutputForDisplay = (value: unknown): string => {
-  let normalized: unknown = value;
+const normalizeComparableValue = (value: unknown): unknown => {
+  let current = value;
 
-  if (typeof value === "string") {
-    const trimmed = value.trim();
+  for (let depth = 0; depth < 8; depth += 1) {
+    if (typeof current === "string") {
+      const trimmed = current.trim();
 
-    if (!trimmed) {
-      return "";
+      if (!trimmed) {
+        return "";
+      }
+
+      try {
+        current = JSON.parse(trimmed);
+        continue;
+      } catch {
+        return current;
+      }
     }
 
-    try {
-      normalized = JSON.parse(trimmed);
-    } catch {
-      return value;
+    if (isCodexTypedEnvelope(current)) {
+      current = unwrapCodexValue(current);
+      continue;
     }
+
+    break;
   }
 
-  const unwrapped = unwrapCodexValue(normalized);
+  return current;
+};
+
+export const formatComparableOutputForDisplay = (value: unknown): string => {
+  const unwrapped = normalizeComparableValue(value);
 
   if (unwrapped == null) {
     return "null";
@@ -173,7 +187,19 @@ export const formatComparableOutputForDisplay = (value: unknown): string => {
     return String(unwrapped);
   }
 
-  return JSON.stringify(unwrapped);
+  if (Array.isArray(unwrapped)) {
+    return `[${unwrapped.map((item) => formatComparableOutputForDisplay(item)).join(", ")}]`;
+  }
+
+  if (isPlainObject(unwrapped)) {
+    const entries = Object.entries(unwrapped).map(
+      ([key, nested]) => `${key}: ${formatComparableOutputForDisplay(nested)}`,
+    );
+
+    return `{ ${entries.join(", ")} }`;
+  }
+
+  return String(unwrapped);
 };
 
 export const validateCodexRuntimeType = (
