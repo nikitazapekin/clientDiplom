@@ -1,14 +1,14 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import DislikeIcon from "@assets/icons/utils/dislike.png";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
 
 import styles from "./comments.module.scss";
 
 import {
-  LessonCommentsService,
   type LessonComment,
+  LessonCommentsService,
 } from "@/app/http/lessonCommentsService";
 
 interface LessonCommentsModalProps {

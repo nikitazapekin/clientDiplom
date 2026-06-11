@@ -15,7 +15,6 @@ import { sortBlocks } from "@/app/components/EditLesson/editorShared";
 import { normalizeFillTaskBlock } from "@/app/components/EditLesson/fillTaskUtils";
 import { SourceModal } from "@/app/components/EditLesson/modals";
 import { PreviewBlock } from "@/app/components/EditLesson/PreviewBlocks";
-import LessonCommentsModal from "@/app/components/StudyLesson/LessonCommentsModal";
 import type {
   CodeTaskBlock,
   FillCodeTaskBlock,
@@ -23,6 +22,7 @@ import type {
   SourceBlock,
   TheoryQuestionBlock,
 } from "@/app/components/EditLesson/types";
+import LessonCommentsModal from "@/app/components/StudyLesson/LessonCommentsModal";
 import { CheckpointService } from "@/app/http/checkpointService";
 import type { CodeLanguage } from "@/app/http/codeService";
 import { CodeService } from "@/app/http/codeService";

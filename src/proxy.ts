@@ -12,6 +12,7 @@ export function proxy(request: NextRequest) {
     if (currentUser) {
       return NextResponse.redirect(new URL("/homepage", request.url));
     }
+
     return NextResponse.redirect(new URL("/auth", request.url));
   }
 

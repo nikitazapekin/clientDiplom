@@ -1,8 +1,8 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import Certificate from "@assets/courses/Certificate.png";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import Button from "../Button";

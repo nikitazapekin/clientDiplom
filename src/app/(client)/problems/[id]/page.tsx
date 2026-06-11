@@ -22,7 +22,7 @@ import type {
   ArgumentType,
   ReturnSchema as SharedReturnSchema,
 } from "@/app/components/EditLesson/types";
-import { CodeService, type CodeLanguage } from "@/app/http/codeService";
+import { type CodeLanguage,CodeService } from "@/app/http/codeService";
 import {
   type CodeConstraint,
   type CodeTask,
@@ -748,6 +748,7 @@ const runClientSideDynamicTests = async (
     }
 
     const output = execution.output || "";
+
     fullOutput += `${output}\n`;
     const { result: actualResult } = parseTestOutput(output, 1);
     const expected = testCase.expectedOutput;

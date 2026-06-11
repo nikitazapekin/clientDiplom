@@ -423,7 +423,7 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                     return (
                       <div
                         key={item.id}
-                        className={`${styles.friendCard} ${isFindFriendsTab ? styles.friendCardStacked : ""}`}
+                        className={`${styles.friendCard} ${!isMyFriendsTab ? styles.friendCardStacked : ""}`}
                       >
                         <div
                           className={styles.friendInfoClickable}
