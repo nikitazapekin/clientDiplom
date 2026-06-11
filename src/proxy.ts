@@ -8,6 +8,13 @@ export function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  if (pathname === "/") {
+    if (currentUser) {
+      return NextResponse.redirect(new URL("/homepage", request.url));
+    }
+    return NextResponse.redirect(new URL("/auth", request.url));
+  }
+
   if (
     pathname.startsWith("/homepage") /* ||
     pathname.startsWith("/users") ||

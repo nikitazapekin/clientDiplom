@@ -7,7 +7,7 @@ import Header from "../Header";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname === "/register" || pathname === "/login";
+  const isAuthPage = pathname === "/register" || pathname === "/login" || pathname === "/auth";
 
   return (
     <>
