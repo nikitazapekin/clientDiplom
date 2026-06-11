@@ -112,13 +112,6 @@ export default function StudentProfilePage() {
           <p className={styles.email}>{profile.email}</p>
         </div>
 
-        <div className={styles.levelSection}>
-          <StudentLevelWheel
-            level={studentLevel?.level ?? 1}
-            experience={studentLevel?.experience ?? 0}
-          />
-        </div>
-
         <div className={styles.stats}>
           <div className={styles.statItem}>
             <span className={styles.statValue}>{profile.totalLessons}</span>
@@ -144,6 +137,13 @@ export default function StudentProfilePage() {
             text="Написать сообщение"
             onClick={() => router.push(`/messages/${auditoryId}`)}
             width="auto"
+          />
+        </div>
+
+        <div className={styles.levelSection}>
+          <StudentLevelWheel
+            level={studentLevel?.level ?? 1}
+            experience={studentLevel?.experience ?? 0}
           />
         </div>
       </div>
