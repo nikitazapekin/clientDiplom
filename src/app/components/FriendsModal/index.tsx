@@ -449,15 +449,17 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                             Удалить
                           </button>
                         ) : (
-                          <button
-                            className={styles.addFriendButton}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void handleAddFriend(item.friendId);
-                            }}
-                          >
-                            + Добавить
-                          </button>
+                          <div className={styles.friendCardActions}>
+                            <button
+                              className={`${styles.addFriendButton} ${styles.addFriendButtonFull}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleAddFriend(item.friendId);
+                              }}
+                            >
+                              + Добавить
+                            </button>
+                          </div>
                         )}
                       </div>
                     );
@@ -509,15 +511,17 @@ const FriendModal = ({ onClose }: { onClose: () => void }) => {
                           <div className={styles.friendName}>{fullName || "Unknown"}</div>
                         </div>
                       </div>
-                      <button
-                        className={styles.addFriendButton}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleAddFriend(item.friendId);
-                        }}
-                      >
-                        + Добавить
-                      </button>
+                      <div className={styles.friendCardActions}>
+                        <button
+                          className={`${styles.addFriendButton} ${styles.addFriendButtonFull}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleAddFriend(item.friendId);
+                          }}
+                        >
+                          + Добавить
+                        </button>
+                      </div>
                     </div>
                   );
                 })

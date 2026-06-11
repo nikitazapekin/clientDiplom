@@ -236,20 +236,23 @@ $danger-color: #dc3545;
     width: 100%;
     align-items: flex-start;
   }
+}
 
-  .addFriendButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    max-width: 100%;
-    align-self: stretch;
-    box-sizing: border-box;
-    text-align: center;
-    padding: 10px 14px;
-    white-space: normal;
-    flex-shrink: 1;
-  }
+.friendCardActions {
+  width: 100%;
+  flex: none;
+}
+
+.addFriendButtonFull {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  padding: 10px 14px;
+  white-space: normal;
+  flex: none;
+  flex-shrink: 0;
 }
 
 .friendInfoClickable {

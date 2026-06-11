@@ -154,9 +154,14 @@ export class CodingTasksService {
     return response.data;
   }
 
-  static async getStudentLevelByAuditoryId(auditoryId: string): Promise<StudentLevel> {
-    const response = await $apiNoRedirect.get(`/coding-tasks/student-level/${auditoryId}`);
+  static async getStudentLevelByClientId(clientId: string): Promise<StudentLevel> {
+    const response = await $apiNoRedirect.get(`/coding-tasks/student-level/${clientId}`);
 
     return response.data;
+  }
+
+  /** @deprecated Используйте getStudentLevelByClientId — эндпоинт принимает clientId, не auditoryId */
+  static async getStudentLevelByAuditoryId(clientId: string): Promise<StudentLevel> {
+    return this.getStudentLevelByClientId(clientId);
   }
 }

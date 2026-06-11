@@ -46,7 +46,9 @@ export default function StudentProfilePage() {
 
       setProfile(profileData);
 
-      const level = await CodingTasksService.getStudentLevelByAuditoryId(auditoryId).catch(() => null);
+      const level = await CodingTasksService.getStudentLevelByClientId(profileData.clientId).catch(
+        () => null,
+      );
 
       setStudentLevel(level);
     } catch (err: unknown) {
@@ -110,14 +112,12 @@ export default function StudentProfilePage() {
           <p className={styles.email}>{profile.email}</p>
         </div>
 
-        {studentLevel ? (
-          <div className={styles.levelSection}>
-            <StudentLevelWheel
-              level={studentLevel.level}
-              experience={studentLevel.experience}
-            />
-          </div>
-        ) : null}
+        <div className={styles.levelSection}>
+          <StudentLevelWheel
+            level={studentLevel?.level ?? 1}
+            experience={studentLevel?.experience ?? 0}
+          />
+        </div>
 
         <div className={styles.stats}>
           <div className={styles.statItem}>

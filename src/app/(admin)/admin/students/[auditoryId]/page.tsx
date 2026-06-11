@@ -164,7 +164,7 @@ const StudentProfilePage = () => {
       try {
         const [tasksData, levelData] = await Promise.all([
           CodingTasksService.getAllTasks(),
-          CodingTasksService.getStudentLevelByAuditoryId(auditoryId).catch(() => null),
+          CodingTasksService.getStudentLevelByClientId(profileData.clientId).catch(() => null),
         ]);
 
         setAllTasks(tasksData);

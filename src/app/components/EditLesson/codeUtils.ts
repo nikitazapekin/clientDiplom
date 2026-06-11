@@ -2421,18 +2421,14 @@ const formatPreviewExampleValue = (type: ArgumentType, value?: string): string =
   return String(sample);
 };
 
-const formatObjectFieldsExampleLiteral = (
-  fields: ObjectField[],
-  language: CodeLanguage,
-): string => {
-  const lines = fields.map((field) => {
-    const example = formatPreviewExampleValue(field.type, field.value);
+const formatObjectTypeNotation = (fields: ObjectField[], language: CodeLanguage): string => {
+  const entries = fields.map((field) => {
     const typeLabel = getTypeString(field.type, language) || field.type;
 
-    return `  ${field.name}: ${example},  // ${typeLabel}`;
+    return `${field.name}: ${typeLabel}`;
   });
 
-  return `{\n${lines.join("\n")}\n}`;
+  return `{ ${entries.join(", ")} }`;
 };
 
 export const generateObjectClassesForPreview = (
@@ -2585,27 +2581,15 @@ export const generateObjectSchemaGuideForPreview = (
   language: CodeLanguage,
   returnSchema?: ReturnSchema,
 ): string => {
-  const parts: string[] = [];
-  const classPreview = generateObjectClassesForPreview(args, language, returnSchema);
-
-  if (classPreview.trim()) {
-    parts.push(classPreview.trim());
-  }
-
   if (language !== "javascript" && language !== "typescript") {
-    return parts.join("\n\n");
+    return generateObjectClassesForPreview(args, language, returnSchema);
   }
+
+  const parts: string[] = [];
 
   args.forEach((arg) => {
     if (arg.type === "object" && arg.objectFields?.length) {
-      const className = getDefaultClassName(
-        arg.className,
-        arg.name.charAt(0).toUpperCase() + arg.name.slice(1),
-      );
-
-      parts.push(
-        `// Пример аргумента ${arg.name} (${className}):\n${formatObjectFieldsExampleLiteral(arg.objectFields, language)}`,
-      );
+      parts.push(`${arg.name}\n${formatObjectTypeNotation(arg.objectFields, language)}`);
     }
 
     if (
@@ -2613,17 +2597,8 @@ export const generateObjectSchemaGuideForPreview = (
       arg.arrayElementType === "object" &&
       arg.arrayElementObjectFields?.length
     ) {
-      const elementClassName = getDefaultClassName(
-        arg.arrayElementClassName,
-        arg.name.charAt(0).toUpperCase() + arg.name.slice(1),
-      );
-      const elementLiteral = formatObjectFieldsExampleLiteral(
-        arg.arrayElementObjectFields,
-        language,
-      ).replace(/\n/g, "\n  ");
-
       parts.push(
-        `// Пример аргумента ${arg.name} (массив ${elementClassName}):\n[\n  ${elementLiteral.trim()}\n]`,
+        `${arg.name}\nArray<${formatObjectTypeNotation(arg.arrayElementObjectFields, language)}>`,
       );
     }
   });
@@ -2632,11 +2607,7 @@ export const generateObjectSchemaGuideForPreview = (
     returnSchema?.objectFields?.length &&
     (getEffectiveReturnObjectMode(returnSchema) === "concrete" || returnSchema.className)
   ) {
-    const returnClassName = getReturnClassName(returnSchema);
-
-    parts.push(
-      `// Пример возвращаемого объекта (${returnClassName}):\n${formatObjectFieldsExampleLiteral(returnSchema.objectFields, language)}`,
-    );
+    parts.push(`Возвращает\n${formatObjectTypeNotation(returnSchema.objectFields, language)}`);
   }
 
   return parts.join("\n\n");

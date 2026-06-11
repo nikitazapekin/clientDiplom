@@ -13,6 +13,7 @@ import {
   formatArgsForDynamicLang,
   generateObjectClasses as generateSharedObjectClasses,
   generateObjectClassesForPreview,
+  generateObjectSchemaGuideForPreview,
   getDisplayInput as getSharedDisplayInput,
   getTypeString as getSharedTypeString,
   resolveTargetFunctionName as resolveSharedTargetFunctionName,
@@ -1456,10 +1457,7 @@ export default function SolveProblemPage() {
             return (
               <div className={styles.examplesBox}>
                 {objectClassesCode &&
-                  (selectedLang === "java" ||
-                    selectedLang === "csharp" ||
-                    selectedLang === "javascript" ||
-                    selectedLang === "typescript") && (
+                  (selectedLang === "java" || selectedLang === "csharp") && (
                   <>
                     <h3>Классы объектов</h3>
                     <pre className={styles.codeBlock}>
@@ -1468,6 +1466,23 @@ export default function SolveProblemPage() {
                         selectedLang,
                         task.returnSchema as SharedReturnSchema | undefined,
                       ) || objectClassesCode}
+                    </pre>
+                  </>
+                )}
+                {(selectedLang === "javascript" || selectedLang === "typescript") &&
+                  generateObjectSchemaGuideForPreview(
+                    argScheme || [],
+                    selectedLang,
+                    task.returnSchema as SharedReturnSchema | undefined,
+                  ) && (
+                  <>
+                    <h3>Схема объектов</h3>
+                    <pre className={styles.codeBlock}>
+                      {generateObjectSchemaGuideForPreview(
+                        argScheme || [],
+                        selectedLang,
+                        task.returnSchema as SharedReturnSchema | undefined,
+                      )}
                     </pre>
                   </>
                 )}
@@ -1544,7 +1559,7 @@ export default function SolveProblemPage() {
 
           {(() => {
             const argScheme = task.argumentScheme as ArgumentSchema[] | undefined;
-            const objectSchemaCode = generateObjectClassesForPreview(
+            const objectSchemaCode = generateObjectSchemaGuideForPreview(
               argScheme || [],
               selectedLang,
               task.returnSchema as SharedReturnSchema | undefined,
