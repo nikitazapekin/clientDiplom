@@ -4,12 +4,49 @@
   background: #fff;
 }
 
-.pageInner {
-  width: min(1180px, 100%);
+.lessonLayout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(1280px, 100%);
   margin: 0 auto;
+  padding-right: 10px;
+}
+
+.pageInner {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.sideRail {
+  position: sticky;
+  top: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.sideRailButton {
+  min-width: 112px;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #9f0fa7;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(159, 15, 167, 0.18);
+  transition: transform 0.18s ease, opacity 0.18s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
 }
 
 .header {
@@ -130,6 +167,8 @@
 
 .modalActions {
   justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 .navigation {
@@ -344,9 +383,9 @@
 
 .summaryItem {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   padding: 12px 14px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.7);
@@ -359,11 +398,11 @@
 }
 
 .summaryValue {
-  min-width: 132px;
   font-size: 16px;
   font-weight: 700;
   color: #333;
-  text-align: center;
+  text-align: left;
+  line-height: 1.2;
 }
 
 .resultsList {
@@ -409,6 +448,12 @@
   gap: 4px;
   font-size: 14px;
   color: #666;
+  padding-right: 12px;
+}
+
+.resultDetailLine {
+  display: block;
+  padding-right: 12px;
 }
 
 .saveWarning {
@@ -429,6 +474,23 @@
     padding: 0 0 28px;
   }
 
+  .lessonLayout {
+    flex-direction: column;
+    padding: 0 10px;
+  }
+
+  .sideRail {
+    position: static;
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .sideRailButton {
+    min-width: 0;
+    flex: 1;
+  }
+
   .header {
     padding: 16px 14px;
   }
@@ -446,9 +508,13 @@
   }
 
   .navigation,
-  .modalActions,
   .stateActions {
     flex-direction: column;
+  }
+
+  .modalActions {
+    flex-direction: column;
+    align-items: center;
   }
 
   .navigation {

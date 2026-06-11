@@ -5,6 +5,12 @@
   border-radius: px($radius-small);
   cursor: pointer;
   width: 100%;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    filter: grayscale(0.15);
+  }
 }
 
 

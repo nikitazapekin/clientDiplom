@@ -15,6 +15,7 @@ import { sortBlocks } from "@/app/components/EditLesson/editorShared";
 import { normalizeFillTaskBlock } from "@/app/components/EditLesson/fillTaskUtils";
 import { SourceModal } from "@/app/components/EditLesson/modals";
 import { PreviewBlock } from "@/app/components/EditLesson/PreviewBlocks";
+import LessonCommentsModal from "@/app/components/StudyLesson/LessonCommentsModal";
 import type {
   CodeTaskBlock,
   FillCodeTaskBlock,
@@ -99,12 +100,15 @@ const StudyLesson = ({
 
   const [lessonTitle, setLessonTitle] = useState(entityTitle);
   const [lessonDescription, setLessonDescription] = useState("");
+  const [lessonDetailsId, setLessonDetailsId] = useState<string | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sourcesModalOpen, setSourcesModalOpen] = useState(false);
+  const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [currentSources, setCurrentSources] = useState<{ url: string; note?: string }[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [codeRunOutput, setCodeRunOutput] = useState<Record<string, string>>({});
   const [codeRunLoading, setCodeRunLoading] = useState<Record<string, boolean>>({});
   const [testAnswer, setTestAnswer] = useState<Record<string, string | number>>({});
@@ -146,6 +150,8 @@ const StudyLesson = ({
           ? CheckpointService.getCheckpoint(entityId).catch(() => null)
           : LessonService.getLesson(entityId).catch(() => null),
       ]);
+
+      setLessonDetailsId(lessonDetails.id);
 
       if (lessonMeta) {
         setLessonTitle(lessonMeta.title || entityTitle);
@@ -229,6 +235,10 @@ const StudyLesson = ({
     void loadLessonDetails();
   }, [loadLessonDetails]);
 
+  useEffect(() => {
+    setCurrentUserId(getUserId());
+  }, []);
+
   const orderedSlides = useMemo(
     () => [...slides].sort((left, right) => left.order - right.order),
     [slides]
@@ -298,6 +308,14 @@ const StudyLesson = ({
           countOfStars: stars,
         });
 
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("course-progress-updated", {
+              detail: { courseId },
+            }),
+          );
+        }
+
         return true;
       } catch (saveError) {
         console.error(`Ошибка сохранения результата ${entityTitleGenitive}:`, saveError);
@@ -305,7 +323,7 @@ const StudyLesson = ({
         return false;
       }
     },
-    [entityId, entityTitleGenitive, isCheckpointMode]
+    [courseId, entityId, entityTitleGenitive, isCheckpointMode]
   );
 
   const calculateResults = useCallback(async () => {
@@ -568,7 +586,8 @@ const StudyLesson = ({
 
   return (
     <section className={styles.page}>
-      <div className={styles.pageInner}>
+      <div className={styles.lessonLayout}>
+        <div className={styles.pageInner}>
         <div className={styles.header}>
           <div className={styles.headerMain}>
         
@@ -593,15 +612,6 @@ const StudyLesson = ({
               */}
             </div>
 
-            {currentSlideSources.length > 0 ? (
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => openSourcesModal(currentSlideSources)}
-              >
-                Источники
-              </button>
-            ) : null}
           </div>
 
           <div className={styles.content}>
@@ -689,12 +699,37 @@ const StudyLesson = ({
             />
           </div>
         </div>
+        </div>
+
+        <aside className={styles.sideRail}>
+          <button
+            type="button"
+            className={styles.sideRailButton}
+            onClick={() => openSourcesModal(currentSlideSources)}
+          >
+            Источники
+          </button>
+          <button
+            type="button"
+            className={styles.sideRailButton}
+            onClick={() => setCommentsModalOpen(true)}
+          >
+            Комментарии
+          </button>
+        </aside>
       </div>
 
       <SourceModal
         isOpen={sourcesModalOpen}
         onClose={() => setSourcesModalOpen(false)}
         sources={currentSources}
+      />
+
+      <LessonCommentsModal
+        isOpen={commentsModalOpen}
+        lessonDetailsId={lessonDetailsId}
+        currentUserId={currentUserId}
+        onClose={() => setCommentsModalOpen(false)}
       />
 
       {resultsModalOpen ? (
@@ -779,7 +814,7 @@ const StudyLesson = ({
                         <span>
                           Тесты: {result.testCasesPassed ?? 0}/{result.testCasesTotal ?? 0}
                         </span>
-                        <span>
+                        <span className={styles.resultDetailLine}>
                           Ограничения: {result.constraintsPassed ? "Пройдены" : "Провалены"}
                         </span>
                       </>

@@ -392,14 +392,24 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
       }
     };
 
+    const handleCourseProgressUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<{ courseId?: string }>;
+
+      if (!customEvent.detail?.courseId || customEvent.detail.courseId === courseId) {
+        void refreshLessonProgress();
+      }
+    };
+
     window.addEventListener("focus", handleWindowFocus);
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("course-progress-updated", handleCourseProgressUpdated);
 
     return () => {
       window.removeEventListener("focus", handleWindowFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("course-progress-updated", handleCourseProgressUpdated);
     };
-  }, [refreshLessonProgress]);
+  }, [courseId, refreshLessonProgress]);
 
   const checkCertificateEligibility = useCallback(async () => {
     const userId = getUserId();
@@ -506,14 +516,18 @@ const StudyMap = ({ courseId, courseName = "Курс" }: StudyMapProps) => {
 
       const currentIndex = courseProgress.findIndex((unit) => unit.mapElementId === mapElementId);
 
-      if (currentIndex <= 0) {
+      if (currentIndex === -1) {
+        return true;
+      }
+
+      if (currentIndex === 0) {
         return true;
       }
 
       const previousLesson = courseProgress[currentIndex - 1];
-      const previousStars = previousLesson?.bestResult?.countOfStars;
+      const previousStars = previousLesson?.bestResult?.countOfStars ?? 0;
 
-      return previousStars !== null && previousStars !== undefined && previousStars > 0;
+      return previousStars > 0;
     },
     [courseProgress]
   );

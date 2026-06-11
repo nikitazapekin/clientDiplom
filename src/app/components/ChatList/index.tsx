@@ -167,7 +167,7 @@ const ChatList = () => {
 
   return (
     <div className={styles.chatList}>
-      <div className={styles.chatList__header}>
+      <div className={styles.chatList__pageHeader}>
         <h1>Сообщения</h1>
         <div className={styles.chatList__search}>
           <input
