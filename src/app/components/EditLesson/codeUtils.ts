@@ -2395,6 +2395,46 @@ export const getDisplayInput = (
   return testCase.input ?? "";
 };
 
+const formatPreviewExampleValue = (type: ArgumentType, value?: string): string => {
+  const raw = value?.trim();
+
+  if (raw) {
+    if (type === "string" || type === "char") {
+      const unquoted = raw.replace(/^["']|["']$/g, "");
+
+      return `"${unquoted}"`;
+    }
+
+    if (type === "boolean") {
+      return raw.toLowerCase() === "true" ? "true" : "false";
+    }
+
+    return raw;
+  }
+
+  const sample = getSamplePrimitiveValue(type);
+
+  if (type === "string" || type === "char") {
+    return `"${sample}"`;
+  }
+
+  return String(sample);
+};
+
+const formatObjectFieldsExampleLiteral = (
+  fields: ObjectField[],
+  language: CodeLanguage,
+): string => {
+  const lines = fields.map((field) => {
+    const example = formatPreviewExampleValue(field.type, field.value);
+    const typeLabel = getTypeString(field.type, language) || field.type;
+
+    return `  ${field.name}: ${example},  // ${typeLabel}`;
+  });
+
+  return `{\n${lines.join("\n")}\n}`;
+};
+
 export const generateObjectClassesForPreview = (
   args: ArgumentSchema[],
   language: CodeLanguage,
@@ -2480,10 +2520,25 @@ ${gettersSetters}
       if (language === "javascript") {
         const constructorParams = objectFields.map((f) => f.name).join(", ");
         const constructorBody = objectFields
-          .map((f) => `this.${f.name} = ${f.name};`)
-          .join("\n    ");
+          .map((f) => {
+            const typeLabel = getTypeString(f.type, language) || f.type;
+            const example = formatPreviewExampleValue(f.type, f.value);
+
+            return `this.${f.name} = ${f.name};  // ${typeLabel}, пример: ${example}`;
+          })
+          .join("\n        ");
+        const fieldsLegend = objectFields
+          .map((f) => {
+            const typeLabel = getTypeString(f.type, language) || f.type;
+            const example = formatPreviewExampleValue(f.type, f.value);
+
+            return `//   ${f.name}: ${typeLabel} — пример: ${example}`;
+          })
+          .join("\n");
+
         return objectFields.length > 0
-          ? `
+          ? `// Класс ${className}
+${fieldsLegend}
 class ${className} {
     constructor(${constructorParams}) {
         ${constructorBody}
@@ -2523,6 +2578,68 @@ class ${className}:
       return "";
     })
     .join("\n\n");
+};
+
+export const generateObjectSchemaGuideForPreview = (
+  args: ArgumentSchema[],
+  language: CodeLanguage,
+  returnSchema?: ReturnSchema,
+): string => {
+  const parts: string[] = [];
+  const classPreview = generateObjectClassesForPreview(args, language, returnSchema);
+
+  if (classPreview.trim()) {
+    parts.push(classPreview.trim());
+  }
+
+  if (language !== "javascript" && language !== "typescript") {
+    return parts.join("\n\n");
+  }
+
+  args.forEach((arg) => {
+    if (arg.type === "object" && arg.objectFields?.length) {
+      const className = getDefaultClassName(
+        arg.className,
+        arg.name.charAt(0).toUpperCase() + arg.name.slice(1),
+      );
+
+      parts.push(
+        `// Пример аргумента ${arg.name} (${className}):\n${formatObjectFieldsExampleLiteral(arg.objectFields, language)}`,
+      );
+    }
+
+    if (
+      (arg.type === "array" || arg.type === "list") &&
+      arg.arrayElementType === "object" &&
+      arg.arrayElementObjectFields?.length
+    ) {
+      const elementClassName = getDefaultClassName(
+        arg.arrayElementClassName,
+        arg.name.charAt(0).toUpperCase() + arg.name.slice(1),
+      );
+      const elementLiteral = formatObjectFieldsExampleLiteral(
+        arg.arrayElementObjectFields,
+        language,
+      ).replace(/\n/g, "\n  ");
+
+      parts.push(
+        `// Пример аргумента ${arg.name} (массив ${elementClassName}):\n[\n  ${elementLiteral.trim()}\n]`,
+      );
+    }
+  });
+
+  if (
+    returnSchema?.objectFields?.length &&
+    (getEffectiveReturnObjectMode(returnSchema) === "concrete" || returnSchema.className)
+  ) {
+    const returnClassName = getReturnClassName(returnSchema);
+
+    parts.push(
+      `// Пример возвращаемого объекта (${returnClassName}):\n${formatObjectFieldsExampleLiteral(returnSchema.objectFields, language)}`,
+    );
+  }
+
+  return parts.join("\n\n");
 };
 
 export const extractFunctionName = (code: string, lang: CodeLanguage): string | null => {

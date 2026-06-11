@@ -1046,6 +1046,7 @@ export default function SolveProblemPage() {
   const [studentLevel, setStudentLevel] = useState<StudentLevel | null>(null);
   const [rawOutput, setRawOutput] = useState<string>("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalXp, setSuccessModalXp] = useState(0);
   const [isTaskSolved, setIsTaskSolved] = useState(false);
   const [constraintErrors, setConstraintErrors] = useState<string[]>([]);
   const [constraintsPassed, setConstraintsPassed] = useState<boolean | null>(null);
@@ -1129,7 +1130,13 @@ export default function SolveProblemPage() {
     setShowSuccessModal(false);
 
     try {
-      let codeToSubmit = code;
+      const argumentScheme = task.argumentScheme as ArgumentSchema[] | undefined;
+      const objectClasses = generateObjectClasses(argumentScheme || [], selectedLang);
+      const codeWithClasses = objectClasses ? `${objectClasses}\n\n${code}` : code;
+      const wasAlreadySolved =
+        studentLevel?.solvedTasks?.some((item) => item.codeTaskId === task.id) ?? false;
+
+      let codeToSubmit = codeWithClasses;
       let clientTestResults: SubmitSolutionResult["results"] | null = null;
       let clientOutput = "";
 
@@ -1187,11 +1194,8 @@ export default function SolveProblemPage() {
           return;
         }
 
-        const argumentScheme = task.argumentScheme as ArgumentSchema[] | undefined;
         const taskTestCases =
           task.testCasesByLanguage?.[selectedLang] || task.testCases || [];
-        const objectClasses = generateObjectClasses(argumentScheme || [], selectedLang);
-        const codeWithClasses = objectClasses ? `${objectClasses}\n\n${code}` : code;
 
         if (selectedLang === "java") {
           codeToSubmit = buildJavaTestSuite(codeWithClasses, taskTestCases, funcName, argumentScheme);
@@ -1251,22 +1255,64 @@ export default function SolveProblemPage() {
         setResult(res);
       }
 
-      await refreshStudentLevel();
+      const experienceBefore = studentLevel?.experience ?? 0;
+      const updatedLevel = await CodingTasksService.getStudentLevel().catch(() => null);
+
+      if (updatedLevel) {
+        setStudentLevel(updatedLevel);
+        setIsTaskSolved(updatedLevel.solvedTasks?.some((item) => item.codeTaskId === task.id) ?? false);
+      } else {
+        await refreshStudentLevel();
+      }
 
       const finalConstraintsPassed = res.constraintsPassed ?? constraintsPassed;
-      const finalResult = clientTestResults
-        ? {
-            ...res,
-            results: clientTestResults,
-            allPassed:
-              clientTestResults.every((item) => item.passed) && (res.constraintsPassed ?? true),
-          }
-        : res;
+      const serverPassed = res.allPassed && finalConstraintsPassed;
+      const clientPassed =
+        clientTestResults?.every((item) => item.passed) && finalConstraintsPassed;
+      const experienceAfter = updatedLevel?.experience ?? studentLevel?.experience ?? 0;
+      const gainedXp =
+        res.experienceGained > 0
+          ? res.experienceGained
+          : !wasAlreadySolved && serverPassed
+            ? task.experienceReward
+            : Math.max(0, experienceAfter - experienceBefore);
 
-      if (finalResult.allPassed && finalConstraintsPassed) {
+      if (clientTestResults) {
+        setResult((current) =>
+          current
+            ? {
+                ...current,
+                experienceGained: gainedXp,
+                newLevel: updatedLevel?.level ?? current.newLevel,
+                newExperience: experienceAfter,
+              }
+            : current,
+        );
+      } else if (gainedXp > 0) {
+        setResult((current) =>
+          current
+            ? {
+                ...current,
+                experienceGained: gainedXp,
+                newLevel: updatedLevel?.level ?? current.newLevel,
+                newExperience: experienceAfter,
+              }
+            : current,
+        );
+      }
+
+      if (serverPassed) {
         setIsTaskSolved(true);
-        setShowSuccessModal(true);
-        window.dispatchEvent(new CustomEvent("student-level-updated"));
+
+        if (gainedXp > 0) {
+          setSuccessModalXp(gainedXp);
+          setShowSuccessModal(true);
+          window.dispatchEvent(new CustomEvent("student-level-updated"));
+        }
+      } else if (clientPassed && !serverPassed) {
+        alert(
+          "Тесты пройдены локально, но сервер не подтвердил решение. Опыт не начислен. Попробуйте ещё раз.",
+        );
       } else if (res.constraintErrors && res.constraintErrors.length > 0) {
         setConstraintErrors(res.constraintErrors);
       }
@@ -1588,7 +1634,7 @@ export default function SolveProblemPage() {
       <TaskSuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        experienceGained={result?.experienceGained || 0}
+        experienceGained={successModalXp || result?.experienceGained || 0}
         newLevel={result?.newLevel || studentLevel?.level || 1}
         passedTests={passedCount}
         totalTests={totalCount}

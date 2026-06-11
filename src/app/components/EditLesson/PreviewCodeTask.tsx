@@ -19,6 +19,7 @@ import {
   formatArgsForRust,
   generateObjectClasses,
   generateObjectClassesForPreview,
+  generateObjectSchemaGuideForPreview,
   getDefaultStarterCode,
   getDisplayInput,
   getExpectedOutputFromTestCase,
@@ -1219,25 +1220,43 @@ export function PreviewCodeTask({
         </p>
       ) : null}
 
-      {(block.language === "java" ||
-        block.language === "csharp" ||
-        block.language === "typescript") &&
-        generateObjectClassesForPreview(
-          block.argumentScheme ?? [],
-          block.language,
-          activeReturnSchema
-        ) && (
-          <div className={styles.objectDescriptions}>
-            <h4>Описание классов:</h4>
-            <pre className={styles.objectClassCode}>
-              {generateObjectClassesForPreview(
+      {(() => {
+        const schemaPreview =
+          block.language === "javascript" || block.language === "typescript"
+            ? generateObjectSchemaGuideForPreview(
                 block.argumentScheme ?? [],
                 block.language,
-                activeReturnSchema
-              )}
-            </pre>
+                activeReturnSchema,
+              )
+            : generateObjectClassesForPreview(
+                block.argumentScheme ?? [],
+                block.language,
+                activeReturnSchema,
+              );
+
+        if (
+          !schemaPreview ||
+          !(
+            block.language === "java" ||
+            block.language === "csharp" ||
+            block.language === "javascript" ||
+            block.language === "typescript"
+          )
+        ) {
+          return null;
+        }
+
+        return (
+          <div className={styles.objectDescriptions}>
+            <h4>
+              {block.language === "javascript" || block.language === "typescript"
+                ? "Схема объектов:"
+                : "Описание классов:"}
+            </h4>
+            <pre className={styles.objectClassCode}>{schemaPreview}</pre>
           </div>
-        )}
+        );
+      })()}
 
       <StableCodeEditor
         value={displayCode}
