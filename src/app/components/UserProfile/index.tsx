@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 
+import CertificateAwardModal from '../CertificateAwardModal';
 import FriendsModal from '../FriendsModal';
 import StudentLevelWheel from '../StudentLevelWheel';
 
@@ -72,6 +73,126 @@ const SolvedTaskCard = ({
   );
 };
  
+const formatCertificateDate = (dateString: string) =>
+  new Date(dateString).toLocaleDateString('ru-RU', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+const CertificateCard = ({
+  certificate,
+  onPress,
+}: {
+  certificate: CertificateResponse;
+  onPress: () => void;
+}) => (
+  <div className={styles.certificateCard} onClick={onPress}>
+    <div className={styles.certificateCardHeader}>
+      <h4 className={styles.certificateCardTitle}>{certificate.courseName}</h4>
+    </div>
+    <img
+      src={certificate.url}
+      alt={`Сертификат курса ${certificate.courseName}`}
+      className={styles.certificateThumb}
+    />
+    <div className={styles.certificateCardFooter}>
+      <span className={styles.certificateDateBadge}>{formatCertificateDate(certificate.date)}</span>
+    </div>
+  </div>
+);
+
+const CertificatesPreview = ({
+  certificates,
+  onViewAll,
+  onOpenCertificate,
+}: {
+  certificates: CertificateResponse[];
+  onViewAll: () => void;
+  onOpenCertificate: (certificate: CertificateResponse) => void;
+}) => {
+  const recentCertificates = [...certificates]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 4);
+
+  if (recentCertificates.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.sectionHeader}>
+        <h3 className={styles.sectionTitle}>Сертификаты</h3>
+        {certificates.length > 4 ? (
+          <button className={styles.viewAllLink} onClick={onViewAll}>
+            Просмотреть все
+          </button>
+        ) : null}
+      </div>
+
+      {recentCertificates.map((certificate) => (
+        <CertificateCard
+          key={certificate.id}
+          certificate={certificate}
+          onPress={() => onOpenCertificate(certificate)}
+        />
+      ))}
+    </div>
+  );
+};
+
+const AllCertificatesModal = ({
+  visible,
+  onClose,
+  certificates,
+  onOpenCertificate,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  certificates: CertificateResponse[];
+  onOpenCertificate: (certificate: CertificateResponse) => void;
+}) => {
+  const sortedCertificates = [...certificates].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalContent} onClick={(event) => event.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Все сертификаты</h2>
+          <button className={styles.modalCloseButton} onClick={onClose}>
+            <span className={styles.modalCloseText}>✕</span>
+          </button>
+        </div>
+
+        <div className={styles.modalListContent}>
+          {sortedCertificates.length === 0 ? (
+            <div className={styles.emptyContainer}>
+              <p className={styles.emptyText}>У вас ещё нет сертификатов</p>
+            </div>
+          ) : (
+            sortedCertificates.map((certificate) => (
+              <CertificateCard
+                key={certificate.id}
+                certificate={certificate}
+                onPress={() => {
+                  onClose();
+                  onOpenCertificate(certificate);
+                }}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SolvedTasksPreview = ({
   solvedTasks,
   allTasks,
@@ -241,7 +362,10 @@ const UserProfile: React.FC = () => {
   const [studentLevel, setStudentLevel] = useState<StudentLevel | null>(null);
   const [codingLoading, setCodingLoading] = useState(false);
   const [showAllSolvedModal, setShowAllSolvedModal] = useState(false);
+  const [showAllCertificatesModal, setShowAllCertificatesModal] = useState(false);
   const [friendsModalVisible, setFriendsModalVisible] = useState(false);
+  const [awardCertificate, setAwardCertificate] = useState<CertificateResponse | null>(null);
+  const [certificateAwardModalOpen, setCertificateAwardModalOpen] = useState(false);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -276,6 +400,13 @@ const UserProfile: React.FC = () => {
         const certs = await CertificateService.getCertificatesByAuditoryId(userId);
 
         setCertificates(certs);
+
+        const unviewedCertificate = certs.find((certificate) => !certificate.isViewed);
+
+        if (unviewedCertificate) {
+          setAwardCertificate(unviewedCertificate);
+          setCertificateAwardModalOpen(true);
+        }
       } catch (certErr) {
         console.error('Failed to load certificates:', certErr);
       } finally {
@@ -339,17 +470,71 @@ const UserProfile: React.FC = () => {
     loadProfile();
   }, [loadProfile]);
 
+  const refreshCertificates = useCallback(async () => {
+    const userId = AuthService.getCurrentUser().userId;
+
+    if (!userId) {
+      return;
+    }
+
+    try {
+      const certs = await CertificateService.getCertificatesByAuditoryId(userId);
+
+      setCertificates(certs);
+    } catch (certErr) {
+      console.error('Failed to refresh certificates:', certErr);
+    }
+  }, []);
+
   useEffect(() => {
     const handleStudentLevelUpdated = () => {
       void refreshStudentLevel();
     };
 
+    const handleCertificateAwarded = (event: Event) => {
+      const certificate = (event as CustomEvent<CertificateResponse>).detail;
+
+      if (certificate) {
+        setAwardCertificate(certificate);
+        setCertificateAwardModalOpen(true);
+      }
+
+      void refreshCertificates();
+    };
+
+    const handleCertificatesUpdated = () => {
+      void refreshCertificates();
+    };
+
     window.addEventListener('student-level-updated', handleStudentLevelUpdated);
+    window.addEventListener('certificate-awarded', handleCertificateAwarded as EventListener);
+    window.addEventListener('certificates-updated', handleCertificatesUpdated);
 
     return () => {
       window.removeEventListener('student-level-updated', handleStudentLevelUpdated);
+      window.removeEventListener('certificate-awarded', handleCertificateAwarded as EventListener);
+      window.removeEventListener('certificates-updated', handleCertificatesUpdated);
     };
-  }, [refreshStudentLevel]);
+  }, [refreshStudentLevel, refreshCertificates]);
+
+  const closeCertificateAwardModal = async () => {
+    if (awardCertificate?.id) {
+      try {
+        await CertificateService.setIsViewed(awardCertificate.id);
+      } catch (closeError) {
+        console.error('Failed to mark certificate as viewed:', closeError);
+      }
+    }
+
+    setCertificateAwardModalOpen(false);
+    setAwardCertificate(null);
+    void refreshCertificates();
+    window.dispatchEvent(new CustomEvent('certificates-updated'));
+  };
+
+  const openCertificateUrl = (certificate: CertificateResponse) => {
+    window.open(certificate.url, '_blank', 'noopener,noreferrer');
+  };
 
   const handleAvatarPress = () => {
     setAvatarPickerVisible(true);
@@ -570,34 +755,15 @@ const UserProfile: React.FC = () => {
         {certificatesLoading ? (
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Сертификаты</h3>
-            <div style={{ marginTop: 12, textAlign: 'center' }}>Загрузка...</div>
+            <div className={styles.sectionLoading}>Загрузка...</div>
           </div>
-        ) : certificates.length > 0 ? (
-          <div className={styles.certSection}>
-            <h3 className={styles.sectionTitle}>Сертификаты</h3>
-            <div className={styles.certSliderContainer}>
-              <div style={{ display: 'flex', overflowX: 'auto', gap: '16px', paddingBottom: '16px' }}>
-                {certificates.map((cert) => (
-                  <div key={cert.id} style={{ minWidth: '300px', textAlign: 'center' }}>
-                    <img
-                      src={cert.url}
-                      alt="Certificate"
-                      className={styles.certImage}
-                      style={{ height: '250px' }}
-                    />
-                    <p className={styles.certDate}>
-                      {new Date(cert.date).toLocaleDateString('ru-RU', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : null}
+        ) : (
+          <CertificatesPreview
+            certificates={certificates}
+            onViewAll={() => setShowAllCertificatesModal(true)}
+            onOpenCertificate={openCertificateUrl}
+          />
+        )}
 
         <div className={styles.logoutButton}>
           <button
@@ -627,6 +793,21 @@ const UserProfile: React.FC = () => {
         allTasks={codingTasks}
         onTaskPress={handleTaskPress}
       />
+
+      <AllCertificatesModal
+        visible={showAllCertificatesModal}
+        onClose={() => setShowAllCertificatesModal(false)}
+        certificates={certificates}
+        onOpenCertificate={openCertificateUrl}
+      />
+
+      {awardCertificate ? (
+        <CertificateAwardModal
+          certificate={awardCertificate}
+          isOpen={certificateAwardModalOpen}
+          onClose={() => void closeCertificateAwardModal()}
+        />
+      ) : null}
 
       {friendsModalVisible && (
         <FriendsModal onClose={() => setFriendsModalVisible(false)} />

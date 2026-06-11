@@ -165,8 +165,13 @@ $danger-color: #dc3545;
 
 .statItem {
   display: flex;
+  flex: 1;
+  min-width: 0;
+  max-width: 50%;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .statValue {
@@ -184,11 +189,8 @@ $danger-color: #dc3545;
 .statDivider {
   width: 1px;
   height: 50px;
+  flex-shrink: 0;
   background-color: $border-color;
-
-  &:last-child {
-    display: none;
-  }
 }
 
 .friendsButtonContainer {
@@ -232,9 +234,15 @@ $danger-color: #dc3545;
   font-size: 20px;
   font-weight: 600;
   color: $text-primary;
-  margin: 0 0 20px 0;
+  margin: 0;
   padding-bottom: 12px;
   border-bottom: 2px solid $border-color;
+}
+
+.sectionLoading {
+  margin-top: 12px;
+  text-align: center;
+  color: $text-secondary;
 }
  
 .levelSection {
@@ -386,7 +394,13 @@ $danger-color: #dc3545;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 16px;
+
+  .sectionTitle {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 // Info Grid
@@ -420,52 +434,62 @@ $danger-color: #dc3545;
   line-height: 1.5;
 }
  
-.certSection {
-  max-width: 800px;
-  margin: 0 auto 24px;
-  padding: 24px;
-  background-color: $card-background;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+.certificateCard {
+  background-color: $background-color;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid $border-color;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
-.certSliderContainer {
-  overflow: hidden;
+.certificateCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
-.certImage {
+.certificateCardTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: $text-primary;
+  overflow-wrap: anywhere;
+}
+
+.certificateThumb {
   width: 100%;
-  max-width: 600px;
-  height: 400px;
+  height: 140px;
   object-fit: contain;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  border: 1px solid $border-color;
 }
 
-.certDate {
-  text-align: center;
-  font-size: 14px;
-  color: $text-secondary;
-  margin-top: 12px;
-}
-
-.certDots {
+.certificateCardFooter {
   display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 16px;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
-.certDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: $border-color;
-  transition: background-color 0.2s;
-}
-
-.certDotActive {
-  background-color: $accent-color;
+.certificateDateBadge {
+  background-color: $success-color;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
 }
  
 .statusContainer {
@@ -727,8 +751,8 @@ $danger-color: #dc3545;
     grid-template-columns: 1fr;
   }
 
-  .certImage {
-    height: 250px;
+  .certificateThumb {
+    height: 120px;
   }
 
   .modalContent {
